@@ -143,6 +143,51 @@ def create_app() -> FastAPI:
     def unfinished_goals() -> list[dict]:
         return [g.to_dict() for g in harness.goal_service.unfinished_goals()]
 
+    @app.post("/conversations")
+    def create_conversation(payload: dict) -> dict:
+        cid = payload.get("id", f"conv_{__import__('uuid').uuid4().hex[:8]}")
+        system = payload.get("system_prompt", "")
+        if system:
+            from bolt_core.conversation import ConversationMessage
+            harness.conversation_store.add(cid, ConversationMessage(role="system", content=system))
+        return {"id": cid}
+
+    @app.get("/conversations")
+    def list_conversations() -> list[str]:
+        return harness.conversation_store.list_conversations()
+
+    @app.get("/conversations/{conversation_id}")
+    def get_conversation(conversation_id: str) -> list[dict]:
+        return [m.to_dict() for m in harness.conversation_store.history(conversation_id)]
+
+    @app.post("/conversations/{conversation_id}/messages")
+    def add_message(conversation_id: str, payload: dict) -> dict:
+        from bolt_core.conversation import ConversationMessage
+        msg = ConversationMessage(
+            role=payload.get("role", "user"),
+            content=payload.get("content", ""),
+            metadata=payload.get("metadata") or {},
+        )
+        harness.conversation_store.add(conversation_id, msg)
+        return {"status": "ok"}
+
+    @app.post("/runs/{run_id}/steering")
+    def steer_run(run_id: str, payload: dict) -> dict:
+        from bolt_core.conversation import ConversationMessage
+        cid = f"run_{run_id}"
+        msg = ConversationMessage(
+            role="user",
+            content=payload.get("content", ""),
+            metadata={"steering": True, "run_id": run_id},
+        )
+        harness.conversation_store.add(cid, msg)
+        return {"status": "injected"}
+
+    @app.get("/runs/{run_id}/timeline")
+    def run_timeline(run_id: str) -> list[dict]:
+        events = harness.trace(run_id)
+        return [e.__dict__ for e in events]
+
     return app
 
 

@@ -1,8 +1,10 @@
 import json
 from dataclasses import dataclass
+from pathlib import Path
 from uuid import uuid4
 
 from bolt_core.agent_loop import AgentLoop, AgentLoopResult, AgentStepResult
+from bolt_core.conversation import ConversationStore
 from bolt_core.document_gardener import DocumentGardener
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.file_writer import apply_file_write, change_set_json, propose_file_write
@@ -40,6 +42,8 @@ class Harness:
         self.consolidator = MemoryConsolidator()
         self.terminal = TerminalService(workspace)
         self.goal_service = GoalService(workspace)
+        self.conversation_store = ConversationStore(
+            str(Path(workspace) / ".bolt" / "conversations.db"))
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
 
