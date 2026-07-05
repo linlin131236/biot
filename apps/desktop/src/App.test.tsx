@@ -92,4 +92,74 @@ describe('App', () => {
     expect(screen.getByText(/src\/App\.tsx/)).toBeInTheDocument();
     expect(screen.getByText(/\+new/)).toBeInTheDocument();
   });
+
+  it('starts a run and executes an agent step from the workbench', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/harness/runs')) return Promise.resolve(json({ id: 'run_9', goal: 'fix bug' }));
+      if (input.endsWith('/agent-steps')) return Promise.resolve(json({ status: 'executed', model_output: '{}', tool_result: { request_id: 'tool_1', status: 'executed', reason: 'ok', output: 'done' } }));
+      if (input.endsWith('/trace')) return Promise.resolve(json([{ run_id: 'run_9', sequence: 1, type: 'run.created', payload: {} }]));
+      if (input.endsWith('/permissions/pending')) return Promise.resolve(json([]));
+      if (input.endsWith('/memory')) return Promise.resolve(json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } }));
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+    fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: 'fix bug' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Run' }));
+    expect(await screen.findByText('run_9')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Run Step' }));
+    expect(await screen.findByText('done')).toBeInTheDocument();
+    expect(localStorage.getItem('bolt.desktop.session')).toContain('run_9');
+  });
+
+  it('refreshes trace and approves permissions', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/trace')) return Promise.resolve(json([{ run_id: 'run_1', sequence: 2, type: 'tool.requested', payload: {} }]));
+      if (input.endsWith('/approve')) return Promise.resolve(json({ request_id: 'tool_1', status: 'executed', reason: 'ok', output: 'applied' }));
+      if (input.endsWith('/permissions/pending')) return Promise.resolve(json([]));
+      return Promise.resolve(json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } }));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
+
+    render(<App fetcher={fetcher} initialPendingPermissions={[{
+      id: 'perm_1', run_id: 'run_1', request_id: 'tool_1', tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'D:/Bolt/Bolt' }, action: 'confirm', reason: 'known command execution', status: 'pending_permission'
+    }]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Trace' }));
+    expect(await screen.findByText('tool.requested')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('applied')).toBeInTheDocument();
+  });
+
+  it('saves model settings without storing api keys locally', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
+      if (init?.method === 'POST') return Promise.resolve(json({ provider: 'openai-compatible', base_url: 'http://llm', model: 'gpt-test', temperature: 0.2, has_api_key: true }));
+      return Promise.resolve(json({ provider: 'fake', base_url: 'http://localhost', model: 'fake-model', temperature: 0.2, has_api_key: false }));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+    fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'gpt-test' } });
+    fireEvent.change(screen.getByLabelText('API Key'), { target: { value: 'secret-key' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save Model Settings' }));
+
+    expect(await screen.findByText('API key configured')).toBeInTheDocument();
+    expect(localStorage.getItem('bolt.desktop.session')).not.toContain('secret-key');
+  });
+
+  it('runs document gardener for the current run', async () => {
+    const fetcher = vi.fn().mockResolvedValue(json({ request_id: 'tool_9', status: 'pending_permission', reason: 'workspace write' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
+
+    render(<App fetcher={fetcher} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Run Document Gardener' }));
+
+    expect(await screen.findByText('workspace write')).toBeInTheDocument();
+  });
 });
+
+function json(value: unknown): Response {
+  return new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
+}

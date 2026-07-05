@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemoryRecords, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, recordMemory, rejectPermission, resolveMemory, runAgentStep, saveModelSettings, submitToolRequest } from './harnessClient';
+import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemoryRecords, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, recordMemory, rejectPermission, resolveMemory, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
 
 describe('harness client', () => {
   it('creates a harness run', async () => {
@@ -111,5 +111,20 @@ describe('harness client', () => {
 
     expect(approved.status).toBe('approved');
     expect(rejected.request_id).toBe('tool_1');
+  });
+
+  it('runs document gardener for a run', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ request_id: 'tool_1', status: 'pending_permission', reason: 'workspace write' })));
+
+    const result = await runDocumentGardener('http://core', 'run_1', fetcher);
+
+    expect(result.status).toBe('pending_permission');
+    expect(fetcher).toHaveBeenCalledWith('http://core/maintenance/document-gardener/runs/run_1', { method: 'POST' });
+  });
+
+  it('throws readable errors for failed responses', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response('bad gateway', { status: 502, statusText: 'Bad Gateway' }));
+
+    await expect(fetchMemorySnapshot('http://core', fetcher)).rejects.toThrow('Agent Core request failed: 502 Bad Gateway');
   });
 });
