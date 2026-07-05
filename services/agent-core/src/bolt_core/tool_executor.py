@@ -25,7 +25,6 @@ class FakeToolExecutor:
 class ReadOnlyToolExecutor:
     def __init__(self, workspace: str) -> None:
         self.workspace = workspace
-        self._fallback = FakeToolExecutor()
 
     def execute(self, request: ToolRequest) -> ToolExecution:
         if request.tool == "file.read":
@@ -34,7 +33,7 @@ class ReadOnlyToolExecutor:
             return self._search(request)
         if request.tool == "shell.execute":
             return self._shell(request)
-        return self._fallback.execute(request)
+        return ToolExecution(request.id, "failed", None, f"unknown tool: {request.tool}")
 
     def _read(self, request: ToolRequest) -> ToolExecution:
         path = str(request.payload.get("path", ""))

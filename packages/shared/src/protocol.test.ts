@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isHarnessRun, isMemorySnapshot, isToolRequest, type AgentStepResult, type ChangeSet, type ContextPacket, type MemoryConsolidationResult, type MemoryQuery, type MemorySnapshot, type ModelSettingsStatus, type PendingPermission, type ShellCommandPayload, type ToolRequest, type TraceEvent, type ToolResult } from './protocol';
+import { isHarnessRun, isMemorySnapshot, isToolRequest, type AgentLoopResult, type AgentStepResult, type ChangeSet, type ContextPacket, type MemoryConsolidationResult, type MemoryQuery, type MemorySnapshot, type ModelSettingsStatus, type PendingPermission, type ShellCommandPayload, type ToolRequest, type TraceEvent, type ToolResult } from './protocol';
 
 describe('shared protocol', () => {
   it('recognizes harness run payloads', () => {
@@ -108,5 +108,12 @@ describe('shared protocol', () => {
     expect(permission.status).toBe('pending_permission');
     expect(result.status).toBe('approved');
     expect(executed.output).toBe('done');
+  });
+
+  it('supports agent loop result payloads', () => {
+    const result: AgentLoopResult = { status: 'pending_permission', steps: 1, last_step: { status: 'pending_permission', model_output: '{}', tool_result: { request_id: 'tool_1', status: 'pending_permission', reason: 'workspace write' } } };
+
+    expect(result.steps).toBe(1);
+    expect(result.last_step.tool_result?.status).toBe('pending_permission');
   });
 });

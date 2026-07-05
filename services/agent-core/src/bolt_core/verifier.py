@@ -13,6 +13,12 @@ class Verifier:
     def verify(self, result: ToolResult | None) -> VerificationResult:
         if result is None:
             return VerificationResult("needs_replan", "no tool result")
-        if result.status in ("executed", "pending_permission", "denied", "failed"):
-            return VerificationResult("passed", result.status)
+        if result.status == "executed":
+            return VerificationResult("complete", result.status)
+        if result.status == "pending_permission":
+            return VerificationResult("pause_for_permission", result.status)
+        if result.status in ("denied", "rejected"):
+            return VerificationResult("terminal_failure", result.status)
+        if result.status == "failed":
+            return VerificationResult("recoverable_failure", result.status)
         return VerificationResult("needs_replan", result.status)

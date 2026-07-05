@@ -83,7 +83,19 @@ def test_readonly_executor_runs_shell_execute_inside_workspace(tmp_path):
     assert "Python" in (result.output or "")
 
 
-def test_readonly_executor_falls_back_to_fake_for_shell(tmp_path):
+def test_readonly_executor_fails_unknown_tools(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    executor = ReadOnlyToolExecutor(str(workspace))
+    request = ToolRequest.create("browser.open", "open", {"url": "https://example.test"})
+
+    result = executor.execute(request)
+
+    assert result.status == "failed"
+    assert result.error == "unknown tool: browser.open"
+
+
+def test_readonly_executor_fails_legacy_shell_run(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     executor = ReadOnlyToolExecutor(str(workspace))
@@ -91,5 +103,5 @@ def test_readonly_executor_falls_back_to_fake_for_shell(tmp_path):
 
     result = executor.execute(request)
 
-    assert result.status == "executed"
-    assert result.output == "fake execution completed"
+    assert result.status == "failed"
+    assert result.error == "unknown tool: shell.run"

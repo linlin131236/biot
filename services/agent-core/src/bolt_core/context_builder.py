@@ -24,4 +24,4 @@ class ContextBuilder:
 
 
 def _memory_dict(record: MemoryRecord) -> dict:
-    return {"kind": record.kind, "scope": record.scope, "content": record.content, "tags": record.tags}
+    return {"kind": record.kind, "scope": record.scope, "content": record.content, "tags": record.tags, "metadata": record.metadata}

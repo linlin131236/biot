@@ -19,6 +19,14 @@ class AgentStepResult:
     error: str | None = None
 
 
+@dataclass(frozen=True)
+class AgentLoopResult:
+    status: str
+    steps: int
+    last_step: AgentStepResult | None
+    error: str | None = None
+
+
 class AgentLoop:
     def __init__(self, gateway=None, context_builder=None, planner=None, verifier=None) -> None:
         self.gateway = gateway or FakeModelGateway()
@@ -39,6 +47,23 @@ class AgentLoop:
             return AgentStepResult("failed", response.content, None, response.error)
         self._record_model_trace(trace, config.model, response)
         return self._submit_model_tool(response.content, trace, submit)
+
+    def run_loop(self, goal: str, config: ModelConfig, p0_context_fn: Callable[[], dict], trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories_fn: Callable[[], list[MemoryRecord]], max_steps: int = 3) -> AgentLoopResult:
+        trace.record("agent.loop.started", {"max_steps": max_steps})
+        last_step: AgentStepResult | None = None
+        for index in range(max(1, max_steps)):
+            trace.record("agent.loop.iteration.started", {"step": index + 1})
+            last_step = self.run_step(goal, config, p0_context_fn(), trace, submit, memories_fn())
+            trace.record("agent.loop.iteration.completed", {"step": index + 1, "status": last_step.status})
+            verification = self.verifier.verify(last_step.tool_result)
+            if verification.status == "pause_for_permission":
+                trace.record("agent.loop.paused", {"status": last_step.status})
+                return AgentLoopResult(last_step.status, index + 1, last_step)
+            if verification.status in ("terminal_failure", "recoverable_failure", "needs_replan"):
+                trace.record("agent.loop.stopped", {"status": last_step.status, "reason": verification.status})
+                return AgentLoopResult(last_step.status, index + 1, last_step, last_step.error)
+        trace.record("agent.loop.max_steps_reached", {"steps": max(1, max_steps)})
+        return AgentLoopResult(last_step.status if last_step else "failed", max(1, max_steps), last_step)
 
     def _record_model_trace(self, trace: TraceLog, model: str, response) -> None:
         trace.record("llm.completed", {"model": model})

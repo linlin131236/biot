@@ -32,6 +32,11 @@ def create_app() -> FastAPI:
         result = harness.run_agent_step(run_id)
         return _agent_step_dict(result)
 
+    @app.post("/harness/runs/{run_id}/agent-loops")
+    def run_agent_loop(run_id: str, payload: dict | None = None) -> dict:
+        result = harness.run_agent_loop(run_id, int((payload or {}).get("max_steps", 3)))
+        return _agent_loop_dict(result)
+
     @app.get("/harness/runs/{run_id}/trace")
     def trace(run_id: str) -> list[dict]:
         return [event.__dict__ for event in harness.trace(run_id)]
@@ -95,6 +100,15 @@ def _agent_step_dict(result) -> dict:
         "status": result.status,
         "model_output": result.model_output,
         "tool_result": None if result.tool_result is None else _tool_result_dict(result.tool_result),
+        "error": result.error,
+    }
+
+
+def _agent_loop_dict(result) -> dict:
+    return {
+        "status": result.status,
+        "steps": result.steps,
+        "last_step": None if result.last_step is None else _agent_step_dict(result.last_step),
         "error": result.error,
     }
 

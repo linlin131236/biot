@@ -5,7 +5,7 @@ from bolt_core.tool_protocol import ToolRequest
 def test_harness_records_trace_for_tool_request():
     harness = Harness(workspace="D:/Bolt/Bolt")
     run = harness.create_run(goal="check safety")
-    request = ToolRequest.create("shell.run", "command", {"command": "pnpm test"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
 
     result = harness.submit_tool_request(run.id, request)
 
@@ -16,25 +16,25 @@ def test_harness_records_trace_for_tool_request():
 def test_harness_denies_dangerous_command_and_records_failure():
     harness = Harness(workspace="D:/Bolt/Bolt")
     run = harness.create_run(goal="delete root")
-    request = ToolRequest.create("shell.run", "command", {"command": "rm -rf /"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "rm -rf /", "workdir": "D:/Bolt/Bolt"})
 
     result = harness.submit_tool_request(run.id, request)
     context = harness.p0_context()
 
     assert result.status == "denied"
-    assert context["unresolved_failures"][0]["tool"] == "shell.run"
+    assert context["unresolved_failures"][0]["tool"] == "shell.execute"
 
 
-def test_harness_approves_pending_permission_and_runs_fake_executor():
+def test_harness_approves_pending_permission_and_runs_shell_execute():
     harness = Harness(workspace="D:/Bolt/Bolt")
     run = harness.create_run(goal="approve command")
-    request = ToolRequest.create("shell.run", "command", {"command": "pnpm test"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
     harness.submit_tool_request(run.id, request)
 
     result = harness.approve_permission(request.id)
 
     assert result.status == "executed"
-    assert result.output == "fake execution completed"
+    assert "Python" in (result.output or "")
     assert harness.pending_permissions() == []
     assert harness.trace(run.id)[-1].type == "tool.execution.completed"
 
@@ -42,7 +42,7 @@ def test_harness_approves_pending_permission_and_runs_fake_executor():
 def test_harness_rejects_pending_permission_without_execution():
     harness = Harness(workspace="D:/Bolt/Bolt")
     run = harness.create_run(goal="reject command")
-    request = ToolRequest.create("shell.run", "command", {"command": "pnpm test"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
     harness.submit_tool_request(run.id, request)
 
     result = harness.reject_permission(request.id)
@@ -55,7 +55,7 @@ def test_harness_rejects_pending_permission_without_execution():
 def test_harness_execution_failure_records_memory():
     harness = Harness(workspace="D:/Bolt/Bolt")
     run = harness.create_run(goal="failing command")
-    request = ToolRequest.create("shell.run", "command", {"command": "pnpm test", "fail": True})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt"})
     harness.submit_tool_request(run.id, request)
 
     result = harness.approve_permission(request.id)
@@ -63,7 +63,7 @@ def test_harness_execution_failure_records_memory():
 
     assert result.status == "failed"
     assert harness.trace(run.id)[-1].type == "tool.execution.failed"
-    assert context["unresolved_failures"][0]["tool"] == "shell.run"
+    assert context["unresolved_failures"][0]["tool"] == "shell.execute"
 
 
 def test_harness_executes_file_read_immediately_without_permission(tmp_path):

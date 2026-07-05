@@ -1,4 +1,4 @@
-import type { AgentStepResult, HarnessRun, MemoryConsolidationResult, MemoryQuery, MemoryRecord, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolRequest, ToolResult, TraceEvent } from '@bolt/shared';
+import type { AgentLoopResult, AgentStepResult, HarnessRun, MemoryConsolidationResult, MemoryQuery, MemoryRecord, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolRequest, ToolResult, TraceEvent } from '@bolt/shared';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -12,6 +12,10 @@ export async function submitToolRequest(baseUrl: string, runId: string, request:
 
 export async function runAgentStep(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<AgentStepResult> {
   return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/agent-steps`, { method: 'POST' }));
+}
+
+export async function runAgentLoop(baseUrl: string, runId: string, maxSteps: number, fetcher: Fetcher = fetch): Promise<AgentLoopResult> {
+  return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/agent-loops`, jsonPost({ max_steps: maxSteps })));
 }
 
 export async function fetchModelSettingsStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<ModelSettingsStatus> {

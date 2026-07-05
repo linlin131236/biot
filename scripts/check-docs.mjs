@@ -19,9 +19,11 @@ const required = [
   'docs/decisions/011-harness-engineering.md',
   'docs/decisions/012-desktop-shipability.md',
   'docs/decisions/013-desktop-agent-workflow.md',
+  'docs/decisions/014-core-autonomy.md',
   'docs/failure-patterns/README.md',
   'docs/exec-plans/active/012-desktop-shipability.md',
   'docs/exec-plans/active/013-desktop-agent-workflow.md',
+  'docs/exec-plans/active/014-core-autonomy.md',
   'docs/user-guide/first-run.md'
 ];
 

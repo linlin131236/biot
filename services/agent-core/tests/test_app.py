@@ -61,7 +61,7 @@ async def test_permission_api_approves_pending_request_and_returns_execution():
         run_id = (await client.post("/harness/runs", json={"goal": "approve"})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.run", "operation": "command", "payload": {"command": "pnpm test"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}},
         )
         request_id = tool_response.json()["request_id"]
         pending_response = await client.get("/permissions/pending")
@@ -70,7 +70,7 @@ async def test_permission_api_approves_pending_request_and_returns_execution():
 
     assert pending_response.json()[0]["request_id"] == request_id
     assert approve_response.json()["status"] == "executed"
-    assert approve_response.json()["output"] == "fake execution completed"
+    assert "Python" in approve_response.json()["output"]
     assert pending_after.json() == []
 
 
@@ -80,7 +80,7 @@ async def test_permission_api_records_failed_execution_in_memory():
         run_id = (await client.post("/harness/runs", json={"goal": "fail"})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.run", "operation": "command", "payload": {"command": "pnpm test", "fail": True}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt"}},
         )
         request_id = tool_response.json()["request_id"]
         approve_response = await client.post(f"/permissions/{request_id}/approve")
@@ -96,7 +96,7 @@ async def test_permission_api_rejects_pending_request_without_execution():
         run_id = (await client.post("/harness/runs", json={"goal": "reject"})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.run", "operation": "command", "payload": {"command": "pnpm test"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}},
         )
         request_id = tool_response.json()["request_id"]
         reject_response = await client.post(f"/permissions/{request_id}/reject")
@@ -194,6 +194,17 @@ async def test_harness_api_denies_reading_secret_file():
 
     assert tool_response.json()["status"] == "denied"
     assert p0_response.json()["unresolved_failures"][0]["tool"] == "file.read"
+
+
+@pytest.mark.anyio
+async def test_agent_loop_endpoint_runs_bounded_loop():
+    async with _client() as client:
+        run_id = (await client.post("/harness/runs", json={"goal": "loop"})).json()["id"]
+        response = await client.post(f"/harness/runs/{run_id}/agent-loops", json={"max_steps": 2})
+        trace_response = await client.get(f"/harness/runs/{run_id}/trace")
+
+    assert response.json()["steps"] <= 2
+    assert "agent.loop.started" in [event["type"] for event in trace_response.json()]
 
 
 def _client() -> AsyncClient:

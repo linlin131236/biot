@@ -11,5 +11,25 @@ class Planner:
 
 def _prompt(context: ContextPacket) -> str:
     failures = context.p0_context.get("hard_constraints", [])
-    memories = [memory["content"] for memory in context.memory_context]
-    return f"Goal: {context.goal}\nToken budget: {context.token_budget}\nHard constraints: {failures}\nMemories: {memories}"
+    traces = [event.get("type") for event in context.recent_trace]
+    memories = [_memory_summary(memory) for memory in context.memory_context]
+    return "\n".join([
+        f"Goal: {context.goal}",
+        f"Token budget: {context.token_budget}",
+        f"Hard constraints: {failures}",
+        f"Recent trace: {traces}",
+        f"Memories: {memories}",
+    ])
+
+
+def _memory_summary(memory: dict) -> dict:
+    summary = {"scope": memory.get("scope"), "tags": memory.get("tags"), "content": memory.get("content")}
+    metadata = memory.get("metadata")
+    if isinstance(metadata, dict):
+        summary["metadata"] = _metadata_summary(metadata)
+    return summary
+
+
+def _metadata_summary(metadata: dict) -> dict:
+    keys = ("package_manager", "languages", "intent", "scheduler", "truncated")
+    return {key: metadata[key] for key in keys if key in metadata}

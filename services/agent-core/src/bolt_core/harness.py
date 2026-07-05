@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import uuid4
 
-from bolt_core.agent_loop import AgentLoop, AgentStepResult
+from bolt_core.agent_loop import AgentLoop, AgentLoopResult, AgentStepResult
 from bolt_core.document_gardener import DocumentGardener
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.file_writer import apply_file_write, change_set_json, propose_file_write
@@ -131,6 +131,12 @@ class Harness:
         config = self.model_settings.config()
         memories = self._agent_memories()
         return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda request: self.submit_tool_request(run_id, request), memories)
+
+    def run_agent_loop(self, run_id: str, max_steps: int = 3) -> AgentLoopResult:
+        run = self.runs[run_id]
+        trace = self.traces[run_id]
+        config = self.model_settings.config()
+        return self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda request: self.submit_tool_request(run_id, request), self._agent_memories, max_steps)
 
     def _agent_memories(self) -> list[MemoryRecord]:
         records = [record for record in self.memory.list(status="active") if record.kind != "failure"]

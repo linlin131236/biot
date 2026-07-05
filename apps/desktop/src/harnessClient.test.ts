@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemoryRecords, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, recordMemory, rejectPermission, resolveMemory, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
+import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemoryRecords, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, recordMemory, rejectPermission, resolveMemory, runAgentLoop, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
 
 describe('harness client', () => {
   it('creates a harness run', async () => {
@@ -111,6 +111,15 @@ describe('harness client', () => {
 
     expect(approved.status).toBe('approved');
     expect(rejected.request_id).toBe('tool_1');
+  });
+
+  it('runs an agent loop with bounded max steps', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'executed', steps: 2, last_step: { status: 'executed', model_output: '{}', tool_result: { request_id: 'tool_1', status: 'executed', reason: 'ok' } } })));
+
+    const result = await runAgentLoop('http://core', 'run_1', 2, fetcher);
+
+    expect(result.steps).toBe(2);
+    expect(fetcher).toHaveBeenCalledWith('http://core/harness/runs/run_1/agent-loops', expect.objectContaining({ method: 'POST', body: JSON.stringify({ max_steps: 2 }) }));
   });
 
   it('runs document gardener for a run', async () => {

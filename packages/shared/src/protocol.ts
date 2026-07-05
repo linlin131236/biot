@@ -45,6 +45,13 @@ export interface AgentStepResult {
   error?: string | null;
 }
 
+export interface AgentLoopResult {
+  status: ToolStatus;
+  steps: number;
+  last_step?: AgentStepResult | null;
+  error?: string | null;
+}
+
 export interface ContextPacket {
   goal: string;
   p0_context: P0Context;

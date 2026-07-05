@@ -75,12 +75,34 @@ def test_shell_execute_requires_confirmation():
 def test_dangerous_command_is_denied():
     gate = PermissionGate(workspace="D:/Bolt/Bolt")
     request = ToolRequest.create(
-        tool="shell.run",
+        tool="shell.execute",
         operation="command",
-        payload={"command": "rm -rf /"},
+        payload={"command": "rm -rf /", "workdir": "D:/Bolt/Bolt"},
     )
 
     decision = gate.evaluate(request)
 
     assert decision.action == "deny"
     assert decision.status == "denied"
+
+
+def test_unknown_tool_is_denied():
+    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    request = ToolRequest.create("browser.open", "open", {"path": "D:/Bolt/Bolt/README.md"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "deny"
+    assert decision.status == "denied"
+    assert decision.reason == "unknown tool: browser.open"
+
+
+def test_unknown_operation_is_denied():
+    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    request = ToolRequest.create("file.read", "write", {"path": "D:/Bolt/Bolt/README.md"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "deny"
+    assert decision.status == "denied"
+    assert decision.reason == "unsupported operation: file.read/write"
