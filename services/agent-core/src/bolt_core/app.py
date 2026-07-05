@@ -111,6 +111,38 @@ def create_app() -> FastAPI:
     def terminal_output(session_id: str) -> dict:
         return harness.terminal_output(session_id)
 
+    @app.post("/goals")
+    def create_goal(payload: dict) -> dict:
+        return harness.goal_service.create_goal(payload).to_dict()
+
+    @app.get("/goals/{goal_id}")
+    def get_goal(goal_id: str) -> dict:
+        return harness.goal_service.get_goal(goal_id).to_dict()
+
+    @app.post("/goals/{goal_id}/pause")
+    def pause_goal(goal_id: str) -> dict:
+        return harness.goal_service.pause_goal(goal_id).to_dict()
+
+    @app.post("/goals/{goal_id}/resume")
+    def resume_goal(goal_id: str) -> dict:
+        return harness.goal_service.resume_goal(goal_id).to_dict()
+
+    @app.post("/goals/{goal_id}/clear")
+    def clear_goal(goal_id: str) -> dict:
+        return harness.goal_service.clear_goal(goal_id).to_dict()
+
+    @app.get("/goals/{goal_id}/evidence")
+    def goal_evidence(goal_id: str) -> list[dict]:
+        return [e.__dict__ for e in harness.goal_service.goal_evidence(goal_id)]
+
+    @app.get("/goals/{goal_id}/budget")
+    def goal_budget(goal_id: str) -> dict:
+        return harness.goal_service.goal_budget(goal_id)
+
+    @app.get("/goals/unfinished")
+    def unfinished_goals() -> list[dict]:
+        return [g.to_dict() for g in harness.goal_service.unfinished_goals()]
+
     return app
 
 

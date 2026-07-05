@@ -11,6 +11,8 @@ from bolt_core.memory_consolidator import MemoryConsolidationResult, MemoryConso
 from bolt_core.memory_store import MemoryRecord, MemoryStore
 from bolt_core.model_settings import ModelSettingsStatus, ModelSettingsStore
 from bolt_core.patch_engine import build_change_set, apply_change_set
+from bolt_core.evidence import EvidenceLog
+from bolt_core.goal_service import GoalService
 from bolt_core.permission_gate import PermissionGate
 from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
@@ -36,6 +38,7 @@ class Harness:
         self.agent_loop = AgentLoop()
         self.consolidator = MemoryConsolidator()
         self.bg_executor = BackgroundExecutor(workspace)
+        self.goal_service = GoalService(workspace)
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
 
