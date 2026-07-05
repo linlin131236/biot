@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/protocol.ts"
+    ".": "./src/protocol.ts",
+    "./autonomy": "./src/protocol-autonomy.ts"
   },
   "scripts": {
     "test": "vitest run"
