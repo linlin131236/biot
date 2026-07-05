@@ -11,7 +11,7 @@ class RiskDecision:
 
 DANGEROUS_COMMANDS = ("rm -rf /", "del /s /q c:\\", "format ", "git push --force")
 BLOCKED_COMMAND_FRAGMENTS = ("| sh", "| bash", "curl ", "Invoke-WebRequest")
-SAFE_COMMANDS = ("git", "npm", "pnpm", "pytest", "node", "python", "ls", "cat")
+SAFE_COMMANDS = ("git", "npm", "pnpm", "pytest", "node", "python", "ls", "cat", "terminal")
 SECRET_NAMES = (".env", ".env.local", "id_rsa", "credentials", "secret")
 
 
@@ -25,8 +25,30 @@ def classify_command(command: str) -> RiskDecision:
     return RiskDecision(4, "confirm", "unknown command execution")
 
 
+def classify_background_command(command: str) -> RiskDecision:
+    normalized = command.strip().lower()
+    if _is_destructive_command(normalized):
+        return RiskDecision(6, "deny", "destructive command denied")
+    executable = normalized.split(maxsplit=1)[0] if normalized else ""
+    if executable in SAFE_COMMANDS:
+        return RiskDecision(3, "confirm", "known background command")
+    return RiskDecision(4, "confirm", "unknown background command")
+
+
 def classify_search() -> RiskDecision:
     return RiskDecision(0, "allow", "workspace search")
+
+
+def classify_web() -> RiskDecision:
+    return RiskDecision(0, "allow", "web read-only")
+
+
+def classify_patch(path: str, workspace: str) -> RiskDecision:
+    if _is_secret_path(PureWindowsPath(path)):
+        return RiskDecision(6, "deny", "secret path denied")
+    if _is_inside_workspace(path, workspace):
+        return RiskDecision(2, "confirm_with_diff", "workspace patch")
+    return RiskDecision(6, "deny", "patch outside workspace")
 
 
 def classify_path(path: str, workspace: str, operation: str) -> RiskDecision:

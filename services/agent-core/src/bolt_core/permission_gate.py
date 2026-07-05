@@ -1,13 +1,19 @@
 from dataclasses import dataclass
 
-from bolt_core.risk import classify_command, classify_path, classify_search
+from bolt_core.risk import classify_background_command, classify_command, classify_patch, classify_path, classify_search, classify_web
 from bolt_core.tool_protocol import ToolRequest
 
 SUPPORTED_OPERATIONS = {
     "file.read": {"read"},
     "files.search": {"search"},
     "file.write": {"write"},
+    "file.patch": {"patch"},
     "shell.execute": {"command"},
+    "terminal.spawn": {"spawn"},
+    "terminal.poll": {"poll"},
+    "terminal.kill": {"kill"},
+    "web.search": {"search"},
+    "web.extract": {"extract"},
 }
 
 
@@ -27,13 +33,23 @@ class PermissionGate:
         unsupported = self._unsupported_reason(request)
         if unsupported:
             return PermissionDecision(request.id, "deny", "denied", unsupported)
-        if request.tool == "shell.execute":
-            risk = classify_command(str(request.payload.get("command", "")))
-        elif request.tool == "files.search":
-            risk = classify_search()
-        else:
-            risk = classify_path(str(request.payload.get("path", "")), self.workspace, request.operation)
+        risk = self._classify(request)
         return PermissionDecision(request.id, risk.action, self._status(risk.action), risk.reason)
+
+    def _classify(self, request: ToolRequest):
+        if request.tool == "shell.execute":
+            return classify_command(str(request.payload.get("command", "")))
+        if request.tool == "terminal.spawn":
+            return classify_background_command(str(request.payload.get("command", "")))
+        if request.tool in ("terminal.poll", "terminal.kill"):
+            return classify_command("terminal")
+        if request.tool == "files.search":
+            return classify_search()
+        if request.tool in ("web.search", "web.extract"):
+            return classify_web()
+        if request.tool == "file.patch":
+            return classify_patch(str(request.payload.get("path", "")), self.workspace)
+        return classify_path(str(request.payload.get("path", "")), self.workspace, request.operation)
 
     def _unsupported_reason(self, request: ToolRequest) -> str | None:
         operations = SUPPORTED_OPERATIONS.get(request.tool)

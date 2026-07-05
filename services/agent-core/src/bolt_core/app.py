@@ -95,6 +95,22 @@ def create_app() -> FastAPI:
         result = harness.reject_permission(request_id)
         return _tool_result_dict(result)
 
+    @app.get("/terminal")
+    def terminal_list() -> list[dict]:
+        return harness.terminal_list()
+
+    @app.post("/terminal/{session_id}/poll")
+    def terminal_poll(session_id: str) -> dict:
+        return harness.terminal_poll(session_id)
+
+    @app.post("/terminal/{session_id}/kill")
+    def terminal_kill(session_id: str) -> dict:
+        return harness.terminal_kill(session_id)
+
+    @app.get("/terminal/{session_id}/output")
+    def terminal_output(session_id: str) -> dict:
+        return harness.terminal_output(session_id)
+
     return app
 
 

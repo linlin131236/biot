@@ -1,13 +1,16 @@
+import json
 from dataclasses import dataclass
 from uuid import uuid4
 
 from bolt_core.agent_loop import AgentLoop, AgentLoopResult, AgentStepResult
+from bolt_core.background_executor import BackgroundExecutor
 from bolt_core.document_gardener import DocumentGardener
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.file_writer import apply_file_write, change_set_json, propose_file_write
 from bolt_core.memory_consolidator import MemoryConsolidationResult, MemoryConsolidator
 from bolt_core.memory_store import MemoryRecord, MemoryStore
 from bolt_core.model_settings import ModelSettingsStatus, ModelSettingsStore
+from bolt_core.patch_engine import build_change_set, apply_change_set
 from bolt_core.permission_gate import PermissionGate
 from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
@@ -32,6 +35,7 @@ class Harness:
         self.model_settings = ModelSettingsStore()
         self.agent_loop = AgentLoop()
         self.consolidator = MemoryConsolidator()
+        self.bg_executor = BackgroundExecutor(workspace)
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
 
@@ -53,6 +57,8 @@ class Harness:
             return self._run_immediate(run_id, request)
         if request.tool == "file.write":
             return self._queue_file_write(run_id, request, decision)
+        if request.tool == "file.patch":
+            return self._queue_file_patch(run_id, request, decision)
         self.permissions.add(run_id, request, decision)
         self.traces[run_id].record("permission.pending", {"request_id": request.id})
         return ToolResult.pending(request.id, decision.reason)
@@ -68,6 +74,8 @@ class Harness:
         self.traces[item.run_id].record("permission.approved", {"request_id": request_id})
         if item.tool == "file.write":
             return self._apply_file_write(item)
+        if item.tool == "file.patch":
+            return self._apply_file_patch(item)
         request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
         execution = self._execute(item.run_id, request)
         return self._result_from_execution(request, execution)
@@ -75,7 +83,7 @@ class Harness:
     def reject_permission(self, request_id: str) -> ToolResult:
         item = self.permissions.reject(request_id)
         self.traces[item.run_id].record("permission.rejected", {"request_id": request_id})
-        if item.tool == "file.write":
+        if item.tool in ("file.write", "file.patch"):
             self.traces[item.run_id].record("change.rejected", {"request_id": request_id})
         return ToolResult.rejected(request_id, "rejected by user")
 
@@ -136,6 +144,21 @@ class Harness:
         config = self.model_settings.config()
         return self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda request: self.submit_tool_request(run_id, request), self._agent_memories, max_steps)
 
+    def terminal_poll(self, session_id: str) -> dict:
+        result = self.bg_executor.poll(session_id)
+        return {"session_id": result.session_id, "status": result.status, "output": result.output}
+
+    def terminal_kill(self, session_id: str) -> dict:
+        result = self.bg_executor.kill(session_id)
+        return {"session_id": result.session_id, "status": result.status}
+
+    def terminal_list(self) -> list[dict]:
+        return [{"session_id": p.session_id, "status": p.status, "command": p.command} for p in self.bg_executor.list_sessions()]
+
+    def terminal_output(self, session_id: str) -> dict:
+        result = self.bg_executor.full_output(session_id)
+        return {"session_id": result.session_id, "status": result.status, "output": result.output}
+
     def _agent_memories(self) -> list[MemoryRecord]:
         records = [record for record in self.memory.list(status="active") if record.kind != "failure"]
         perception = [record for record in records if "perception" in record.tags]
@@ -158,10 +181,34 @@ class Harness:
 
     def _execute(self, run_id: str, request: ToolRequest) -> ToolExecution:
         self.traces[run_id].record("tool.execution.started", {"request_id": request.id})
-        execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
+        if request.tool in ("terminal.spawn", "terminal.poll", "terminal.kill"):
+            execution = self._execute_terminal(request)
+        elif request.tool in ("web.search", "web.extract"):
+            execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
+        else:
+            execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
         event_type = "tool.execution.completed" if execution.status == "executed" else "tool.execution.failed"
         self.traces[run_id].record(event_type, {"request_id": request.id})
         return execution
+
+    def _execute_terminal(self, request: ToolRequest) -> ToolExecution:
+        import json as _json
+        if request.tool == "terminal.spawn":
+            command = str(request.payload.get("command", ""))
+            workdir = str(request.payload.get("workdir", self.workspace))
+            result = self.bg_executor.spawn(command, workdir)
+            if result.status == "failed":
+                return ToolExecution(request.id, "failed", None, result.output)
+            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status}), None)
+        if request.tool == "terminal.poll":
+            session_id = str(request.payload.get("session_id", ""))
+            result = self.bg_executor.poll(session_id)
+            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status, "output": result.output}), None)
+        if request.tool == "terminal.kill":
+            session_id = str(request.payload.get("session_id", ""))
+            result = self.bg_executor.kill(session_id)
+            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status}), None)
+        return ToolExecution(request.id, "failed", None, f"unknown terminal operation: {request.tool}")
 
     def _queue_file_write(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
         path = str(request.payload.get("path", ""))
@@ -175,6 +222,31 @@ class Harness:
         self.traces[run_id].record("permission.pending", {"request_id": request.id})
         return ToolResult.pending(request.id, change_set_json(proposal.change))
 
+    def _queue_file_patch(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
+        path = str(request.payload.get("path", ""))
+        old_string = str(request.payload.get("old_string", ""))
+        new_string = str(request.payload.get("new_string", ""))
+        from pathlib import Path
+        target = Path(path)
+        if not target.exists():
+            return self._deny(request, f"file not found: {path}")
+        try:
+            original = target.read_text(encoding="utf-8")
+        except OSError as exc:
+            return self._deny(request, f"read error: {exc}")
+        count = original.count(old_string)
+        if count == 0:
+            return self._deny(request, "old_string not found in file")
+        if count > 1:
+            return self._deny(request, f"old_string appears {count} times, must be unique")
+        patched = original.replace(old_string, new_string, 1)
+        change = build_change_set(path, original, patched)
+        payload = {**request.payload, "change_set": change.__dict__}
+        self.permissions.add(run_id, request, decision, payload)
+        self.traces[run_id].record("change.proposed", {"request_id": request.id})
+        self.traces[run_id].record("permission.pending", {"request_id": request.id})
+        return ToolResult.pending(request.id, change_set_json(change))
+
     def _apply_file_write(self, item: PendingPermission) -> ToolResult:
         allowed, reason = apply_file_write(item.payload["change_set"])
         event = "change.applied" if allowed else "change.failed"
@@ -184,6 +256,17 @@ class Harness:
         request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
         self._record_execution_failure(request, reason)
         return ToolResult.failed(item.request_id, reason)
+
+    def _apply_file_patch(self, item: PendingPermission) -> ToolResult:
+        change_set = item.payload.get("change_set", {})
+        from bolt_core.patch_engine import ChangeSet
+        change = ChangeSet(**change_set)
+        decision = apply_change_set(change)
+        event = "change.applied" if decision.allowed else "change.failed"
+        self.traces[item.run_id].record(event, {"request_id": item.request_id})
+        if decision.allowed:
+            return ToolResult.executed(item.request_id, decision.reason)
+        return ToolResult.failed(item.request_id, decision.reason)
 
     def _run_immediate(self, run_id: str, request: ToolRequest) -> ToolResult:
         self.traces[run_id].record("permission.auto_allowed", {"request_id": request.id})

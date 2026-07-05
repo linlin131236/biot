@@ -43,7 +43,7 @@ function checkLayerImports(rel, text) {
 
 function checkPythonBoundaries(rel, text) {
   if (!rel.startsWith('services/agent-core/src/bolt_core/') || !rel.endsWith('.py')) return;
-  if (rel.endsWith('harness.py') || rel.endsWith('file_writer.py') || rel.endsWith('patch_engine.py') || rel.endsWith('shell_executor.py')) return;
+  if (rel.endsWith('harness.py') || rel.endsWith('file_writer.py') || rel.endsWith('patch_engine.py') || rel.endsWith('shell_executor.py') || rel.endsWith('background_executor.py')) return;
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');
   if (/\bsubprocess\b/.test(text)) fail(rel, 'subprocess usage outside shell executor boundary');
   if (/\.write_text\(|\.write_bytes\(|open\([^\n]*['"]w/.test(text)) fail(rel, 'direct file write outside write boundary');

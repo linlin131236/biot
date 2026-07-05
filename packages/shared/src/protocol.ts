@@ -23,6 +23,42 @@ export interface ShellCommandPayload {
   timeout_seconds?: number;
 }
 
+export interface FilePatchPayload {
+  path: string;
+  old_string: string;
+  new_string: string;
+}
+
+export interface TerminalSpawnPayload {
+  command: string;
+  workdir?: string;
+}
+
+export interface TerminalPollPayload {
+  session_id: string;
+}
+
+export interface TerminalKillPayload {
+  session_id: string;
+}
+
+export interface WebSearchPayload {
+  query: string;
+  limit?: number;
+}
+
+export interface WebExtractPayload {
+  urls: string[];
+  char_limit?: number;
+}
+
+export interface BackgroundProcess {
+  session_id: string;
+  command: string;
+  status: string;
+  output: string;
+}
+
 export interface ModelSettings {
   provider: string;
   base_url: string;

@@ -42,3 +42,18 @@ Implement real OpenAI-compatible LLM function calling. Replace the current FakeM
 
 **Karpathy Pre-flight:**
 Think before coding. The current architecture uses a single `content` string on ModelResponse that contains raw JSON. The new architecture needs `tool_calls: list[ToolCall]` alongside optional `content`. This is a fundamental shape change that touches model_gateway, agent_loop, planner, and tests. Minimal approach: add tool_calls field, keep content for backwards compat, change parsing in agent_loop, update FakeModelGateway to populate both.
+
+**Result:**
+- Commit: f2a65ee
+- 13 files changed, 558 insertions, 91 deletions
+- New: tool_schemas.py, provider_registry.py, test_tool_schemas.py, test_provider_registry.py
+- Modified: model_gateway.py (ToolCall + tool_calls), agent_loop.py (tool_calls dispatch), planner.py (structured prompt), model_settings.py (timeout)
+- All 158 Python tests pass, pnpm quality pass, desktop build pass
+- No push
+- Risk: openai SDK not tested with real API (no key in env), but FakeModelGateway covers shape
+
+---
+
+## Phase 2: Core Tool Expansion
+
+**Started:** 2026-07-06

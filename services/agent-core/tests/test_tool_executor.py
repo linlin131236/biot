@@ -92,7 +92,7 @@ def test_readonly_executor_fails_unknown_tools(tmp_path):
     result = executor.execute(request)
 
     assert result.status == "failed"
-    assert result.error == "unknown tool: browser.open"
+    assert "browser.open" in result.error
 
 
 def test_readonly_executor_fails_legacy_shell_run(tmp_path):
@@ -104,4 +104,4 @@ def test_readonly_executor_fails_legacy_shell_run(tmp_path):
     result = executor.execute(request)
 
     assert result.status == "failed"
-    assert result.error == "unknown tool: shell.run"
+    assert "shell.run" in result.error

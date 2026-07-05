@@ -90,5 +90,16 @@ class AgentLoop:
 
 
 def _operation_for_tool(tool_name: str) -> str:
-    mapping = {"file.read": "read", "files.search": "search", "file.write": "write", "shell.execute": "command"}
+    mapping = {
+        "file.read": "read",
+        "files.search": "search",
+        "file.write": "write",
+        "file.patch": "patch",
+        "shell.execute": "command",
+        "terminal.spawn": "spawn",
+        "terminal.poll": "poll",
+        "terminal.kill": "kill",
+        "web.search": "search",
+        "web.extract": "extract",
+    }
     return mapping.get(tool_name, "read")

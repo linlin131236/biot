@@ -43,3 +43,30 @@ def test_shell_execute_requires_command():
     schema = tool_schema("shell.execute")
     required = schema["function"]["parameters"]["required"]
     assert "command" in required
+
+
+def test_file_patch_schema_exists():
+    schema = tool_schema("file.patch")
+    assert schema is not None
+    assert schema["function"]["name"] == "file.patch"
+    required = schema["function"]["parameters"]["required"]
+    assert "path" in required
+    assert "old_string" in required
+    assert "new_string" in required
+
+
+def test_terminal_spawn_schema_exists():
+    schema = tool_schema("terminal.spawn")
+    assert schema is not None
+    assert schema["function"]["name"] == "terminal.spawn"
+
+
+def test_web_search_schema_exists():
+    schema = tool_schema("web.search")
+    assert schema is not None
+    assert schema["function"]["name"] == "web.search"
+
+
+def test_all_schemas_count():
+    schemas = all_tool_schemas()
+    assert len(schemas) == 10

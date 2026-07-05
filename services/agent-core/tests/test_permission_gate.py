@@ -106,3 +106,73 @@ def test_unknown_operation_is_denied():
     assert decision.action == "deny"
     assert decision.status == "denied"
     assert decision.reason == "unsupported operation: file.read/write"
+
+
+def test_file_patch_inside_workspace_requires_diff():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("file.patch", "patch", {"path": "C:/Projects/Bolt/src/app.ts", "old_string": "x", "new_string": "y"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "confirm_with_diff"
+    assert decision.status == "pending_permission"
+
+
+def test_file_patch_outside_workspace_is_denied():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("file.patch", "patch", {"path": "C:/Outside/file.ts", "old_string": "x", "new_string": "y"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "deny"
+    assert decision.status == "denied"
+
+
+def test_terminal_spawn_requires_confirmation():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("terminal.spawn", "spawn", {"command": "pnpm dev"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "confirm"
+    assert decision.status == "pending_permission"
+
+
+def test_terminal_poll_requires_confirmation():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("terminal.poll", "poll", {"session_id": "bg_123"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "confirm"
+    assert decision.status == "pending_permission"
+
+
+def test_terminal_kill_requires_confirmation():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("terminal.kill", "kill", {"session_id": "bg_123"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "confirm"
+    assert decision.status == "pending_permission"
+
+
+def test_web_search_is_allowed():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("web.search", "search", {"query": "test"})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "allow"
+    assert decision.status == "allowed"
+
+
+def test_web_extract_is_allowed():
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("web.extract", "extract", {"urls": ["https://example.com"]})
+
+    decision = gate.evaluate(request)
+
+    assert decision.action == "allow"
+    assert decision.status == "allowed"

@@ -1,4 +1,4 @@
-from bolt_core.risk import classify_command, classify_path, classify_search
+from bolt_core.risk import classify_background_command, classify_command, classify_patch, classify_path, classify_search, classify_web
 
 
 def test_known_command_requires_confirmation():
@@ -67,3 +67,56 @@ def test_search_is_allowed():
     assert result.level == 0
     assert result.action == "allow"
     assert result.reason == "workspace search"
+
+
+def test_web_search_is_allowed():
+    result = classify_web()
+
+    assert result.level == 0
+    assert result.action == "allow"
+    assert result.reason == "web read-only"
+
+
+def test_patch_inside_workspace_requires_diff():
+    result = classify_patch("C:/Projects/Bolt/src/app.ts", workspace="C:/Projects/Bolt")
+
+    assert result.level == 2
+    assert result.action == "confirm_with_diff"
+    assert result.reason == "workspace patch"
+
+
+def test_patch_outside_workspace_is_denied():
+    result = classify_patch("C:/Outside/file.ts", workspace="C:/Projects/Bolt")
+
+    assert result.level == 6
+    assert result.action == "deny"
+    assert result.reason == "patch outside workspace"
+
+
+def test_patch_secret_path_is_denied():
+    result = classify_patch("C:/Projects/Bolt/.env", workspace="C:/Projects/Bolt")
+
+    assert result.level == 6
+    assert result.action == "deny"
+
+
+def test_background_known_command_requires_confirmation():
+    result = classify_background_command("pnpm dev")
+
+    assert result.level == 3
+    assert result.action == "confirm"
+    assert result.reason == "known background command"
+
+
+def test_background_dangerous_command_is_denied():
+    result = classify_background_command("rm -rf /")
+
+    assert result.level == 6
+    assert result.action == "deny"
+
+
+def test_background_unknown_command_requires_confirmation():
+    result = classify_background_command("custom_server")
+
+    assert result.level == 4
+    assert result.action == "confirm"
