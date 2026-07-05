@@ -3,155 +3,185 @@
 ## Phase 1: Real LLM + Provider Foundation
 
 **Started:** 2026-07-06
+**Commit:** f2a65ee
 
-**Current Goal:**
-Implement real OpenAI-compatible LLM function calling. Replace the current FakeModelGateway-driven JSON text parsing with proper tool_calls. Build ProviderRegistry for multi-provider support. Upgrade Planner prompt. Wire AgentLoop to use tool_calls.
+**Changes:**
+- tool_schemas.py: 4 OpenAI function specs (file.read, files.search, file.write, shell.execute)
+- model_gateway.py: ToolCall dataclass + OpenAICompatibleGateway with tool_calls
+- agent_loop.py: tool_calls 替代自由格式 JSON
+- planner.py: 结构化系统提示词
+- provider_registry.py: BUILTIN_PROVIDERS
+- model_settings.py: timeout
+- pyproject.toml: openai>=1.50
 
-**Existing Code Entry Points:**
-- `model_gateway.py`: FakeModelGateway + OpenAICompatibleGateway (urllib, no function calling)
-- `agent_loop.py`: _parse_tool_request parses free-form JSON text output
-- `planner.py`: One-line system prompt
-- `permission_gate.py`: SUPPORTED_OPERATIONS = {file.read, files.search, file.write, shell.execute}
-- `harness.py`: Wires AgentLoop with default FakeModelGateway
-
-**Minimal Viable Changes:**
-1. Add `openai` SDK to pyproject.toml
-2. Create `tool_schemas.py` — OpenAI function specs from SUPPORTED_OPERATIONS
-3. Add `ToolCall` dataclass + update `ModelResponse` with `tool_calls`
-4. Rewrite `OpenAICompatibleGateway` with openai SDK, function calling, retry, timeout
-5. Update `FakeModelGateway` to return tool_calls format
-6. Rewrite `Planner` with structured system prompt
-7. Rewrite `AgentLoop._submit_model_tool` to use tool_calls
-8. Create `provider_registry.py` — ProviderRegistry with env-resolved keys
-9. Update `Harness` to use ProviderRegistry
-
-**Success Criteria:**
-- FakeModelGateway returns tool_calls, existing tests pass
-- OpenAICompatibleGateway sends tools parameter, parses tool_calls
-- AgentLoop reads tool_calls from ModelResponse, not free-form JSON
-- Planner has structured system prompt with agent identity and rules
-- ProviderRegistry resolves providers from env
-- All pytest tests pass
-- pnpm quality passes
-- pnpm --filter @bolt/desktop build passes
-
-**Maximum Risk:**
-- Existing tests tightly coupled to free-form JSON parsing — must migrate carefully
-- openai SDK install may have dependency conflicts
-- ProviderRegistry env resolution needs careful key redaction
-
-**Karpathy Pre-flight:**
-Think before coding. The current architecture uses a single `content` string on ModelResponse that contains raw JSON. The new architecture needs `tool_calls: list[ToolCall]` alongside optional `content`. This is a fundamental shape change that touches model_gateway, agent_loop, planner, and tests. Minimal approach: add tool_calls field, keep content for backwards compat, change parsing in agent_loop, update FakeModelGateway to populate both.
-
-**Result:**
-- Commit: f2a65ee
-- 13 files changed, 558 insertions, 91 deletions
-- New: tool_schemas.py, provider_registry.py, test_tool_schemas.py, test_provider_registry.py
-- Modified: model_gateway.py (ToolCall + tool_calls), agent_loop.py (tool_calls dispatch), planner.py (structured prompt), model_settings.py (timeout)
-- All 158 Python tests pass, pnpm quality pass, desktop build pass
-- No push
-- Risk: openai SDK not tested with real API (no key in env), but FakeModelGateway covers shape
+**Tests:** 158/158 pass
+**Verification:** pnpm quality + build pass
 
 ---
 
-## Phase 2: Core Tool Expansion
+## Phase 2: Core Coding Tools
 
 **Started:** 2026-07-06
+**Commit:** 57fe76f
 
-**Current Goal:**
-Expand core tool set: file.patch, file.write agent loop wiring, shell/test/git tools, terminal spawn/poll/kill, web search/extract. All writes and shell keep PermissionGate. Extend risk classifier and permission gate for new operations.
+**Changes:**
+- background_executor.py: 后台进程管理
+- web_tools.py: web 搜索/提取
+- permission_gate.py: 10 个操作
+- risk.py: 风险分类器
+- tool_schemas.py: 10 个 schemas
+- tool_executor.py: ReadOnlyToolExecutor
+- harness.py: terminal/web 工具直接处理
+- app.py: 新端点
 
-**Existing Code Entry Points:**
-- `tool_schemas.py`: 4 tool schemas (file.read, files.search, file.write, shell.execute)
-- `permission_gate.py`: 4 operations
-- `risk.py`: classify_command, classify_path
-- `tool_executor.py`: ReadOnlyToolExecutor handles 4 tools
-- `harness.py`: queues file.write, shell.execute
-
-**Minimal Viable Changes:**
-1. Create `background_executor.py` — subprocess spawn/poll/kill
-2. Create `web_tools.py` — SearXNG search + urllib extract
-3. Extend `tool_schemas.py` — 10 schemas (add file.patch, terminal.spawn/poll/kill, web.search/extract)
-4. Extend `permission_gate.py` — new operations (patch, command_bg, web_search, web_extract, test, git)
-5. Extend `risk.py` — classify_background_command, classify_search, classify_web, classify_patch
-6. Refactor `tool_executor.py` — read-only only, no direct write primitives
-7. Update `harness.py` — file.patch changeset flow, terminal execution, web delegation
-8. Update `agent_loop.py` — new tool name mapping
-
-**Success Criteria:**
-- 10 tool schemas in tool_schemas.py
-- file.patch goes through changeset flow (propose → approve → apply)
-- terminal.spawn/poll/kill work with BackgroundExecutor
-- web.search/extract are auto-allowed
-- All writes/shell require PermissionGate
-- Architecture check passes (no boundary violations)
-- All pytest + pnpm quality + build pass
-
-**Maximum Risk:**
-- Architecture boundary check: background_executor uses subprocess, tool_executor imports write primitives
-- Need to whitelist background_executor.py as shell execution infrastructure
-- Need to keep write primitives in harness.py boundary only
-
-**Result:**
-- Commit: 57fe76f
-- 19 files changed, 888 insertions, 18 deletions
-- New: background_executor.py, web_tools.py, test_background_executor.py, test_web_tools.py, test_file_patch.py
-- Modified: tool_schemas.py (10 schemas), permission_gate.py (10 ops), risk.py (6 classifiers), tool_executor.py (read-only), harness.py (patch+terminal+web), agent_loop.py (tool mapping), app.py (new endpoints)
-- Updated: check-architecture.mjs (whitelist background_executor.py)
-- Updated: protocol.ts (new TypeScript types for all tools)
-- 190 Python tests pass, pnpm quality pass, desktop build pass
-- No push
-- Risk: web_tools.py uses SearXNG public instance (may be rate-limited); background_executor uses subprocess (already whitelisted)
+**Tests:** 190/190 pass
+**Verification:** pnpm quality + build pass
 
 ---
 
-## Phase 3: Goal Mode Core
+## Phase 3: Persistent Goal Mode
 
 **Started:** 2026-07-06
+**Commit:** 5cc269c
 
-**Current Goal:**
-Add persistent long-running autonomous task control. Goal/GoalBuilder for structured objectives with completion criteria, constraints, budgets. GoalRunner for autonomous loop (plan→act→test→review→iterate). EvidenceLog for immutable audit trail. Lifecycle commands: pause/resume/status/evidence. Budget enforcement: max_steps/max_cost/max_wall_time. Evidence-based completion (not model confidence).
+**Changes:**
+- evidence.py: Evidence frozen dataclass + EvidenceLog
+- goal.py: Goal, GoalBuilder, GoalStatus
+- goal_runner.py: GoalRunner + GoalRunnerResult
+- goal_service.py: GoalService + GoalPersistence
+- app.py: 8 个 Goal API 端点
+- harness.py: goal_service 组合
 
-**Existing Code Entry Points:**
-- `agent_loop.py`: run_loop with max_steps but no budgets, no evidence, no pause/resume
-- `harness.py`: create_run/submit/approve flow
-- `model_gateway.py`: FakeModelGateway, OpenAICompatibleGateway with tool_calls
+**Tests:** 213/213 pass
+**Verification:** pnpm quality + build pass
 
-**Minimal Viable Changes:**
-1. Create `evidence.py` — Evidence dataclass + EvidenceLog (immutable, append-only)
-2. Create `goal.py` — Goal dataclass + GoalBuilder (audit-readiness check)
-3. Create `goal_runner.py` — GoalRunner autonomous loop with budget checks, evidence completion, pause/resume
-4. Add Goal endpoints to `app.py`
-5. Update `harness.py` — integrate GoalRunner
+---
 
-**Success Criteria:**
-- GoalBuilder structures vague objectives, rejects unauditable ones
-- GoalRunner loops plan/act/test/review/iterate
-- Evidence-based completion (must run/cite concrete checks)
-- max_steps, max_cost, max_wall_time enforced
-- pause/resume/status/evidence API works
-- Goal persistence to disk, resume detects file conflicts
-- All tests pass, pnpm quality + build pass
+## Phase 1-3 Review Gate
 
-**Maximum Risk:**
-- GoalRunner loop complexity — keep it thin, delegate to existing AgentLoop
-- Evidence-based completion needs careful design to avoid "model confidence = done"
-- Persistence format must be simple and robust
+**Date:** 2026-07-06
 
-**Karpathy Pre-flight:**
-Goal Mode is the control plane. The key insight is that GoalRunner should be a thin orchestrator over existing AgentLoop.run_step, not a reimplementation. Each step: check budgets → check completion evidence → plan next action → execute → record evidence → check for self-correction. Evidence is the ground truth; model output is not.
+**4 Red Risks Found:**
+1. BackgroundExecutor stdout 管道死锁
+2. goal_id 路径遍历漏洞
+3. GoalRunner 默认 evidence_type 完成判定太宽松
+4. harness.py 仅 5 行余量
 
-**Result:**
-- Commit: 5cc269c
-- 11 files changed, 774 insertions, 1 deletion
-- New: evidence.py, goal.py, goal_runner.py, goal_service.py
-- New tests: test_evidence.py (6), test_goal.py (10), test_goal_runner.py (7)
-- Updated: app.py (8 goal endpoints), harness.py (GoalService integration)
-- Updated: check-architecture.mjs (whitelist goal.py for persistence writes)
-- 213 Python tests pass, pnpm quality pass, desktop build pass
-- No push
-- Risk: GoalRunner currently uses injected step_fn for testability; real integration with AgentLoop needs wiring in Phase 4
+**Report:** docs/phase-1-3-review-gate.md
+
+---
+
+## Phase 0: Review Gate Fix
+
+**Started:** 2026-07-06
+**Commit:** 3796bcc
+
+**Changes:**
+- background_executor.py: 后台线程持续消费 stdout，max_output_size=1MB，completed 后释放引用
+- goal_persistence.py: 拆分自 goal.py，goal_id 正则验证，原子写入 (temp+rename)，损坏 JSON 异常
+- goal.py: 移除 GoalPersistence，不再需要 write 白名单
+- goal_runner.py: 移除默认 evidence_type 自动完成，加 consecutive_failures (3次→FAILED)，默认 min cost 0.01
+- terminal_service.py: 拆分自 harness.py
+- harness.py: 295→271 行，使用 TerminalService + ConversationStore
+- check-architecture.mjs: goal.py 出白名单，goal_persistence.py 入白名单
+
+**Tests:** 230/230 pass
+**Verification:** pnpm quality + build pass
 
 ---
 
 ## Phase 4: Multi-turn Conversation + Side Chat
+
+**Started:** 2026-07-06
+**Commit:** 07e783c
+
+**Changes:**
+- conversation.py: ConversationStore (SQLite), ConversationMessage
+- context_compressor.py: 保留 system/权限/失败证据，压缩旧消息
+- app.py: 6 个新端点 (conversations, messages, steering, timeline)
+- harness.py: conversation_store 组合
+
+**Tests:** 242/242 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Phase 5: Vector Memory
+
+**Started:** 2026-07-06
+**Commit:** 7ad455d
+
+**Changes:**
+- vector_memory.py: LocalHashEmbedding (确定性 fallback), VectorMemoryStore (record/search/delete), secret pattern 拒绝
+
+**Tests:** 251/251 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Phase 6: Skill System
+
+**Started:** 2026-07-06
+**Commit:** 1cd96bc
+
+**Changes:**
+- skill.py: SkillManifest (SKILL.md 解析), SkillStore (加载/匹配/路径遍历防护), SkillSelector, bypass_permission 拒绝
+
+**Tests:** 259/259 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Phase 7: Multi-agent Delegation
+
+**Started:** 2026-07-06
+**Commit:** 3e00a7f
+
+**Changes:**
+- delegation.py: AgentRole, DelegationTask 生命周期, reviewer fail→needs_revision, evidence 必填
+
+**Tests:** 267/267 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Phase 8: Provider Policy + MoA
+
+**Started:** 2026-07-06
+**Commit:** 9af4c72
+
+**Changes:**
+- provider_policy.py: ProviderCapability 路由, ProviderPolicy (tier/cost)
+- moa.py: MoAOrchestrator (dry_run 默认), secret scrubbing, budget enforce, dissent 记录
+
+**Tests:** 274/274 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Phase 9: Checkpoints + Review Gate
+
+**Started:** 2026-07-06
+**Commit:** 1072c6c
+
+**Changes:**
+- checkpoint.py: CheckpointService (快照/恢复/不含大文件/不含 secrets), no subprocess (delegated)
+- review_gate.py: ReviewGate + ReviewChecklist + ReviewResult
+- check-architecture.mjs: checkpoint.py 入白名单 (元数据持久化基础设施)
+
+**Tests:** 283/283 pass
+**Verification:** pnpm quality + build pass
+
+---
+
+## Desktop Integration
+
+**Started:** 2026-07-06
+**Commit:** 42f0aa9
+
+**Changes:**
+- protocol-autonomy.ts: 99 行，Goal/Conversation/VectorMemory/Skill/Delegation/MoA/Checkpoint/Review 类型
+- harnessClientAutonomy.ts: 18 个新 API 方法
+- packages/shared/package.json: 加 "./autonomy" export
+
+**Verification:** 283 pytest + pnpm quality + desktop build pass
