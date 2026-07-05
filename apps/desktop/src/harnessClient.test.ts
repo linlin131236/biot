@@ -3,47 +3,48 @@ import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTra
 
 describe('harness client', () => {
   it('creates a harness run', async () => {
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'run_1', goal: 'test' })));
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: 'run_1', goal: 'test', workspace: 'D:/Projects/App' })));
 
-    const run = await createHarnessRun('http://core', 'test', fetcher);
+    const run = await createHarnessRun('http://core', 'test', 'D:/Projects/App', fetcher);
 
     expect(run.id).toBe('run_1');
-    expect(fetcher).toHaveBeenCalledWith('http://core/harness/runs', expect.objectContaining({ method: 'POST' }));
+    expect(run.workspace).toBe('D:/Projects/App');
+    expect(fetcher).toHaveBeenCalledWith('http://core/harness/runs', expect.objectContaining({ method: 'POST', body: JSON.stringify({ goal: 'test', workspace: 'D:/Projects/App' }) }));
   });
 
   it('submits a read-only tool request', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ request_id: 'tool_1', status: 'executed', reason: 'execution completed', output: 'done' })));
 
-    const result = await submitToolRequest('http://core', 'run_1', { tool: 'file.read', operation: 'read', payload: { path: 'D:/Bolt/Bolt/README.md' } }, fetcher);
+    const result = await submitToolRequest('http://core', 'run_1', { tool: 'file.read', operation: 'read', payload: { path: 'C:/Projects/Bolt/README.md' } }, fetcher);
 
     expect(result.status).toBe('executed');
     expect(fetcher).toHaveBeenCalledWith(
       'http://core/harness/runs/run_1/tool-requests',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'file.read', operation: 'read', payload: { path: 'D:/Bolt/Bolt/README.md' } }) })
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'file.read', operation: 'read', payload: { path: 'C:/Projects/Bolt/README.md' } }) })
     );
   });
 
   it('submits a file write request for diff review', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ request_id: 'tool_2', status: 'pending_permission', reason: '{"diff":"+new"}' })));
 
-    const result = await submitToolRequest('http://core', 'run_1', { tool: 'file.write', operation: 'write', payload: { path: 'D:/Bolt/Bolt/app.ts', proposed_content: 'new' } }, fetcher);
+    const result = await submitToolRequest('http://core', 'run_1', { tool: 'file.write', operation: 'write', payload: { path: 'C:/Projects/Bolt/app.ts', proposed_content: 'new' } }, fetcher);
 
     expect(result.status).toBe('pending_permission');
     expect(fetcher).toHaveBeenCalledWith(
       'http://core/harness/runs/run_1/tool-requests',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'file.write', operation: 'write', payload: { path: 'D:/Bolt/Bolt/app.ts', proposed_content: 'new' } }) })
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'file.write', operation: 'write', payload: { path: 'C:/Projects/Bolt/app.ts', proposed_content: 'new' } }) })
     );
   });
 
   it('submits a shell execute request for confirmation', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ request_id: 'tool_3', status: 'pending_permission', reason: 'known command execution' })));
 
-    const result = await submitToolRequest('http://core', 'run_1', { tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'D:/Bolt/Bolt' } }, fetcher);
+    const result = await submitToolRequest('http://core', 'run_1', { tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'C:/Projects/Bolt' } }, fetcher);
 
     expect(result.status).toBe('pending_permission');
     expect(fetcher).toHaveBeenCalledWith(
       'http://core/harness/runs/run_1/tool-requests',
-      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'D:/Bolt/Bolt' } }) })
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'C:/Projects/Bolt' } }) })
     );
   });
 

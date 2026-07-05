@@ -3,11 +3,11 @@ from bolt_core.tool_protocol import ToolRequest
 
 
 def test_write_request_requires_permission_with_diff():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="file.write",
         operation="write",
-        payload={"path": "D:/Bolt/Bolt/src/app.ts"},
+        payload={"path": "C:/Projects/Bolt/src/app.ts"},
     )
 
     decision = gate.evaluate(request)
@@ -17,11 +17,11 @@ def test_write_request_requires_permission_with_diff():
 
 
 def test_file_read_inside_workspace_is_allowed():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="file.read",
         operation="read",
-        payload={"path": "D:/Bolt/Bolt/src/app.ts"},
+        payload={"path": "C:/Projects/Bolt/src/app.ts"},
     )
 
     decision = gate.evaluate(request)
@@ -31,7 +31,7 @@ def test_file_read_inside_workspace_is_allowed():
 
 
 def test_files_search_is_allowed():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="files.search",
         operation="search",
@@ -45,11 +45,11 @@ def test_files_search_is_allowed():
 
 
 def test_file_read_secret_path_is_denied():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="file.read",
         operation="read",
-        payload={"path": "D:/Bolt/Bolt/.env"},
+        payload={"path": "C:/Projects/Bolt/.env"},
     )
 
     decision = gate.evaluate(request)
@@ -59,11 +59,11 @@ def test_file_read_secret_path_is_denied():
 
 
 def test_shell_execute_requires_confirmation():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="shell.execute",
         operation="command",
-        payload={"command": "pnpm test", "workdir": "D:/Bolt/Bolt"},
+        payload={"command": "pnpm test", "workdir": "C:/Projects/Bolt"},
     )
 
     decision = gate.evaluate(request)
@@ -73,11 +73,11 @@ def test_shell_execute_requires_confirmation():
 
 
 def test_dangerous_command_is_denied():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
     request = ToolRequest.create(
         tool="shell.execute",
         operation="command",
-        payload={"command": "rm -rf /", "workdir": "D:/Bolt/Bolt"},
+        payload={"command": "rm -rf /", "workdir": "C:/Projects/Bolt"},
     )
 
     decision = gate.evaluate(request)
@@ -87,8 +87,8 @@ def test_dangerous_command_is_denied():
 
 
 def test_unknown_tool_is_denied():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
-    request = ToolRequest.create("browser.open", "open", {"path": "D:/Bolt/Bolt/README.md"})
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("browser.open", "open", {"path": "C:/Projects/Bolt/README.md"})
 
     decision = gate.evaluate(request)
 
@@ -98,8 +98,8 @@ def test_unknown_tool_is_denied():
 
 
 def test_unknown_operation_is_denied():
-    gate = PermissionGate(workspace="D:/Bolt/Bolt")
-    request = ToolRequest.create("file.read", "write", {"path": "D:/Bolt/Bolt/README.md"})
+    gate = PermissionGate(workspace="C:/Projects/Bolt")
+    request = ToolRequest.create("file.read", "write", {"path": "C:/Projects/Bolt/README.md"})
 
     decision = gate.evaluate(request)
 

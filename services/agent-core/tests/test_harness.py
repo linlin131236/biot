@@ -2,10 +2,12 @@ from bolt_core.harness import Harness
 from bolt_core.tool_protocol import ToolRequest
 
 
-def test_harness_records_trace_for_tool_request():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_records_trace_for_tool_request(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
     run = harness.create_run(goal="check safety")
-    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": str(workspace)})
 
     result = harness.submit_tool_request(run.id, request)
 
@@ -13,10 +15,12 @@ def test_harness_records_trace_for_tool_request():
     assert "tool.requested" in _trace_types(harness, run.id)
 
 
-def test_harness_denies_dangerous_command_and_records_failure():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_denies_dangerous_command_and_records_failure(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
     run = harness.create_run(goal="delete root")
-    request = ToolRequest.create("shell.execute", "command", {"command": "rm -rf /", "workdir": "D:/Bolt/Bolt"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "rm -rf /", "workdir": str(workspace)})
 
     result = harness.submit_tool_request(run.id, request)
     context = harness.p0_context()
@@ -25,10 +29,12 @@ def test_harness_denies_dangerous_command_and_records_failure():
     assert context["unresolved_failures"][0]["tool"] == "shell.execute"
 
 
-def test_harness_approves_pending_permission_and_runs_shell_execute():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_approves_pending_permission_and_runs_shell_execute(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
     run = harness.create_run(goal="approve command")
-    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": str(workspace)})
     harness.submit_tool_request(run.id, request)
 
     result = harness.approve_permission(request.id)
@@ -39,10 +45,12 @@ def test_harness_approves_pending_permission_and_runs_shell_execute():
     assert harness.trace(run.id)[-1].type == "tool.execution.completed"
 
 
-def test_harness_rejects_pending_permission_without_execution():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_rejects_pending_permission_without_execution(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
     run = harness.create_run(goal="reject command")
-    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt/Bolt"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": str(workspace)})
     harness.submit_tool_request(run.id, request)
 
     result = harness.reject_permission(request.id)
@@ -52,10 +60,14 @@ def test_harness_rejects_pending_permission_without_execution():
     assert harness.trace(run.id)[-1].type == "permission.rejected"
 
 
-def test_harness_execution_failure_records_memory():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_execution_failure_records_memory(tmp_path):
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside"
+    workspace.mkdir()
+    outside.mkdir()
+    harness = Harness(workspace=str(workspace))
     run = harness.create_run(goal="failing command")
-    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": "D:/Bolt"})
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version", "workdir": str(outside)})
     harness.submit_tool_request(run.id, request)
 
     result = harness.approve_permission(request.id)
@@ -232,8 +244,10 @@ def test_harness_shell_execute_failure_records_memory(tmp_path):
     assert context["unresolved_failures"][0]["tool"] == "shell.execute"
 
 
-def test_harness_records_queries_resolves_and_consolidates_memory():
-    harness = Harness(workspace="D:/Bolt/Bolt")
+def test_harness_records_queries_resolves_and_consolidates_memory(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
     record = harness.record_memory({"kind": "session", "scope": "run_1", "content": "I prefer Tauri", "tags": ["preference"]})
 
     queried = harness.query_memory(kind="session", query="tauri")

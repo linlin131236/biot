@@ -6,6 +6,7 @@ export type MemoryStatus = 'active' | 'resolved';
 export interface HarnessRun {
   id: string;
   goal: string;
+  workspace: string;
 }
 
 export interface ChangeSet {
@@ -192,7 +193,7 @@ export interface MemorySnapshot {
 
 export function isHarnessRun(value: unknown): value is HarnessRun {
   if (!isRecord(value)) return false;
-  return typeof value.id === 'string' && typeof value.goal === 'string';
+  return typeof value.id === 'string' && typeof value.goal === 'string' && typeof value.workspace === 'string';
 }
 
 export function isToolRequest(value: unknown): value is ToolRequest {

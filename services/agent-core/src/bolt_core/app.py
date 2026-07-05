@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Query
 
 from bolt_core.harness import Harness
@@ -6,7 +8,7 @@ from bolt_core.tool_protocol import ToolRequest, ToolResult
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
-    harness = Harness(workspace="D:/Bolt/Bolt")
+    harness = Harness(workspace=str(Path.cwd()))
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -18,8 +20,9 @@ def create_app() -> FastAPI:
 
     @app.post("/harness/runs")
     def create_run(payload: dict) -> dict[str, str]:
-        run = harness.create_run(goal=str(payload.get("goal", "")))
-        return {"id": run.id, "goal": run.goal}
+        workspace = payload.get("workspace")
+        run = harness.create_run(goal=str(payload.get("goal", "")), workspace=workspace if isinstance(workspace, str) and workspace else None)
+        return {"id": run.id, "goal": run.goal, "workspace": run.workspace}
 
     @app.post("/harness/runs/{run_id}/tool-requests")
     def submit_tool(run_id: str, payload: dict) -> dict[str, str | None]:

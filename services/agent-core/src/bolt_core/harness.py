@@ -21,33 +21,31 @@ from bolt_core.trace import TraceEvent, TraceLog
 class HarnessRun:
     id: str
     goal: str
+    workspace: str
 
 
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None, memory_db_path: str | None = None) -> None:
         self.workspace = workspace
         self.memory = memory_store or MemoryStore(memory_db_path)
-        self.gate = PermissionGate(workspace)
         self.permissions = PermissionQueue()
-        self.executor = ReadOnlyToolExecutor(workspace)
         self.model_settings = ModelSettingsStore()
         self.agent_loop = AgentLoop()
         self.consolidator = MemoryConsolidator()
-        self.perception = PerceptionService(workspace)
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
 
-    def create_run(self, goal: str) -> HarnessRun:
-        run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal)
+    def create_run(self, goal: str, workspace: str | None = None) -> HarnessRun:
+        run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=workspace or self.workspace)
         self.runs[run.id] = run
         self.traces[run.id] = TraceLog(run.id)
-        self.traces[run.id].record("run.created", {"goal": goal})
+        self.traces[run.id].record("run.created", {"goal": goal, "workspace": run.workspace})
         self._capture_perception(run)
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:
         self.traces[run_id].record("tool.requested", {"tool": request.tool})
-        decision = self.gate.evaluate(request)
+        decision = PermissionGate(self._workspace(run_id)).evaluate(request)
         self.traces[run_id].record("permission.evaluated", {"status": decision.status})
         if decision.status == "denied":
             return self._deny(request, decision.reason)
@@ -115,7 +113,7 @@ class Harness:
         return self.consolidator.consolidate(self.memory)
 
     def run_document_gardener(self, run_id: str) -> ToolResult:
-        proposals = DocumentGardener(self.workspace, self.memory).proposals()
+        proposals = DocumentGardener(self._workspace(run_id), self.memory).proposals()
         if not proposals:
             self.traces[run_id].record("maintenance.document_gardener.completed", {"proposals": 0})
             return ToolResult.executed(f"maintenance_{uuid4().hex[:12]}", "no failure patterns to propose")
@@ -145,7 +143,7 @@ class Harness:
         return (perception + others)[:8]
 
     def _capture_perception(self, run: HarnessRun) -> None:
-        snapshot = self.perception.snapshot(run.goal, self.p0_context())
+        snapshot = PerceptionService(run.workspace).snapshot(run.goal, self.p0_context())
         self._record_workspace_profile(snapshot)
         self._record_perception_snapshot(run.id, snapshot)
         self.traces[run.id].record("perception.snapshot.created", {"intent": snapshot.intent.category})
@@ -160,7 +158,7 @@ class Harness:
 
     def _execute(self, run_id: str, request: ToolRequest) -> ToolExecution:
         self.traces[run_id].record("tool.execution.started", {"request_id": request.id})
-        execution = self.executor.execute(request)
+        execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
         event_type = "tool.execution.completed" if execution.status == "executed" else "tool.execution.failed"
         self.traces[run_id].record(event_type, {"request_id": request.id})
         return execution
@@ -168,7 +166,7 @@ class Harness:
     def _queue_file_write(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
         path = str(request.payload.get("path", ""))
         proposed = str(request.payload.get("proposed_content", ""))
-        proposal = propose_file_write(path, proposed, self.workspace)
+        proposal = propose_file_write(path, proposed, self._workspace(run_id))
         if proposal.status != "pending_review" or proposal.change is None:
             return self._deny(request, proposal.error or "change proposal failed")
         payload = {**request.payload, "change_set": proposal.change.__dict__}
@@ -206,3 +204,6 @@ class Harness:
         failure = ToolFailure(request.tool, request.operation, "permission_denied", reason, reason, "not_fixed")
         self.memory.record_failure(failure, source=request.id)
         return ToolResult.denied(request.id, reason)
+
+    def _workspace(self, run_id: str) -> str:
+        return self.runs[run_id].workspace

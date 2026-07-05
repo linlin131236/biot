@@ -5,6 +5,44 @@ from bolt_core.app import create_app
 
 
 @pytest.mark.anyio
+async def test_run_api_accepts_workspace_and_uses_it_for_tools(tmp_path):
+    workspace = tmp_path / "project"
+    workspace.mkdir()
+    target = workspace / "README.md"
+    target.write_text("hello project", encoding="utf-8")
+    async with _client() as client:
+        run_response = await client.post("/harness/runs", json={"goal": "read", "workspace": str(workspace)})
+        run_id = run_response.json()["id"]
+        tool_response = await client.post(
+            f"/harness/runs/{run_id}/tool-requests",
+            json={"tool": "file.read", "operation": "read", "payload": {"path": str(target)}},
+        )
+
+    assert run_response.json()["workspace"] == str(workspace)
+    assert tool_response.json()["status"] == "executed"
+    assert "hello project" in (tool_response.json()["output"] or "")
+
+
+@pytest.mark.anyio
+async def test_run_api_workspace_isolation_denies_other_projects(tmp_path):
+    project = tmp_path / "project"
+    outside = tmp_path / "outside"
+    project.mkdir()
+    outside.mkdir()
+    outside_file = outside / "README.md"
+    outside_file.write_text("outside", encoding="utf-8")
+    async with _client() as client:
+        run_id = (await client.post("/harness/runs", json={"goal": "read", "workspace": str(project)})).json()["id"]
+        tool_response = await client.post(
+            f"/harness/runs/{run_id}/tool-requests",
+            json={"tool": "file.read", "operation": "read", "payload": {"path": str(outside_file)}},
+        )
+
+    assert tool_response.json()["status"] == "denied"
+    assert tool_response.json()["reason"] == "path outside workspace"
+
+
+@pytest.mark.anyio
 async def test_health_endpoint_reports_service_status():
     async with _client() as client:
         response = await client.get("/health")
@@ -56,12 +94,14 @@ async def test_memory_endpoints_expose_snapshot_and_p0_context():
 
 
 @pytest.mark.anyio
-async def test_permission_api_approves_pending_request_and_returns_execution():
+async def test_permission_api_approves_pending_request_and_returns_execution(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "approve"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "approve", "workspace": str(workspace)})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": str(workspace)}},
         )
         request_id = tool_response.json()["request_id"]
         pending_response = await client.get("/permissions/pending")
@@ -75,12 +115,16 @@ async def test_permission_api_approves_pending_request_and_returns_execution():
 
 
 @pytest.mark.anyio
-async def test_permission_api_records_failed_execution_in_memory():
+async def test_permission_api_records_failed_execution_in_memory(tmp_path):
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside"
+    workspace.mkdir()
+    outside.mkdir()
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "fail"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "fail", "workspace": str(workspace)})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": str(outside)}},
         )
         request_id = tool_response.json()["request_id"]
         approve_response = await client.post(f"/permissions/{request_id}/approve")
@@ -91,12 +135,14 @@ async def test_permission_api_records_failed_execution_in_memory():
 
 
 @pytest.mark.anyio
-async def test_permission_api_rejects_pending_request_without_execution():
+async def test_permission_api_rejects_pending_request_without_execution(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "reject"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "reject", "workspace": str(workspace)})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": str(workspace)}},
         )
         request_id = tool_response.json()["request_id"]
         reject_response = await client.post(f"/permissions/{request_id}/reject")
@@ -122,12 +168,14 @@ async def test_harness_api_executes_readonly_search_immediately():
 
 
 @pytest.mark.anyio
-async def test_harness_api_shell_execute_requires_approval_then_runs():
+async def test_harness_api_shell_execute_requires_approval_then_runs(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "shell"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "shell", "workspace": str(workspace)})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}},
+            json={"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": str(workspace)}},
         )
         request_id = tool_response.json()["request_id"]
         pending_response = await client.get("/permissions/pending")
@@ -170,9 +218,12 @@ async def test_model_settings_endpoint_redacts_api_key():
 
 
 @pytest.mark.anyio
-async def test_agent_step_endpoint_records_llm_trace():
+async def test_agent_step_endpoint_records_llm_trace(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "README.md").write_text("# Project\n", encoding="utf-8")
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "read README"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "read README", "workspace": str(workspace)})).json()["id"]
         step_response = await client.post(f"/harness/runs/{run_id}/agent-steps")
         trace_response = await client.get(f"/harness/runs/{run_id}/trace")
 
@@ -183,12 +234,14 @@ async def test_agent_step_endpoint_records_llm_trace():
 
 
 @pytest.mark.anyio
-async def test_harness_api_denies_reading_secret_file():
+async def test_harness_api_denies_reading_secret_file(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
     async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "read secret"})).json()["id"]
+        run_id = (await client.post("/harness/runs", json={"goal": "read secret", "workspace": str(workspace)})).json()["id"]
         tool_response = await client.post(
             f"/harness/runs/{run_id}/tool-requests",
-            json={"tool": "file.read", "operation": "read", "payload": {"path": "D:/Bolt/Bolt/.env"}},
+            json={"tool": "file.read", "operation": "read", "payload": {"path": str(workspace / ".env")}},
         )
         p0_response = await client.get("/memory/p0")
 

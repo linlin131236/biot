@@ -33,14 +33,14 @@ def test_pipe_to_shell_is_blocked():
 
 
 def test_project_read_is_allowed():
-    result = classify_path("D:/Bolt/Bolt/src/app.ts", workspace="D:/Bolt/Bolt", operation="read")
+    result = classify_path("C:/Projects/Bolt/src/app.ts", workspace="C:/Projects/Bolt", operation="read")
 
     assert result.level == 0
     assert result.action == "allow"
 
 
 def test_read_outside_workspace_is_denied():
-    result = classify_path("D:/Bolt/outside.txt", workspace="D:/Bolt/Bolt", operation="read")
+    result = classify_path("C:/Projects/outside.txt", workspace="C:/Projects/Bolt", operation="read")
 
     assert result.level == 6
     assert result.action == "deny"
@@ -48,14 +48,14 @@ def test_read_outside_workspace_is_denied():
 
 
 def test_project_write_requires_diff_confirmation():
-    result = classify_path("D:/Bolt/Bolt/src/app.ts", workspace="D:/Bolt/Bolt", operation="write")
+    result = classify_path("C:/Projects/Bolt/src/app.ts", workspace="C:/Projects/Bolt", operation="write")
 
     assert result.level == 2
     assert result.action == "confirm_with_diff"
 
 
 def test_secret_path_is_denied():
-    result = classify_path("D:/Bolt/Bolt/.env", workspace="D:/Bolt/Bolt", operation="read")
+    result = classify_path("C:/Projects/Bolt/.env", workspace="C:/Projects/Bolt", operation="read")
 
     assert result.level == 6
     assert result.action == "deny"

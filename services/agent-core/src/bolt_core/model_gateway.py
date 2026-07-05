@@ -1,4 +1,5 @@
 import json
+import re
 import urllib.request
 from dataclasses import dataclass
 
@@ -41,7 +42,7 @@ class ModelResponse:
 
 class FakeModelGateway:
     def complete(self, request: ModelRequest) -> ModelResponse:
-        prompt = "\n".join(message.content for message in request.messages).lower()
+        prompt = "\n".join(message.content for message in request.messages)
         content = _fake_tool_request(prompt)
         usage = TokenUsage(_count_tokens(prompt), _count_tokens(content), _count_tokens(prompt + content))
         return ModelResponse("completed", content, usage, None)
@@ -64,11 +65,20 @@ class OpenAICompatibleGateway:
 
 
 def _fake_tool_request(prompt: str) -> str:
-    if "write" in prompt or "改" in prompt:
-        return json.dumps({"tool": "file.write", "operation": "write", "payload": {"path": "D:/Bolt/Bolt/README.md", "proposed_content": "# Bolt\n"}})
-    if "shell" in prompt or "test" in prompt or "测试" in prompt:
-        return json.dumps({"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": "D:/Bolt/Bolt"}})
-    return json.dumps({"tool": "file.read", "operation": "read", "payload": {"path": "D:/Bolt/Bolt/README.md"}})
+    workspace = _fake_workspace(prompt)
+    normalized = prompt.lower()
+    if "read" in normalized:
+        return json.dumps({"tool": "file.read", "operation": "read", "payload": {"path": f"{workspace}/README.md"}})
+    if "write" in normalized:
+        return json.dumps({"tool": "file.write", "operation": "write", "payload": {"path": f"{workspace}/README.md", "proposed_content": "# Bolt\n"}})
+    if "shell" in normalized or "test" in normalized:
+        return json.dumps({"tool": "shell.execute", "operation": "command", "payload": {"command": "python --version", "workdir": workspace}})
+    return json.dumps({"tool": "file.read", "operation": "read", "payload": {"path": f"{workspace}/README.md"}})
+
+
+def _fake_workspace(prompt: str) -> str:
+    match = re.search(r"root_path['\"]?: ['\"]([^'\"]+)['\"]", prompt)
+    return match.group(1).replace("\\", "/") if match else "."
 
 
 def _request_payload(request: ModelRequest) -> dict:

@@ -9,8 +9,8 @@ export interface WorkflowRefresh {
   permissions?: PendingPermission[];
 }
 
-export async function startWorkflowRun(baseUrl: string, goal: string, fetcher: Fetcher): Promise<HarnessRun> {
-  return createHarnessRun(baseUrl, goal, fetcher);
+export async function startWorkflowRun(baseUrl: string, goal: string, workspace: string, fetcher: Fetcher): Promise<HarnessRun> {
+  return createHarnessRun(baseUrl, goal, workspace, fetcher);
 }
 
 export async function executeWorkflowStep(baseUrl: string, runId: string, fetcher: Fetcher): Promise<{ step: AgentStepResult; refresh: WorkflowRefresh }> {

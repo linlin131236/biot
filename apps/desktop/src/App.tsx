@@ -41,7 +41,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
 
   async function startRun() {
     await guarded(async () => {
-      const run = await startWorkflowRun(session.coreUrl, goal || 'Continue Bolt task', fetcher);
+      const run = await startWorkflowRun(session.coreUrl, goal || 'Continue Bolt task', session.workspacePath, fetcher);
       dispatch({ type: 'harness.run.created', runId: run.id });
       saveSession({ ...session, lastRunId: run.id });
     }, '无法创建任务。');
@@ -112,7 +112,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
 }
 
 function Toolbar(props: { goal: string; setGoal: (value: string) => void; runId: string | null; startRun: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void }) {
-  return <header className="toolbar"><label>任务目标<input aria-label="任务目标" value={props.goal} onChange={(event) => props.setGoal(event.target.value)} /></label><div className="actions"><button type="button" onClick={props.startRun}>Start Run</button><button type="button" disabled={!props.runId} onClick={props.runStep}>Run Step</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>Refresh Trace</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />刷新 Memory</button><button type="button" onClick={props.refreshPermissions}>刷新 Permissions</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>Run Document Gardener</button></div></header>;
+  return <header className="toolbar"><label>浠诲姟鐩爣<input aria-label="浠诲姟鐩爣" value={props.goal} onChange={(event) => props.setGoal(event.target.value)} /></label><div className="actions"><button type="button" onClick={props.startRun}>Start Run</button><button type="button" disabled={!props.runId} onClick={props.runStep}>Run Step</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>Refresh Trace</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />鍒锋柊 Memory</button><button type="button" onClick={props.refreshPermissions}>鍒锋柊 Permissions</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>Run Document Gardener</button></div></header>;
 }
 
 function createInitialState(session: DesktopSession, memory: MemorySnapshot | undefined, permissions: PendingPermission[]): BoltState {
@@ -124,11 +124,20 @@ function createInitialState(session: DesktopSession, memory: MemorySnapshot | un
 }
 
 function FirstRunWizard({ session, onComplete }: { session: DesktopSession; onComplete: (session: DesktopSession) => void }) {
-  const [workspacePath, setWorkspacePath] = useState(session.workspacePath || 'D:/Bolt/Bolt');
+  const [workspacePath, setWorkspacePath] = useState(session.workspacePath || '');
   const [coreUrl, setCoreUrl] = useState(session.coreUrl);
-  return <main className="wizard"><section className="wizardPanel"><div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div><label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(event) => setWorkspacePath(event.target.value)} /></label><label>Agent Core URL<input aria-label="Agent Core URL" value={coreUrl} onChange={(event) => setCoreUrl(event.target.value)} /></label><p>API Key 不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p><button type="button" onClick={() => onComplete({ completed: true, workspacePath, coreUrl, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button></section></main>;
+  return (
+    <main className="wizard">
+      <section className="wizardPanel">
+        <div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div>
+        <label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(event) => setWorkspacePath(event.target.value)} /></label>
+        <label>Agent Core URL<input aria-label="Agent Core URL" value={coreUrl} onChange={(event) => setCoreUrl(event.target.value)} /></label>
+        <p>API Key 不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p>
+        <button type="button" onClick={() => onComplete({ completed: true, workspacePath, coreUrl, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button>
+      </section>
+    </main>
+  );
 }
-
 function ModelPanel({ model, setModel, apiKey, setApiKey, saveModel, status }: { model: ModelSettings; setModel: (model: ModelSettings) => void; apiKey: string; setApiKey: (value: string) => void; saveModel: () => void; status: BoltState['modelSettingsStatus'] }) {
   return <section className="modelPanel"><label>Provider<input aria-label="Provider" value={model.provider} onChange={(event) => setModel({ ...model, provider: event.target.value })} /></label><label>Base URL<input aria-label="Base URL" value={model.base_url} onChange={(event) => setModel({ ...model, base_url: event.target.value })} /></label><label>Model<input aria-label="Model" value={model.model} onChange={(event) => setModel({ ...model, model: event.target.value })} /></label><label>API Key<input aria-label="API Key" value={apiKey} onChange={(event) => setApiKey(event.target.value)} /></label><button type="button" onClick={saveModel}>Save Model Settings</button><span>{status?.has_api_key ? 'API key configured' : 'API key not configured'}</span></section>;
 }

@@ -31,5 +31,5 @@ def _memory_summary(memory: dict) -> dict:
 
 
 def _metadata_summary(metadata: dict) -> dict:
-    keys = ("package_manager", "languages", "intent", "scheduler", "truncated")
+    keys = ("root_path", "package_manager", "languages", "intent", "scheduler", "truncated")
     return {key: metadata[key] for key in keys if key in metadata}

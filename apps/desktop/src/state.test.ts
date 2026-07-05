@@ -5,10 +5,10 @@ describe('Bolt desktop state', () => {
   it('stores selected workspace path', () => {
     const state = reduceBoltState(createBoltState(), {
       type: 'workspace.selected',
-      path: 'D:/Bolt/Bolt'
+      path: 'C:/Projects/Bolt'
     });
 
-    expect(state.workspacePath).toBe('D:/Bolt/Bolt');
+    expect(state.workspacePath).toBe('C:/Projects/Bolt');
   });
 
   it('updates agent core health', () => {
@@ -68,7 +68,7 @@ describe('Bolt desktop state', () => {
           request_id: 'tool_2',
           tool: 'shell.execute',
           operation: 'command',
-          payload: { command: 'pnpm test', workdir: 'D:/Bolt/Bolt' },
+          payload: { command: 'pnpm test', workdir: 'C:/Projects/Bolt' },
           action: 'confirm',
           reason: 'known command execution',
           status: 'pending_permission'

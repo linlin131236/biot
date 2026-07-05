@@ -44,16 +44,16 @@ describe('App', () => {
   it('completes first-run and restores workspace state', () => {
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText('工作区路径'), { target: { value: 'D:/Bolt/Bolt' } });
+    fireEvent.change(screen.getByLabelText('工作区路径'), { target: { value: 'C:/Projects/Bolt' } });
     fireEvent.click(screen.getByRole('button', { name: '进入工作台' }));
 
     expect(screen.getByText('Workspace')).toBeInTheDocument();
-    expect(screen.getByText('D:/Bolt/Bolt')).toBeInTheDocument();
-    expect(localStorage.getItem('bolt.desktop.session')).toContain('D:/Bolt/Bolt');
+    expect(screen.getByText('C:/Projects/Bolt')).toBeInTheDocument();
+    expect(localStorage.getItem('bolt.desktop.session')).toContain('C:/Projects/Bolt');
   });
 
   it('restores the last run from local storage', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_7' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_7' }));
 
     render(<App />);
 
@@ -63,16 +63,16 @@ describe('App', () => {
 
   it('shows a readable error when a core action fails', async () => {
     const fetcher = vi.fn().mockRejectedValue(new Error('network down'));
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);
-    fireEvent.click(screen.getByRole('button', { name: '刷新 Memory' }));
+    fireEvent.click(screen.getByRole('button', { name: '鍒锋柊 Memory' }));
 
     expect(await screen.findByText(/无法连接 Agent Core/)).toBeInTheDocument();
   });
 
   it('renders perception memory and pending diff permissions', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App initialMemorySnapshot={memorySnapshot} initialPendingPermissions={[{
       id: 'perm_1',
@@ -95,19 +95,20 @@ describe('App', () => {
 
   it('starts a run and executes an agent step from the workbench', async () => {
     const fetcher = vi.fn().mockImplementation((input: string) => {
-      if (input.endsWith('/harness/runs')) return Promise.resolve(json({ id: 'run_9', goal: 'fix bug' }));
+      if (input.endsWith('/harness/runs')) return Promise.resolve(json({ id: 'run_9', goal: 'fix bug', workspace: 'C:/Projects/Bolt' }));
       if (input.endsWith('/agent-steps')) return Promise.resolve(json({ status: 'executed', model_output: '{}', tool_result: { request_id: 'tool_1', status: 'executed', reason: 'ok', output: 'done' } }));
       if (input.endsWith('/trace')) return Promise.resolve(json([{ run_id: 'run_9', sequence: 1, type: 'run.created', payload: {} }]));
       if (input.endsWith('/permissions/pending')) return Promise.resolve(json([]));
       if (input.endsWith('/memory')) return Promise.resolve(json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } }));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);
-    fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: 'fix bug' } });
+    fireEvent.change(screen.getByLabelText('浠诲姟鐩爣'), { target: { value: 'fix bug' } });
     fireEvent.click(screen.getByRole('button', { name: 'Start Run' }));
     expect(await screen.findByText('run_9')).toBeInTheDocument();
+    expect(fetcher).toHaveBeenCalledWith('http://core/harness/runs', expect.objectContaining({ body: JSON.stringify({ goal: 'fix bug', workspace: 'C:/Projects/Bolt' }) }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Run Step' }));
     expect(await screen.findByText('done')).toBeInTheDocument();
@@ -121,10 +122,10 @@ describe('App', () => {
       if (input.endsWith('/permissions/pending')) return Promise.resolve(json([]));
       return Promise.resolve(json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } }));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
 
     render(<App fetcher={fetcher} initialPendingPermissions={[{
-      id: 'perm_1', run_id: 'run_1', request_id: 'tool_1', tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'D:/Bolt/Bolt' }, action: 'confirm', reason: 'known command execution', status: 'pending_permission'
+      id: 'perm_1', run_id: 'run_1', request_id: 'tool_1', tool: 'shell.execute', operation: 'command', payload: { command: 'pnpm test', workdir: 'C:/Projects/Bolt' }, action: 'confirm', reason: 'known command execution', status: 'pending_permission'
     }]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh Trace' }));
     expect(await screen.findByText('tool.requested')).toBeInTheDocument();
@@ -138,7 +139,7 @@ describe('App', () => {
       if (init?.method === 'POST') return Promise.resolve(json({ provider: 'openai-compatible', base_url: 'http://llm', model: 'gpt-test', temperature: 0.2, has_api_key: true }));
       return Promise.resolve(json({ provider: 'fake', base_url: 'http://localhost', model: 'fake-model', temperature: 0.2, has_api_key: false }));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.change(screen.getByLabelText('Model'), { target: { value: 'gpt-test' } });
@@ -151,7 +152,7 @@ describe('App', () => {
 
   it('runs document gardener for the current run', async () => {
     const fetcher = vi.fn().mockResolvedValue(json({ request_id: 'tool_9', status: 'pending_permission', reason: 'workspace write' }));
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.click(screen.getByRole('button', { name: 'Run Document Gardener' }));

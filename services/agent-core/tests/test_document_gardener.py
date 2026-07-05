@@ -19,7 +19,7 @@ def test_failure_pattern_renderer_uses_stable_sections():
 def test_failure_pattern_path_is_stable_and_scoped_to_docs():
     failure = ToolFailure("file.read", "read", "permission_denied", "secret path denied", "secret path denied", "not_fixed")
 
-    path = failure_pattern_path("D:/Bolt/Bolt", failure)
+    path = failure_pattern_path("C:/Projects/Bolt", failure)
 
     assert path.replace("\\", "/").endswith("docs/failure-patterns/file-read-permission-denied.md")
 

@@ -2,8 +2,8 @@ import type { AgentLoopResult, AgentStepResult, HarnessRun, MemoryConsolidationR
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export async function createHarnessRun(baseUrl: string, goal: string, fetcher: Fetcher = fetch): Promise<HarnessRun> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs`, jsonPost({ goal })));
+export async function createHarnessRun(baseUrl: string, goal: string, workspace: string, fetcher: Fetcher = fetch): Promise<HarnessRun> {
+  return readJson(await fetcher(`${baseUrl}/harness/runs`, jsonPost({ goal, workspace })));
 }
 
 export async function submitToolRequest(baseUrl: string, runId: string, request: ToolRequest, fetcher: Fetcher = fetch): Promise<ToolResult> {

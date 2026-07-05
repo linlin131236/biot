@@ -11,9 +11,9 @@ describe('desktop session storage', () => {
   });
 
   it('persists non-sensitive first-run state', () => {
-    saveDesktopSession({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' });
+    saveDesktopSession({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' });
 
-    expect(loadDesktopSession()).toEqual({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' });
+    expect(loadDesktopSession()).toEqual({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' });
     expect(localStorage.getItem('bolt.desktop.session')).not.toContain('api_key');
   });
 

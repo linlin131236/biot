@@ -3,8 +3,8 @@ import { isHarnessRun, isMemorySnapshot, isToolRequest, type AgentLoopResult, ty
 
 describe('shared protocol', () => {
   it('recognizes harness run payloads', () => {
-    expect(isHarnessRun({ id: 'run_1', goal: 'test' })).toBe(true);
-    expect(isHarnessRun({ id: 'run_1' })).toBe(false);
+    expect(isHarnessRun({ id: 'run_1', goal: 'test', workspace: 'D:/Projects/App' })).toBe(true);
+    expect(isHarnessRun({ id: 'run_1', goal: 'test' })).toBe(false);
   });
 
   it('supports tool result and trace event shapes', () => {
@@ -26,14 +26,14 @@ describe('shared protocol', () => {
   });
 
   it('recognizes tool request payloads', () => {
-    const request: ToolRequest = { tool: 'file.read', operation: 'read', payload: { path: 'D:/Bolt/Bolt/README.md' } };
+    const request: ToolRequest = { tool: 'file.read', operation: 'read', payload: { path: 'C:/Projects/Bolt/README.md' } };
 
     expect(isToolRequest(request)).toBe(true);
     expect(isToolRequest({ tool: 'file.read', operation: 'read' })).toBe(false);
   });
 
   it('supports shell execute request payloads', () => {
-    const payload: ShellCommandPayload = { command: 'pnpm test', workdir: 'D:/Bolt/Bolt', timeout_seconds: 60 };
+    const payload: ShellCommandPayload = { command: 'pnpm test', workdir: 'C:/Projects/Bolt', timeout_seconds: 60 };
     const request: ToolRequest = { tool: 'shell.execute', operation: 'command', payload: { ...payload } };
 
     expect(isToolRequest(request)).toBe(true);
@@ -56,7 +56,7 @@ describe('shared protocol', () => {
 
   it('supports write change set payloads', () => {
     const change: ChangeSet = {
-      path: 'D:/Bolt/Bolt/src/app.ts',
+      path: 'C:/Projects/Bolt/src/app.ts',
       base_hash: 'abc',
       proposed: 'new',
       diff: '--- a\n+++ b',
