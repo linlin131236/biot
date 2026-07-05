@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Release channel
+        required: true
+        default: beta
+        type: choice
+        options:
+          - dev
+          - beta
+          - stable
+      package_target:
+        description: Windows package target
+        required: true
+        default: portable
+        type: choice
+        options:
+          - none
+          - dir
+          - portable
+          - nsis
+          - all
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      BOLT_RELEASE_CHANNEL: ${{ inputs.channel }}
+      CSC_LINK: ${{ secrets.CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm quality
+      - run: pnpm --filter @bolt/desktop build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .[test]
+        working-directory: services/agent-core
+      - run: pytest
+        working-directory: services/agent-core
+      - if: ${{ inputs.package_target == 'dir' }}
+        run: pnpm --filter @bolt/desktop package:win:dir
+      - if: ${{ inputs.package_target == 'portable' }}
+        run: pnpm --filter @bolt/desktop package:win:portable
+      - if: ${{ inputs.package_target == 'nsis' }}
+        run: pnpm --filter @bolt/desktop package:win:nsis
+      - if: ${{ inputs.package_target == 'all' }}
+        run: pnpm --filter @bolt/desktop package:win
+      - if: ${{ inputs.package_target != 'none' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bolt-windows-${{ inputs.channel }}-${{ inputs.package_target }}
+          path: apps/desktop/release/**
+          if-no-files-found: error

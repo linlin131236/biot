@@ -1,9 +1,14 @@
 node_modules/
 dist/
 dist-electron/
-release/
+/release/
+apps/desktop/release/
 .venv/
 __pycache__/
 .pytest_cache/
 *.pyc
 *.egg-info/
+*.pfx
+*.p12
+*.pem
+*.key

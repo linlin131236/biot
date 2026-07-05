@@ -9,7 +9,8 @@
     "lint:docs": "node scripts/check-docs.mjs",
     "lint:boundaries": "node scripts/check-boundaries.mjs",
     "lint:architecture": "node scripts/check-architecture.mjs",
-    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm test"
+    "lint:release": "node scripts/check-release-policy.mjs",
+    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm lint:release && pnpm test"
   },
   "engines": {
     "node": ">=22"
