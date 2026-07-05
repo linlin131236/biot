@@ -14,7 +14,7 @@ class ModelSettingsStatus:
 
 class ModelSettingsStore:
     def __init__(self) -> None:
-        self._config = ModelConfig("fake", "http://localhost", None, "fake-model", 0.2)
+        self._config = ModelConfig("fake", "http://localhost", None, "fake-model", 0.2, 120.0)
 
     def config(self) -> ModelConfig:
         return self._config
@@ -26,6 +26,7 @@ class ModelSettingsStore:
             api_key=payload.get("api_key") or self._config.api_key,
             model=str(payload.get("model", self._config.model)),
             temperature=float(payload.get("temperature", self._config.temperature)),
+            timeout=float(payload.get("timeout", self._config.timeout)),
         )
         return self.status()
 

@@ -1,15 +1,40 @@
 from bolt_core.context_builder import ContextPacket
 from bolt_core.model_gateway import ModelConfig, ModelMessage, ModelRequest
+from bolt_core.tool_schemas import all_tool_schemas
 
 
 class Planner:
     def build_request(self, context: ContextPacket, config: ModelConfig) -> ModelRequest:
-        system = ModelMessage("system", "Return one JSON tool request with tool, operation, and payload.")
-        user = ModelMessage("user", _prompt(context))
+        system = ModelMessage("system", _system_prompt())
+        user = ModelMessage("user", _user_prompt(context))
         return ModelRequest([system, user], config)
 
 
-def _prompt(context: ContextPacket) -> str:
+def _system_prompt() -> str:
+    tools_descriptions = "\n".join(
+        f"- {schema['function']['name']}: {schema['function']['description']}"
+        for schema in all_tool_schemas()
+    )
+    return "\n".join([
+        "You are Bolt, a desktop coding agent.",
+        "",
+        "# Your Role",
+        "You help the user with coding tasks in their local workspace. You operate through tools only — you cannot act except by issuing tool requests.",
+        "",
+        "# Available Tools",
+        tools_descriptions,
+        "",
+        "# Rules",
+        "1. Read files before editing them. Understand context first.",
+        "2. Search the workspace to locate relevant code; do not guess paths.",
+        "3. Issue exactly ONE tool request per step. Wait for the result before the next.",
+        "4. If a tool fails, read the error, change strategy. Do not repeat the same failing call.",
+        "5. Never fabricate file contents, paths, or command output. If you have not seen it via a tool, you do not know it.",
+        "6. When the goal is achieved, stop and summarize what you did.",
+    ])
+
+
+def _user_prompt(context: ContextPacket) -> str:
     failures = context.p0_context.get("hard_constraints", [])
     traces = [event.get("type") for event in context.recent_trace]
     memories = [_memory_summary(memory) for memory in context.memory_context]

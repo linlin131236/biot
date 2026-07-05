@@ -14,7 +14,7 @@ def test_planner_prompt_includes_trace_failure_and_perception_metadata():
     snapshot = store.record("session", "run_1", "Perception snapshot captured", "test", ["perception", "snapshot"], {"intent": {"category": "code_change"}, "scheduler": [{"status": "executed"}]})
     context = ContextBuilder().build("fix bug", p0, trace.events(), [profile, snapshot])
 
-    request = Planner().build_request(context, ModelConfig("fake", "http://localhost", "fake-model", 0.2))
+    request = Planner().build_request(context, ModelConfig("fake", "http://localhost", None, "fake-model"))
     prompt = request.messages[1].content
 
     assert "Do not retry command" in prompt
@@ -23,3 +23,18 @@ def test_planner_prompt_includes_trace_failure_and_perception_metadata():
     assert "pnpm" in prompt
     assert "typescript" in prompt
     assert "code_change" in prompt
+
+
+def test_planner_system_prompt_contains_rules():
+    trace = TraceLog("run_1")
+    p0 = {"hard_constraints": [], "unresolved_failures": []}
+    context = ContextBuilder().build("test", p0, trace.events(), [])
+
+    request = Planner().build_request(context, ModelConfig("fake", "http://localhost", None, "fake-model"))
+    system_message = request.messages[0]
+
+    assert system_message.role == "system"
+    assert "Bolt" in system_message.content
+    assert "Rules" in system_message.content
+    assert "file.read" in system_message.content
+    assert "shell.execute" in system_message.content

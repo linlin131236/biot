@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from bolt_core.context_builder import ContextBuilder
-from bolt_core.model_gateway import FakeModelGateway, ModelConfig
+from bolt_core.model_gateway import FakeModelGateway, ModelConfig, ToolCall
 from bolt_core.memory_store import MemoryRecord
 from bolt_core.planner import Planner
 from bolt_core.tool_protocol import ToolRequest, ToolResult
@@ -44,9 +44,9 @@ class AgentLoop:
         response = self.gateway.complete(request)
         if response.status != "completed":
             trace.record("llm.failed", {"error": response.error})
-            return AgentStepResult("failed", response.content, None, response.error)
+            return AgentStepResult("failed", response.content or "", None, response.error)
         self._record_model_trace(trace, config.model, response)
-        return self._submit_model_tool(response.content, trace, submit)
+        return self._dispatch_model_response(response, trace, submit)
 
     def run_loop(self, goal: str, config: ModelConfig, p0_context_fn: Callable[[], dict], trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories_fn: Callable[[], list[MemoryRecord]], max_steps: int = 3) -> AgentLoopResult:
         trace.record("agent.loop.started", {"max_steps": max_steps})
@@ -69,27 +69,26 @@ class AgentLoop:
         trace.record("llm.completed", {"model": model})
         trace.record("tokens.recorded", response.usage.__dict__ | {"model": model})
 
-    def _submit_model_tool(self, output: str, trace: TraceLog, submit) -> AgentStepResult:
-        parsed = _parse_tool_request(output)
-        if isinstance(parsed, str):
-            trace.record("agent.step.failed", {"error": parsed})
-            return AgentStepResult("failed", output, None, parsed)
-        result = submit(parsed)
+    def _dispatch_model_response(self, response, trace: TraceLog, submit) -> AgentStepResult:
+        if response.tool_calls:
+            call = response.tool_calls[0]
+            return self._submit_tool_call(call, trace, submit)
+        if response.content:
+            trace.record("agent.step.completed", {"status": "completed_text"})
+            return AgentStepResult("completed", response.content, None, None)
+        trace.record("agent.step.failed", {"error": "empty model response"})
+        return AgentStepResult("failed", "", None, "empty model response")
+
+    def _submit_tool_call(self, call: ToolCall, trace: TraceLog, submit) -> AgentStepResult:
+        operation = _operation_for_tool(call.name)
+        request = ToolRequest.create(call.name, operation, call.arguments)
+        result = submit(request)
         verification = self.verifier.verify(result)
         trace.record("verifier.completed", verification.__dict__)
         trace.record("agent.step.completed", {"status": result.status})
-        return AgentStepResult(result.status, output, result, None)
+        return AgentStepResult(result.status, json.dumps({"tool": call.name, "arguments": call.arguments}), result, None)
 
 
-def _parse_tool_request(output: str) -> ToolRequest | str:
-    try:
-        payload = json.loads(output)
-    except json.JSONDecodeError:
-        return "model output is not valid json"
-    if not _valid_tool_payload(payload):
-        return "model output is not a tool request"
-    return ToolRequest.create(payload["tool"], payload["operation"], payload["payload"])
-
-
-def _valid_tool_payload(payload: dict) -> bool:
-    return isinstance(payload, dict) and isinstance(payload.get("tool"), str) and isinstance(payload.get("operation"), str) and isinstance(payload.get("payload"), dict)
+def _operation_for_tool(tool_name: str) -> str:
+    mapping = {"file.read": "read", "files.search": "search", "file.write": "write", "shell.execute": "command"}
+    return mapping.get(tool_name, "read")

@@ -1,11 +1,11 @@
 from bolt_core.agent_loop import AgentLoop
 from bolt_core.harness import Harness
-from bolt_core.model_gateway import ModelResponse, TokenUsage
+from bolt_core.model_gateway import ModelResponse, TokenUsage, ToolCall
 
 
 class BadGateway:
     def complete(self, request):
-        return ModelResponse("completed", "not json", TokenUsage(1, 1, 2), None)
+        return ModelResponse("completed", "not json", TokenUsage(1, 1, 2), [], None)
 
 
 def test_agent_loop_submits_read_tool_through_harness(tmp_path):
@@ -31,7 +31,7 @@ def test_agent_loop_write_request_stops_on_pending_permission(tmp_path):
     target = workspace / "README.md"
     target.write_text("old\n", encoding="utf-8")
     harness = Harness(workspace=str(workspace))
-    harness.agent_loop.gateway = _fixed_gateway(str(target), tool="file.write", payload={"path": str(target), "proposed_content": "new\n"})
+    harness.agent_loop.gateway = _fixed_gateway(str(target), tool="file.write", args={"path": str(target), "proposed_content": "new\n"})
     run = harness.create_run("write README")
 
     result = harness.run_agent_step(run.id)
@@ -50,16 +50,15 @@ def test_agent_loop_fails_invalid_model_output(tmp_path):
 
     result = harness.run_agent_step(run.id)
 
-    assert result.status == "failed"
-    assert result.error == "model output is not valid json"
-    assert _has_trace(harness, run.id, "agent.step.failed")
+    assert result.status == "completed"
+    assert result.model_output == "not json"
 
 
 def test_agent_loop_denies_unknown_tools(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     harness = Harness(workspace=str(workspace))
-    harness.agent_loop.gateway = _fixed_gateway(str(workspace), tool="browser.open", operation="open", payload={"url": "https://example.test"})
+    harness.agent_loop.gateway = _fixed_gateway(str(workspace), tool="browser.open", args={"url": "https://example.test"})
     run = harness.create_run("open browser")
 
     result = harness.run_agent_step(run.id)
@@ -75,7 +74,7 @@ def test_agent_loop_run_loop_stops_on_pending_permission(tmp_path):
     target = workspace / "README.md"
     target.write_text("old\n", encoding="utf-8")
     harness = Harness(workspace=str(workspace))
-    harness.agent_loop.gateway = _fixed_gateway(str(target), tool="file.write", operation="write", payload={"path": str(target), "proposed_content": "new\n"})
+    harness.agent_loop.gateway = _fixed_gateway(str(target), tool="file.write", args={"path": str(target), "proposed_content": "new\n"})
     run = harness.create_run("write README")
 
     result = harness.run_agent_loop(run.id, max_steps=3)
@@ -106,7 +105,7 @@ def test_agent_loop_run_loop_stops_on_denied(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
     harness = Harness(workspace=str(workspace))
-    harness.agent_loop.gateway = _fixed_gateway(str(workspace), tool="shell.execute", operation="command", payload={"command": "rm -rf /", "workdir": str(workspace)})
+    harness.agent_loop.gateway = _fixed_gateway(str(workspace), tool="shell.execute", args={"command": "rm -rf /", "workdir": str(workspace)})
     run = harness.create_run("dangerous")
 
     result = harness.run_agent_loop(run.id, max_steps=3)
@@ -116,13 +115,34 @@ def test_agent_loop_run_loop_stops_on_denied(tmp_path):
     assert _has_trace(harness, run.id, "agent.loop.stopped")
 
 
-def _fixed_gateway(path, tool="file.read", operation=None, payload=None):
+def test_agent_loop_stops_when_no_tool_call(tmp_path):
+    """Model returns text only (no tool_calls) → loop ends with completed."""
+
+    class TextOnlyGateway:
+        def complete(self, request):
+            return ModelResponse("completed", "Task is done!", TokenUsage(1, 1, 2), [], None)
+
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
+    harness.agent_loop = AgentLoop(gateway=TextOnlyGateway())
+    run = harness.create_run("summarize project")
+
+    result = harness.run_agent_step(run.id)
+
+    assert result.status == "completed"
+    assert result.tool_result is None
+    assert result.model_output == "Task is done!"
+
+
+def _fixed_gateway(path, tool="file.read", args=None):
+    call_id = f"call_{tool.replace('.', '_')}"
+    arguments = args or {"path": path}
+    call = ToolCall(call_id, tool, arguments)
+
     class Gateway:
         def complete(self, request):
-            body = payload or {"path": path}
-            op = operation or ("write" if tool == "file.write" else "read")
-            content = '{"tool":"' + tool + '","operation":"' + op + '","payload":' + __import__("json").dumps(body) + "}"
-            return ModelResponse("completed", content, TokenUsage(2, 3, 5), None)
+            return ModelResponse("completed", None, TokenUsage(2, 3, 5), [call], None)
 
     return Gateway()
 
