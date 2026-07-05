@@ -13,7 +13,9 @@ Bolt Windows artifacts are produced by the manual Release workflow or by local p
 1. Download the release artifact from the manually triggered Release workflow.
 2. Extract the artifact if GitHub Actions packaged it as a zip.
 3. Run the portable executable or the NSIS installer.
-4. Start Agent Core separately before using the desktop workbench.
+4. Open Bolt and choose a workspace.
+
+The desktop app starts Agent Core automatically. Packaged builds look for Agent Core resources under Electron's `resources/agent-core` directory. If the runtime cannot find those resources, Bolt reports a startup failure instead of silently continuing.
 
 ## Trust and Signing
 
@@ -24,6 +26,8 @@ Signed builds require certificate material supplied outside the repository throu
 ## Network Requirements
 
 Packaging may need access to GitHub release asset hosts used by Electron Builder. If packaging fails with `release-assets.githubusercontent.com`, see `docs/failure-patterns/electron-builder-package-win-network-failure.md`.
+
+`package:win:dir` also runs a packaged runtime smoke check after Electron Builder completes. That check verifies the packaged `resources/agent-core` layout before the artifact is considered usable.
 
 ## Auto Update
 

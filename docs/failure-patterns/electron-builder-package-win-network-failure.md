@@ -39,6 +39,8 @@ pnpm --filter @bolt/desktop package:win:nsis
 pnpm --filter @bolt/desktop package:win:dir
 ```
 
+`package:win:dir` runs `scripts/check-desktop-package-runtime.mjs --require-output` after packaging. If the network stage succeeds but the smoke check fails, inspect `apps/desktop/release/win-unpacked/resources/agent-core` before retrying the package command.
+
 ## Do Not Repeat
 
 Do not treat this as a TypeScript or desktop source failure. Verify network access before retrying installer packaging. Do not bypass `--publish never` while diagnosing the issue. Do not commit partially generated `release/` output.

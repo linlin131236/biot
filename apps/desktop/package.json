@@ -11,7 +11,7 @@
     "package:win": "pnpm build && node ../../scripts/release-preflight.mjs && node ../../scripts/run-electron-builder.mjs --win portable nsis --config electron-builder.json --publish never",
     "package:win:portable": "pnpm build && node ../../scripts/release-preflight.mjs && node ../../scripts/run-electron-builder.mjs --win portable --config electron-builder.json --publish never",
     "package:win:nsis": "pnpm build && node ../../scripts/release-preflight.mjs && node ../../scripts/run-electron-builder.mjs --win nsis --config electron-builder.json --publish never",
-    "package:win:dir": "pnpm build && node ../../scripts/release-preflight.mjs && node ../../scripts/run-electron-builder.mjs --win --dir --config electron-builder.json --publish never"
+    "package:win:dir": "pnpm build && node ../../scripts/release-preflight.mjs && node ../../scripts/run-electron-builder.mjs --win --dir --config electron-builder.json --publish never && node ../../scripts/check-desktop-package-runtime.mjs --require-output"
   },
   "dependencies": {
     "@bolt/shared": "workspace:*",

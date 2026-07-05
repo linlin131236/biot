@@ -10,9 +10,16 @@ const scripts = desktopPackage.scripts ?? {};
 requireScript('package:win', ['node ../../scripts/run-electron-builder.mjs', '--win portable nsis', '--publish never']);
 requireScript('package:win:portable', ['node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win portable', '--publish never']);
 requireScript('package:win:nsis', ['node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win nsis', '--publish never']);
-requireScript('package:win:dir', ['node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win --dir', '--publish never']);
+requireScript('package:win:dir', [
+  'node ../../scripts/release-preflight.mjs',
+  'node ../../scripts/run-electron-builder.mjs',
+  '--win --dir',
+  '--publish never',
+  'node ../../scripts/check-desktop-package-runtime.mjs --require-output'
+]);
 
 requireFile('.github/workflows/release.yml');
+requireFile('scripts/check-desktop-package-runtime.mjs');
 if (existsSync(join(root, '.github/workflows/release.yml'))) {
   const workflow = readFileSync(join(root, '.github/workflows/release.yml'), 'utf8');
   requireText(workflow, 'workflow_dispatch', 'release workflow must be manual');
@@ -28,6 +35,8 @@ if (existsSync(join(root, '.github/workflows/release.yml'))) {
   'docs/release/release-checklist.md',
   'docs/decisions/015-release-hardening.md',
   'docs/exec-plans/active/015-release-hardening.md',
+  'docs/decisions/018-packaged-runtime-smoke.md',
+  'docs/exec-plans/active/018-packaged-runtime-smoke.md',
 ].forEach(requireFile);
 
 const gitignore = readFileSync(join(root, '.gitignore'), 'utf8');

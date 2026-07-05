@@ -66,4 +66,29 @@ describe('agent core runtime', () => {
     expect(spawn).toHaveBeenCalledWith(runtime.command, runtime.args, expect.objectContaining({ cwd: runtime.cwd, env: runtime.env }));
     expect(child.kill).toHaveBeenCalled();
   });
+
+  it('fails closed in packaged mode when bundled agent core resources are missing', async () => {
+    const spawn = vi.fn();
+    const runtime = resolveAgentCoreRuntime({
+      repoRoot: 'C:/Projects/Bolt',
+      resourcesPath: 'C:/Program Files/Bolt/resources',
+      packaged: true,
+      env: {},
+      exists: () => false
+    });
+    const supervisor = new AgentCoreSupervisor({
+      runtime,
+      health: vi.fn().mockResolvedValue(false),
+      spawn
+    });
+
+    const status = await supervisor.ensureStarted();
+
+    expect(runtime.cwd).toBe('C:/Program Files/Bolt/resources/agent-core');
+    expect(runtime.env.PYTHONPATH).toContain('C:/Program Files/Bolt/resources/agent-core/src');
+    expect(status.status).toBe('down');
+    expect(status.started).toBe(false);
+    expect(status.error).toContain('missing packaged Agent Core resource');
+    expect(spawn).not.toHaveBeenCalled();
+  });
 });

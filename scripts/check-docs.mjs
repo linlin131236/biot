@@ -23,6 +23,7 @@ const required = [
   'docs/decisions/015-release-hardening.md',
   'docs/decisions/016-real-workspace-runtime.md',
   'docs/decisions/017-desktop-runtime-orchestration.md',
+  'docs/decisions/018-packaged-runtime-smoke.md',
   'docs/failure-patterns/README.md',
   'docs/exec-plans/active/012-desktop-shipability.md',
   'docs/exec-plans/active/013-desktop-agent-workflow.md',
@@ -30,6 +31,7 @@ const required = [
   'docs/exec-plans/active/015-release-hardening.md',
   'docs/exec-plans/active/016-real-workspace-runtime.md',
   'docs/exec-plans/active/017-desktop-runtime-orchestration.md',
+  'docs/exec-plans/active/018-packaged-runtime-smoke.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

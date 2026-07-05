@@ -14,10 +14,13 @@ Use this checklist for Windows release candidates.
 - `pnpm --filter @bolt/desktop build`
 - `cd services/agent-core && .venv/Scripts/python -I -m pytest`
 - `pnpm --filter @bolt/desktop package:win:portable`
+- `pnpm --filter @bolt/desktop package:win:dir`
 
 If packaging cannot reach GitHub release assets, record the failure as external network failure and retry from a network that can resolve `release-assets.githubusercontent.com`.
 
 If Electron Builder prints packaging output and then stalls, the wrapper should fail with `Electron Builder packaging stalled` and point to the failure pattern. Do not leave a packaging job running indefinitely.
+
+`package:win:dir` must finish by running `scripts/check-desktop-package-runtime.mjs --require-output`. The release candidate is not valid if `win-unpacked/resources/agent-core/src/bolt_core/app.py` or `win-unpacked/resources/agent-core/pyproject.toml` is missing.
 
 ## Manual Workflow
 

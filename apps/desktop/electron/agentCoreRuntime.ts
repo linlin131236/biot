@@ -15,6 +15,7 @@ export interface AgentCoreRuntime {
   args: string[];
   cwd: string;
   env: NodeJS.ProcessEnv;
+  validationError?: string;
 }
 
 export interface AgentCoreStatus {
@@ -34,12 +35,14 @@ export function resolveAgentCoreRuntime(options: AgentCoreRuntimeOptions): Agent
   const sourceRoot = env.BOLT_AGENT_CORE_SRC || joinPath(coreRoot, 'src');
   const venvPython = joinPath(coreRoot, '.venv', 'Scripts', 'python.exe');
   const command = env.BOLT_AGENT_CORE_PYTHON || ((options.exists ?? (() => false))(venvPython) ? venvPython : 'python');
+  const validationError = packagedResourceError(options, coreRoot, sourceRoot);
   return {
     baseUrl: `http://127.0.0.1:${port}`,
     command,
     args: ['-m', 'uvicorn', 'bolt_core.app:create_app', '--factory', '--host', '127.0.0.1', '--port', String(port)],
     cwd: coreRoot,
-    env: { ...env, PYTHONPATH: prependPath(sourceRoot, env.PYTHONPATH) }
+    env: { ...env, PYTHONPATH: prependPath(sourceRoot, env.PYTHONPATH) },
+    validationError
   };
 }
 
@@ -57,6 +60,9 @@ export class AgentCoreSupervisor {
 
   async ensureStarted(): Promise<AgentCoreStatus> {
     if (await this.health(this.runtime.baseUrl)) return { status: 'ok', started: false, baseUrl: this.runtime.baseUrl };
+    if (this.runtime.validationError) {
+      return { status: 'down', started: false, baseUrl: this.runtime.baseUrl, error: this.runtime.validationError };
+    }
     if (!this.child || this.child.killed) {
       this.child = this.spawn(this.runtime.command, this.runtime.args, { cwd: this.runtime.cwd, env: this.runtime.env, windowsHide: true });
     }
@@ -86,6 +92,14 @@ export async function defaultHealthCheck(baseUrl: string): Promise<boolean> {
 function defaultCoreRoot(options: AgentCoreRuntimeOptions): string {
   if (options.packaged && options.resourcesPath) return joinPath(options.resourcesPath, 'agent-core');
   return joinPath(options.repoRoot, 'services', 'agent-core');
+}
+
+function packagedResourceError(options: AgentCoreRuntimeOptions, coreRoot: string, sourceRoot: string): string | undefined {
+  if (!options.packaged) return undefined;
+  const exists = options.exists ?? (() => false);
+  const missing = [joinPath(sourceRoot, 'bolt_core', 'app.py'), joinPath(coreRoot, 'pyproject.toml')].filter((file) => !exists(file));
+  if (missing.length === 0) return undefined;
+  return `missing packaged Agent Core resource: ${missing.join(', ')}`;
 }
 
 function normalizePort(value: string | undefined): number {
