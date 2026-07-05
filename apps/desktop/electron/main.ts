@@ -1,7 +1,10 @@
 import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { AgentCoreSupervisor, resolveAgentCoreRuntime } from './agentCoreRuntime.js';
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+let agentCore: AgentCoreSupervisor | null = null;
 
 async function createWindow() {
   const window = new BrowserWindow({
@@ -23,7 +26,27 @@ async function createWindow() {
   await window.loadFile(path.join(__dirname, '../dist/index.html'));
 }
 
-app.whenReady().then(createWindow);
+async function startAgentCore() {
+  const runtime = resolveAgentCoreRuntime({
+    repoRoot: path.resolve(__dirname, '../../..'),
+    resourcesPath: process.resourcesPath,
+    packaged: app.isPackaged,
+    env: process.env,
+    exists: existsSync
+  });
+  agentCore = new AgentCoreSupervisor({ runtime });
+  const status = await agentCore.ensureStarted();
+  if (status.status === 'down') console.error(status.error);
+}
+
+app.whenReady().then(async () => {
+  await startAgentCore();
+  await createWindow();
+});
+
+app.on('before-quit', () => {
+  agentCore?.stop();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

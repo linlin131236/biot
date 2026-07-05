@@ -61,6 +61,16 @@ describe('App', () => {
     expect(screen.getByText('run_7')).toBeInTheDocument();
   });
 
+  it('checks agent core health when the workbench opens', async () => {
+    const fetcher = vi.fn().mockResolvedValue(json({ status: 'ok', service: 'bolt-agent-core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+
+    expect(await screen.findByText('ok')).toBeInTheDocument();
+    expect(fetcher).toHaveBeenCalledWith('http://core/health');
+  });
+
   it('shows a readable error when a core action fails', async () => {
     const fetcher = vi.fn().mockRejectedValue(new Error('network down'));
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
@@ -151,7 +161,10 @@ describe('App', () => {
   });
 
   it('runs document gardener for the current run', async () => {
-    const fetcher = vi.fn().mockResolvedValue(json({ request_id: 'tool_9', status: 'pending_permission', reason: 'workspace write' }));
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      return Promise.resolve(json({ request_id: 'tool_9', status: 'pending_permission', reason: 'workspace write' }));
+    });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
 
     render(<App fetcher={fetcher} />);

@@ -1,9 +1,10 @@
-import { useReducer, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { MemorySnapshot, ModelSettings, PendingPermission, ToolResult } from '@bolt/shared';
 import { fetchHarnessTrace, fetchMemorySnapshot, fetchPendingPermissions } from './harnessClient';
 import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
+import { fetchCoreHealth } from './coreClient';
 import { decidePermission, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings } from './workflowClient';
 import './styles.css';
 
@@ -23,6 +24,17 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   const [apiKey, setApiKey] = useState('');
   const [state, dispatch] = useReducer(reduceBoltState, createInitialState(session, initialMemorySnapshot, initialPendingPermissions));
   const runId = state.currentRunId || session.lastRunId;
+
+  useEffect(() => {
+    if (!session.completed) return;
+    let active = true;
+    fetchCoreHealth(session.coreUrl, fetcher).then((status) => {
+      if (active) dispatch({ type: 'core.health.changed', status });
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetcher, session.completed, session.coreUrl]);
 
   function completeFirstRun(next: DesktopSession) {
     saveSession(next);

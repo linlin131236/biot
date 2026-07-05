@@ -1,8 +1,8 @@
 # First Run Guide
 
-## Start Agent Core
+## Agent Core Runtime
 
-Open a terminal in `services/agent-core` and run the Python service with the project virtual environment or your local Python setup.
+Bolt Desktop checks Agent Core on startup and starts the local service automatically when the default URL is down. If startup fails, confirm Python is available or set `BOLT_AGENT_CORE_PYTHON` before launching the desktop app.
 
 ## Open Desktop
 
@@ -20,7 +20,7 @@ Run the desktop app in development or install a packaged build. On a fresh profi
 - `Memory / Perception` shows workspace profile and intent signals.
 - `Pending Permissions` shows commands and file diffs that need approval.
 - `Harness Trace` shows run and tool events.
-- If Bolt cannot reach Agent Core, it shows a visible error banner.
+- If Bolt cannot reach Agent Core, the sidebar reports `down` and core actions show a visible error banner.
 
 ## Recovery
 

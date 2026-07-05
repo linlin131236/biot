@@ -9,6 +9,16 @@
     "dist-electron/**",
     "package.json"
   ],
+  "extraResources": [
+    {
+      "from": "../../services/agent-core/src",
+      "to": "agent-core/src"
+    },
+    {
+      "from": "../../services/agent-core/pyproject.toml",
+      "to": "agent-core/pyproject.toml"
+    }
+  ],
   "win": {
     "target": [
       "portable",
