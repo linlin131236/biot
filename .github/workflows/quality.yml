@@ -1,0 +1,29 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm quality
+      - run: pnpm --filter @bolt/desktop build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e .[test]
+        working-directory: services/agent-core
+      - run: pytest
+        working-directory: services/agent-core

@@ -1,0 +1,18 @@
+{
+  "name": "bolt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "pnpm -r test",
+    "lint:size": "node scripts/check-size.mjs",
+    "lint:docs": "node scripts/check-docs.mjs",
+    "lint:boundaries": "node scripts/check-boundaries.mjs",
+    "lint:architecture": "node scripts/check-architecture.mjs",
+    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {}
+}

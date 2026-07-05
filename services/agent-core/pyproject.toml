@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bolt-agent-core"
+version = "0.1.0"
+description = "Bolt local agent core"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115",
+  "pydantic>=2.8",
+  "uvicorn>=0.30"
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.3",
+  "httpx>=0.27"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

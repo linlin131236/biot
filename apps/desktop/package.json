@@ -1,0 +1,32 @@
+{
+  "name": "@bolt/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "test": "vitest run",
+    "build": "vite build && tsc -p tsconfig.electron.json"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "vite": "latest",
+    "typescript": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "zustand": "latest",
+    "lucide-react": "latest",
+    "@bolt/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "latest",
+    "jsdom": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/node": "latest",
+    "electron": "latest"
+  }
+}
