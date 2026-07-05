@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 
 from bolt_core.evidence import EvidenceLog
-from bolt_core.goal import Goal, GoalBuilder, GoalPersistence, GoalStatus
+from bolt_core.goal import Goal, GoalBuilder, GoalStatus
+from bolt_core.goal_persistence import GoalPersistence
 
 
 class GoalService:

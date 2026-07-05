@@ -140,3 +140,18 @@ Add persistent long-running autonomous task control. Goal/GoalBuilder for struct
 
 **Karpathy Pre-flight:**
 Goal Mode is the control plane. The key insight is that GoalRunner should be a thin orchestrator over existing AgentLoop.run_step, not a reimplementation. Each step: check budgets → check completion evidence → plan next action → execute → record evidence → check for self-correction. Evidence is the ground truth; model output is not.
+
+**Result:**
+- Commit: 5cc269c
+- 11 files changed, 774 insertions, 1 deletion
+- New: evidence.py, goal.py, goal_runner.py, goal_service.py
+- New tests: test_evidence.py (6), test_goal.py (10), test_goal_runner.py (7)
+- Updated: app.py (8 goal endpoints), harness.py (GoalService integration)
+- Updated: check-architecture.mjs (whitelist goal.py for persistence writes)
+- 213 Python tests pass, pnpm quality pass, desktop build pass
+- No push
+- Risk: GoalRunner currently uses injected step_fn for testability; real integration with AgentLoop needs wiring in Phase 4
+
+---
+
+## Phase 4: Multi-turn Conversation + Side Chat

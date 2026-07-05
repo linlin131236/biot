@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from bolt_core.agent_loop import AgentLoop, AgentLoopResult, AgentStepResult
-from bolt_core.background_executor import BackgroundExecutor
 from bolt_core.document_gardener import DocumentGardener
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.file_writer import apply_file_write, change_set_json, propose_file_write
@@ -17,6 +16,7 @@ from bolt_core.permission_gate import PermissionGate
 from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
 from bolt_core.perception_types import PerceptionSnapshot, dataclass_dict
+from bolt_core.terminal_service import TerminalService
 from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
@@ -30,14 +30,15 @@ class HarnessRun:
 
 
 class Harness:
-    def __init__(self, workspace: str, memory_store: MemoryStore | None = None, memory_db_path: str | None = None) -> None:
+    def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
+                 memory_db_path: str | None = None) -> None:
         self.workspace = workspace
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
         self.model_settings = ModelSettingsStore()
         self.agent_loop = AgentLoop()
         self.consolidator = MemoryConsolidator()
-        self.bg_executor = BackgroundExecutor(workspace)
+        self.terminal = TerminalService(workspace)
         self.goal_service = GoalService(workspace)
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
@@ -104,15 +105,11 @@ class Harness:
 
     def record_memory(self, payload: dict) -> MemoryRecord:
         return self.memory.record(
-            str(payload.get("kind", "session")),
-            str(payload.get("scope", "default")),
-            str(payload.get("content", "")),
-            str(payload.get("source", "api")),
-            payload.get("tags") or [],
-            payload.get("metadata") or {},
-        )
+            str(payload.get("kind", "session")), str(payload.get("scope", "default")),
+            str(payload.get("content", "")), str(payload.get("source", "api")),
+            payload.get("tags") or [], payload.get("metadata") or {})
 
-    def query_memory(self, kind: str | None = None, scope: str | None = None, status: str | None = None, query: str | None = None) -> list[MemoryRecord]:
+    def query_memory(self, kind=None, scope=None, status=None, query=None) -> list[MemoryRecord]:
         if query:
             return self.memory.search(query, kind=kind)
         return self.memory.list(kind=kind, scope=scope, status=status)
@@ -139,33 +136,31 @@ class Harness:
         trace = self.traces[run_id]
         config = self.model_settings.config()
         memories = self._agent_memories()
-        return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda request: self.submit_tool_request(run_id, request), memories)
+        return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories)
 
     def run_agent_loop(self, run_id: str, max_steps: int = 3) -> AgentLoopResult:
         run = self.runs[run_id]
         trace = self.traces[run_id]
         config = self.model_settings.config()
-        return self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda request: self.submit_tool_request(run_id, request), self._agent_memories, max_steps)
+        return self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps)
 
+    # Terminal delegation
     def terminal_poll(self, session_id: str) -> dict:
-        result = self.bg_executor.poll(session_id)
-        return {"session_id": result.session_id, "status": result.status, "output": result.output}
+        return self.terminal.poll(session_id)
 
     def terminal_kill(self, session_id: str) -> dict:
-        result = self.bg_executor.kill(session_id)
-        return {"session_id": result.session_id, "status": result.status}
+        return self.terminal.kill(session_id)
 
     def terminal_list(self) -> list[dict]:
-        return [{"session_id": p.session_id, "status": p.status, "command": p.command} for p in self.bg_executor.list_sessions()]
+        return self.terminal.list_sessions()
 
     def terminal_output(self, session_id: str) -> dict:
-        result = self.bg_executor.full_output(session_id)
-        return {"session_id": result.session_id, "status": result.status, "output": result.output}
+        return self.terminal.full_output(session_id)
 
     def _agent_memories(self) -> list[MemoryRecord]:
-        records = [record for record in self.memory.list(status="active") if record.kind != "failure"]
-        perception = [record for record in records if "perception" in record.tags]
-        others = [record for record in records if "perception" not in record.tags]
+        records = [r for r in self.memory.list(status="active") if r.kind != "failure"]
+        perception = [r for r in records if "perception" in r.tags]
+        others = [r for r in records if "perception" not in r.tags]
         return (perception + others)[:8]
 
     def _capture_perception(self, run: HarnessRun) -> None:
@@ -185,7 +180,7 @@ class Harness:
     def _execute(self, run_id: str, request: ToolRequest) -> ToolExecution:
         self.traces[run_id].record("tool.execution.started", {"request_id": request.id})
         if request.tool in ("terminal.spawn", "terminal.poll", "terminal.kill"):
-            execution = self._execute_terminal(request)
+            execution = self.terminal.execute_tool(request)
         elif request.tool in ("web.search", "web.extract"):
             execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
         else:
@@ -193,25 +188,6 @@ class Harness:
         event_type = "tool.execution.completed" if execution.status == "executed" else "tool.execution.failed"
         self.traces[run_id].record(event_type, {"request_id": request.id})
         return execution
-
-    def _execute_terminal(self, request: ToolRequest) -> ToolExecution:
-        import json as _json
-        if request.tool == "terminal.spawn":
-            command = str(request.payload.get("command", ""))
-            workdir = str(request.payload.get("workdir", self.workspace))
-            result = self.bg_executor.spawn(command, workdir)
-            if result.status == "failed":
-                return ToolExecution(request.id, "failed", None, result.output)
-            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status}), None)
-        if request.tool == "terminal.poll":
-            session_id = str(request.payload.get("session_id", ""))
-            result = self.bg_executor.poll(session_id)
-            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status, "output": result.output}), None)
-        if request.tool == "terminal.kill":
-            session_id = str(request.payload.get("session_id", ""))
-            result = self.bg_executor.kill(session_id)
-            return ToolExecution(request.id, "executed", _json.dumps({"session_id": result.session_id, "status": result.status}), None)
-        return ToolExecution(request.id, "failed", None, f"unknown terminal operation: {request.tool}")
 
     def _queue_file_write(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
         path = str(request.payload.get("path", ""))

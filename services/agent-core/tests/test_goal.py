@@ -76,14 +76,12 @@ def test_goal_has_id_and_workspace():
 
 
 def test_goal_persistence_save_and_load(tmp_path):
-    from bolt_core.goal import GoalPersistence
+    from bolt_core.goal_persistence import GoalPersistence
 
     goal = GoalBuilder().build("fix tests", criteria=["tests pass"], workspace=str(tmp_path))
     goal = goal.with_status(GoalStatus.RUNNING)
 
-    storage = tmp_path / "goals"
-    storage.mkdir()
-    persistence = GoalPersistence(str(storage))
+    persistence = GoalPersistence(str(tmp_path / "goals"))
     persistence.save(goal)
 
     loaded = persistence.load(goal.id)
@@ -94,7 +92,7 @@ def test_goal_persistence_save_and_load(tmp_path):
 
 
 def test_goal_persistence_detects_file_conflicts(tmp_path):
-    from bolt_core.goal import GoalPersistence
+    from bolt_core.goal_persistence import GoalPersistence
 
     workspace = tmp_path / "project"
     workspace.mkdir()
@@ -104,9 +102,7 @@ def test_goal_persistence_detects_file_conflicts(tmp_path):
     goal = goal.with_status(GoalStatus.RUNNING)
     goal = goal.with_snapshot({"app.py": "original"})
 
-    storage = tmp_path / "goals"
-    storage.mkdir()
-    persistence = GoalPersistence(str(storage))
+    persistence = GoalPersistence(str(tmp_path / "goals"))
     persistence.save(goal)
 
     (workspace / "app.py").write_text("modified", encoding="utf-8")
