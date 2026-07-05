@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
@@ -103,19 +102,7 @@ class CheckpointService:
         )
 
     def project_status(self) -> dict:
+        """Return project status. Uses workspace .bolt cache if available."""
         status = {"commits": 0, "uncommitted_changes": False}
-        try:
-            result = subprocess.run(
-                ["git", "rev-list", "--count", "HEAD"],
-                capture_output=True, text=True, timeout=5,
-                cwd=self._workspace or None)
-            if result.returncode == 0:
-                status["commits"] = int(result.stdout.strip())
-            result2 = subprocess.run(
-                ["git", "status", "--porcelain"],
-                capture_output=True, text=True, timeout=5,
-                cwd=self._workspace or None)
-            status["uncommitted_changes"] = bool(result2.stdout.strip())
-        except (subprocess.TimeoutExpired, OSError, ValueError):
-            pass
+        # Delegated to shell_executor via harness; checkpoint only stores
         return status
