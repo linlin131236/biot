@@ -17,7 +17,10 @@ const required = [
   'docs/design-docs/golden-principles.md',
   'docs/exec-plans/active/011-harness-engineering.md',
   'docs/decisions/011-harness-engineering.md',
-  'docs/failure-patterns/README.md'
+  'docs/decisions/012-desktop-shipability.md',
+  'docs/failure-patterns/README.md',
+  'docs/exec-plans/active/012-desktop-shipability.md',
+  'docs/user-guide/first-run.md'
 ];
 
 const missing = required.filter((path) => !existsSync(join(process.cwd(), path)));

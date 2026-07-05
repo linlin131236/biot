@@ -1,0 +1,23 @@
+{
+  "appId": "dev.bolt.desktop",
+  "productName": "Bolt",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**",
+    "dist-electron/**",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      "portable",
+      "nsis"
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
+  },
+  "publish": null
+}

@@ -1,3 +1,9 @@
 packages:
   - apps/*
   - packages/*
+allowBuilds:
+  electron-winstaller: true
+packageExtensions:
+  '@peculiar/utils@*':
+    dependencies:
+      tslib: ^2.8.1
