@@ -42,7 +42,7 @@
 | Phase 6: Skill System | ✅ Complete | 259 |
 | Phase 7: Multi-agent Delegation | ✅ Complete | 267 |
 | Phase 8: Provider + MoA | ✅ Complete | 274 |
-| Phase 9: Checkpoints + Review | ✅ Complete | 283 |
+| Phase 9: Checkpoints + Review | ✅ Complete | 286 |
 | Desktop Integration | ✅ Complete | — |
 | Docs + Quality Gates | ✅ Complete | — |
 
@@ -171,7 +171,7 @@ git push origin main
 ## 三份最终名单
 
 ### ✅ 已彻底修好
-所有 283 个测试通过的核心模块：background_executor, goal_persistence, goal_runner, terminal_service, conversation, context_compressor, vector_memory, skill, delegation, provider_policy, moa, checkpoint, review_gate
+所有 286 个测试通过的核心模块：background_executor, goal_persistence, goal_runner, terminal_service, conversation, context_compressor, vector_memory, skill, delegation, provider_policy, moa, checkpoint, review_gate
 
 ### ⚠️ 可用但不是生产级
 - LocalHashEmbedding (无语义排序)
