@@ -29,7 +29,7 @@
 - goal_input 不创建 goal，不启动 loop。
 - M46 不做自动执行。
 - M46 不进入 M47。
-- 未 push。
+- 已 push 到 `origin/main`。
 
 ## 安全扫描
 - `rg "ipcRenderer|nodeIntegration|contextIsolation|\\bfs\\b|shell|process\\.env" apps/desktop/src`：有既有 CSS 类名、注释和测试字符串命中；M46 未新增 renderer 直接危险调用。
@@ -56,4 +56,4 @@
 - 已检查：新增 UI 为中文。
 - 已检查：App 接线只传递 API 与状态，不自动生成 handoff，无 render loop。
 - 已检查：无 `as any` / `unknown as`。
-- 已检查：未 push。
+- 已检查：已 push 到 `origin/main`，本地与远程同步。

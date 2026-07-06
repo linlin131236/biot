@@ -2,15 +2,15 @@
 
 ## 当前稳定基线
 - 已完成到：M46 Controlled Execution Handoff
-- 最新本地提交：`31b124e feat(M46): add controlled execution handoff`
-- 远程状态：`main` 领先 `origin/main` 1 个本地提交；未 push
+- 最新本地提交：`b2d69ed feat(M46): add controlled execution handoff`
+- 远程状态：`main` 与 `origin/main` 已同步；M46 已 push
 - 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff
 
 ## 当前进行中
-- 当前阶段：M46 复审修复
-- 当前状态：M46 已提交，未 push，正在修复复审 findings
+- 当前阶段：M46 已完成并已同步远程
+- 当前状态：M46 已提交并已 push，工作区干净，等待爸爸确认下一步
 - 当前结果：approved queue item 可转成安全交接记录，但不执行命令、不批准权限、不创建 goal、不启动 Agent Loop
-- 下一步：复跑 targeted 验证和安全扫描；复审修复 diff；不要 push；不要进入 M47
+- 下一步：等待爸爸确认是否进入 M47 或先做只读复审；不要擅自进入 M47
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
