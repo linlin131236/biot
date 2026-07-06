@@ -185,3 +185,17 @@
 - packages/shared/package.json: 加 "./autonomy" export
 
 **Verification:** 283 pytest + pnpm quality + desktop build pass
+
+---
+
+## M31 Integration Smoke
+
+**Started:** 2026-07-06
+
+**Changes:**
+- app.py: checkpoint and review gate routes wired to existing services
+- harnessClientAutonomy.ts: checkpoint and review methods call real endpoints
+- test_integration_smoke.py: run/goal/conversation/tool/permission/checkpoint/review/loop/timeline smoke
+- harnessClientAutonomy.test.ts: desktop client route contract coverage
+
+**Verification:** 287 pytest + pnpm quality (11 shared, 53 desktop) + desktop build pass

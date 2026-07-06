@@ -2,13 +2,18 @@ from pathlib import Path
 
 from fastapi import FastAPI, Query
 
+from bolt_core.checkpoint import CheckpointService
 from bolt_core.harness import Harness
+from bolt_core.review_gate import ReviewChecklist, ReviewGate
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     harness = Harness(workspace=str(Path.cwd()))
+    checkpoint_service = CheckpointService(harness.workspace)
+    checkpoint_workspaces: dict[str, str] = {}
+    review_gate = ReviewGate()
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -188,6 +193,35 @@ def create_app() -> FastAPI:
         events = harness.trace(run_id)
         return [e.__dict__ for e in events]
 
+    @app.post("/checkpoints")
+    def create_checkpoint(payload: dict) -> dict:
+        workspace = _checkpoint_workspace(payload, harness.runs, harness.workspace)
+        service = CheckpointService(workspace) if workspace != harness.workspace else checkpoint_service
+        checkpoint = service.create(
+            run_id=str(payload.get("run_id", "")),
+            goal_id=str(payload.get("goal_id", "")),
+            changed_files=_string_list(payload.get("changed_files")),
+            constraints=_string_list(payload.get("constraints")),
+            pending_permissions=_string_list(payload.get("pending_permissions")),
+            evidence_refs=_string_list(payload.get("evidence_refs")),
+        )
+        checkpoint_workspaces[checkpoint.id] = workspace
+        return checkpoint.to_dict()
+
+    @app.get("/checkpoints/{checkpoint_id}")
+    def load_checkpoint(checkpoint_id: str, workspace: str | None = Query(default=None)) -> dict | None:
+        target = workspace or checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        service = CheckpointService(target) if target != harness.workspace else checkpoint_service
+        checkpoint = service.load(checkpoint_id)
+        return None if checkpoint is None else checkpoint.to_dict()
+
+    @app.post("/review/evaluate")
+    def evaluate_review(payload: dict) -> dict:
+        checklist = ReviewChecklist(items=_string_list(payload.get("items")))
+        results = payload.get("results")
+        result = review_gate.evaluate(checklist, results if isinstance(results, dict) else {})
+        return {"passed": result.passed, "failures": result.failures}
+
     return app
 
 
@@ -217,6 +251,18 @@ def _tool_result_dict(result: ToolResult) -> dict[str, str | None]:
         "output": result.output,
         "error": result.error,
     }
+
+
+def _string_list(value) -> list[str]:
+    return [str(item) for item in value] if isinstance(value, list) else []
+
+
+def _checkpoint_workspace(payload: dict, runs: dict, default_workspace: str) -> str:
+    workspace = payload.get("workspace")
+    if isinstance(workspace, str) and workspace:
+        return workspace
+    run = runs.get(str(payload.get("run_id", "")))
+    return run.workspace if run is not None else default_workspace
 
 
 app = create_app()

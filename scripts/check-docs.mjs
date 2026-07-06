@@ -44,6 +44,8 @@ const required = [
   'docs/exec-plans/active/028-goal-mode.md',
   'docs/exec-plans/active/029-agent-product-convergence.md',
   'docs/decisions/029-agent-product-convergence.md',
+  'docs/exec-plans/active/031-integration-smoke.md',
+  'docs/decisions/031-integration-smoke.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'
