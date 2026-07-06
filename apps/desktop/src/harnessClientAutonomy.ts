@@ -4,7 +4,7 @@
 import type {
   Goal, ConversationMessage, SkillManifest, DelegationTask,
   Checkpoint, ReviewChecklist, ReviewResult,
-  TimelineEvent,
+  TimelineEvent, GoalEvidence,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -34,7 +34,7 @@ export async function clearGoal(baseUrl: string, goalId: string, fetcher: Fetche
   return readJson(await fetcher(`${baseUrl}/goals/${goalId}/clear`, { method: 'POST' }));
 }
 
-export async function fetchGoalEvidence(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<unknown[]> {
+export async function fetchGoalEvidence(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<GoalEvidence[]> {
   return readJson(await fetcher(`${baseUrl}/goals/${goalId}/evidence`));
 }
 

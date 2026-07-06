@@ -45,7 +45,7 @@
 - 传给 GoalConsole
 
 ### Phase 6: 时间线和证据面板
-- GoalTimelinePanel / GoalEvidencePanel 拆分
+- GoalConsole 内嵌 timeline/evidence 面板（useEffect 主动 fetch，不拆分独立组件，220行在300行限制内）
 
 ### Phase 7: 安全与中文质量门
 
