@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { MemorySnapshot, ModelSettings, PendingPermission, ToolResult } from '@bolt/shared';
 import type { Goal } from '@bolt/shared/autonomy';
@@ -84,10 +84,11 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   async function saveModel() { await guarded(async () => { const status = await storeModelSettings(session.coreUrl, { ...model, api_key: apiKey || undefined }, fetcher); dispatch({ type: 'model.settings.loaded', status }); setApiKey(''); }, '无法保存模型设置。'); }
   async function runGardener() { if (!runId) return; await guarded(async () => recordToolResult(await maintainMemory(session.coreUrl, runId, fetcher)), '无法运行文档整理。'); }
   async function fetchTimelineAction() { if (!runId) return; await guarded(async () => setTimeline(await fetchWorkflowTimeline(session.coreUrl, runId, fetcher)), '无法加载时间线。'); }
-  function handleGoalConsoleChange(g: Goal | null, rId: string | null) {
-    if (g) setGoalInfo(g);
-    if (rId) { dispatch({ type: 'harness.run.created', runId: rId }); saveSession({ ...session, lastRunId: rId }); }
-  }
+  const handleGoalConsoleChange = useCallback((g: Goal | null, rId: string | null) => {
+    if (g && (g.id !== goalInfo?.id || g.status !== goalInfo?.status)) setGoalInfo(g);
+    if (rId && rId !== (state.currentRunId || session.lastRunId)) { dispatch({ type: 'harness.run.created', runId: rId }); }
+    if (rId && rId !== session.lastRunId) { saveSession({ ...session, lastRunId: rId }); }
+  }, [goalInfo?.id, state.currentRunId, session.lastRunId, session]);
 
   async function runReview() { await guarded(async () => { const result = await evaluateWorkflowReview(session.coreUrl, { items: ['pytest', 'build'], results: { pytest: true, build: true } }, fetcher); setReviewResult(result); }, '无法评估审查。'); }
 

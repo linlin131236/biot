@@ -172,6 +172,21 @@ describe('App', () => {
 
     expect(await screen.findByText('workspace write')).toBeInTheDocument();
   });
+
+  it('does not re-dispatch for same runId from GoalConsole', async () => {
+    const fetcher = vi.fn().mockImplementation((u: string) => {
+      if (u.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      if (u.endsWith('/goals/unfinished')) return Promise.resolve(json([]));
+      if (u.endsWith('/harness/runs') && u[1]?.method === 'POST') return Promise.resolve(json({ id: 'run_42' }));
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_42' }));
+    render(<App fetcher={fetcher} />);
+    await screen.findByText('Agent Core 状态');
+    // If App already has lastRunId='run_42', GoalConsole returning same runId should NOT re-dispatch or more harness.run.created
+    const runPosts = fetcher.mock.calls.filter(c => c[1]?.method === 'POST' && c[0].includes('/runs'));
+    expect(runPosts).toHaveLength(0);
+  });
 });
 
 function json(value: unknown): Response {
