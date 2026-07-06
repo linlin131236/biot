@@ -71,4 +71,4 @@
 - 已检查：未 push，未 release，未 tag，未 delete。
 
 ## 是否 push
-- 未 push。
+- 已 push 到 origin/main，本地与远程同步。
