@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M49 Execution Result Evidence Ingestion（本地实现中）
-- 最新本地提交：`b68bf2a feat(M48): add permission-gated execution bridge`
-- 远程状态：`main` 本地领先 `origin/main`；M48 已本地提交，M49 未 push
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion
+- 已完成到：M50 End-to-End Dogfood + Release Hardening（本地已完成）
+- 最新本地提交：M50 本地提交完成后以 `git log --oneline -1` 为准
+- 远程状态：`main` 本地领先 `origin/main`；M50 completed locally, not pushed
+- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening
 
 ## 当前进行中
-- 当前阶段：M49 Execution Result Evidence Ingestion
-- 当前状态：permission approval/rejection result ingestion 已实现，正在进行完整验证和 review gate 收口
-- 当前结果：M48 pending permission 经用户批准/拒绝后，可回写 handoff、queue 和 task closure command evidence；不新增自动批准、不新增执行入口、不创建 goal、不启动 Agent Loop
-- 下一步：完成 M49 完整验证和 commit；通过后进入 M50 End-to-End Dogfood + Release Hardening
+- 当前阶段：M50 End-to-End Dogfood + Release Hardening
+- 当前状态：M50 本地实现、验证、Reviewer 审核已完成，等待本地 commit；不要进入 M51
+- 当前结果：任务闭环缺少验证证据后可走 execution queue -> handoff -> request permission -> approve permission -> evidence ingestion -> assessment completed；不新增自动批准、不绕过 PermissionGate、不新增执行入口
+- 下一步：提交 M50；不要 push，等待爸爸审核
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
