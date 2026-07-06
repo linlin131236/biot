@@ -282,3 +282,17 @@ async def test_goals_unfinished_before_dynamic_route(tmp_path):
         unfinished_resp = await client.get("/goals/unfinished")
         assert unfinished_resp.status_code == 200
         assert isinstance(unfinished_resp.json(), list)
+
+
+@pytest.mark.anyio
+async def test_steering_endpoint_injects_into_run(tmp_path):
+    """M39: POST /runs/{run_id}/steering injects a user steering message."""
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    async with _client() as client:
+        run_resp = await client.post("/harness/runs", json={"goal": "steer test", "workspace": str(workspace)})
+        run_id = run_resp.json()["id"]
+        steer_resp = await client.post(f"/runs/{run_id}/steering", json={"content": "请先修测试"})
+    assert steer_resp.status_code == 200
+    assert steer_resp.json()["status"] == "injected"
+
