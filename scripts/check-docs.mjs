@@ -46,6 +46,8 @@ const required = [
   'docs/decisions/029-agent-product-convergence.md',
   'docs/exec-plans/active/031-integration-smoke.md',
   'docs/decisions/031-integration-smoke.md',
+  'docs/exec-plans/active/032-desktop-dogfood-smoke.md',
+  'docs/decisions/032-desktop-dogfood-smoke.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

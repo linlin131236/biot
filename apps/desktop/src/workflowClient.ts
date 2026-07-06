@@ -1,5 +1,6 @@
 import type { AgentStepResult, HarnessRun, MemoryConsolidationResult, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolResult, TraceEvent } from '@bolt/shared';
-import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings } from './harnessClient';
+import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
+import { createGoal, createCheckpoint, loadCheckpoint, evaluateReview, fetchRunTimeline, createConversation, addMessage } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -22,7 +23,7 @@ export async function refreshWorkflow(baseUrl: string, runId: string, fetcher: F
   const [trace, memory, permissions] = await Promise.all([
     fetchHarnessTrace(baseUrl, runId, fetcher),
     fetchMemorySnapshot(baseUrl, fetcher),
-    fetchPendingPermissions(baseUrl, fetcher)
+    fetchPendingPermissions(baseUrl, fetcher),
   ]);
   return { trace, memory, permissions };
 }
@@ -45,4 +46,38 @@ export async function maintainMemory(baseUrl: string, runId: string, fetcher: Fe
 
 export async function consolidateWorkflowMemory(baseUrl: string, fetcher: Fetcher): Promise<MemoryConsolidationResult> {
   return consolidateMemory(baseUrl, fetcher);
+}
+
+// === Dogfood path helpers ===
+
+export async function createWorkflowGoal(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Record<string, unknown>> {
+  return createGoal(baseUrl, payload, fetcher);
+}
+
+export async function createWorkflowConversation(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ id: string }> {
+  return createConversation(baseUrl, payload, fetcher);
+}
+
+export async function addWorkflowMessage(baseUrl: string, conversationId: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ status: string }> {
+  return addMessage(baseUrl, conversationId, payload, fetcher);
+}
+
+export async function submitWorkflowTool(baseUrl: string, runId: string, request: { tool: string; operation: string; payload: Record<string, unknown> }, fetcher: Fetcher): Promise<ToolResult> {
+  return submitToolRequest(baseUrl, runId, request, fetcher);
+}
+
+export async function createWorkflowCheckpoint(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Record<string, unknown>> {
+  return createCheckpoint(baseUrl, payload, fetcher);
+}
+
+export async function loadWorkflowCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher): Promise<Record<string, unknown> | null> {
+  return loadCheckpoint(baseUrl, cpId, fetcher);
+}
+
+export async function evaluateWorkflowReview(baseUrl: string, payload: { items: string[]; results: Record<string, boolean> }, fetcher: Fetcher): Promise<{ passed: boolean; failures: string[] }> {
+  return evaluateReview(baseUrl, payload, fetcher);
+}
+
+export async function fetchWorkflowTimeline(baseUrl: string, runId: string, fetcher: Fetcher): Promise<unknown[]> {
+  return fetchRunTimeline(baseUrl, runId, fetcher);
 }

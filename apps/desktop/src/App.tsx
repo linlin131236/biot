@@ -5,7 +5,7 @@ import { fetchHarnessTrace, fetchMemorySnapshot, fetchPendingPermissions } from 
 import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
-import { decidePermission, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings } from './workflowClient';
+import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline } from './workflowClient';
 import './styles.css';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -23,6 +23,9 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   const [model, setModel] = useState<ModelSettings>({ provider: 'openai-compatible', base_url: 'http://localhost:11434/v1', model: 'fake-model', temperature: 0.2 });
   const [apiKey, setApiKey] = useState('');
   const [state, dispatch] = useReducer(reduceBoltState, createInitialState(session, initialMemorySnapshot, initialPendingPermissions));
+  const [goalInfo, setGoalInfo] = useState<Record<string, unknown> | null>(null);
+  const [reviewResult, setReviewResult] = useState<{ passed: boolean; failures: string[] } | null>(null);
+  const [timeline, setTimeline] = useState<unknown[]>([]);
   const runId = state.currentRunId || session.lastRunId;
 
   useEffect(() => {
@@ -31,9 +34,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
     fetchCoreHealth(session.coreUrl, fetcher).then((status) => {
       if (active) dispatch({ type: 'core.health.changed', status });
     });
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [fetcher, session.completed, session.coreUrl]);
 
   function completeFirstRun(next: DesktopSession) {
@@ -57,6 +58,18 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
       dispatch({ type: 'harness.run.created', runId: run.id });
       saveSession({ ...session, lastRunId: run.id });
     }, '无法创建任务。');
+  }
+
+  async function createGoal() {
+    await guarded(async () => {
+      const g = await createWorkflowGoal(session.coreUrl, {
+        objective: goal || 'Bolt task',
+        criteria: ['file read', 'patch approved'],
+        max_steps: 10, max_cost: 5.0, max_wall_time: 300,
+        workspace: session.workspacePath,
+      }, fetcher);
+      setGoalInfo(g);
+    }, '无法创建目标。');
   }
 
   async function runStep() {
@@ -103,28 +116,34 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
     await guarded(async () => recordToolResult(await maintainMemory(session.coreUrl, runId, fetcher)), '无法运行文档园丁。');
   }
 
+  async function fetchTimeline() {
+    if (!runId) return;
+    await guarded(async () => setTimeline(await fetchWorkflowTimeline(session.coreUrl, runId, fetcher)), '无法加载 Timeline。');
+  }
+
+  async function runReview() {
+    await guarded(async () => {
+      const result = await evaluateWorkflowReview(session.coreUrl, { items: ['pytest', 'build'], results: { pytest: true, build: true } }, fetcher);
+      setReviewResult(result);
+    }, '无法评估 Review。');
+  }
+
   function applyRefresh(refresh: { trace?: BoltState['traceEvents']; memory?: MemorySnapshot; permissions?: PendingPermission[] }) {
     if (refresh.trace) dispatch({ type: 'harness.trace.loaded', events: refresh.trace });
     if (refresh.memory) dispatch({ type: 'memory.snapshot.loaded', snapshot: refresh.memory });
     if (refresh.permissions) dispatch({ type: 'permissions.pending.loaded', permissions: refresh.permissions });
   }
 
-  function recordToolResult(result: ToolResult) {
-    dispatch({ type: 'tool.result.recorded', result });
-  }
-
-  function saveSession(next: DesktopSession) {
-    saveDesktopSession(next);
-    setSession(next);
-  }
+  function recordToolResult(result: ToolResult) { dispatch({ type: 'tool.result.recorded', result }); }
+  function saveSession(next: DesktopSession) { saveDesktopSession(next); setSession(next); }
 
   if (!session.completed) return <FirstRunWizard session={session} onComplete={completeFirstRun} />;
 
-  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core" value={state.coreStatus} /><StatusRow label="Workspace" value={state.workspacePath || session.workspacePath} /><StatusRow label="Core URL" value={session.coreUrl} /><StatusRow label="Last run" value={runId || 'none'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} startRun={startRun} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><TaskLog state={state} /><TracePanel state={state} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
+  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core" value={state.coreStatus} /><StatusRow label="Workspace" value={state.workspacePath || session.workspacePath} /><StatusRow label="Core URL" value={session.coreUrl} /><StatusRow label="Last run" value={runId || 'none'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} startRun={startRun} createGoal={createGoal} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} fetchTimeline={fetchTimeline} runReview={runReview} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
 }
 
-function Toolbar(props: { goal: string; setGoal: (value: string) => void; runId: string | null; startRun: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void }) {
-  return <header className="toolbar"><label>浠诲姟鐩爣<input aria-label="浠诲姟鐩爣" value={props.goal} onChange={(event) => props.setGoal(event.target.value)} /></label><div className="actions"><button type="button" onClick={props.startRun}>Start Run</button><button type="button" disabled={!props.runId} onClick={props.runStep}>Run Step</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>Refresh Trace</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />鍒锋柊 Memory</button><button type="button" onClick={props.refreshPermissions}>鍒锋柊 Permissions</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>Run Document Gardener</button></div></header>;
+function Toolbar(props: { goal: string; setGoal: (v: string) => void; runId: string | null; startRun: () => void; createGoal: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void; fetchTimeline: () => void; runReview: () => void }) {
+  return <header className="toolbar"><label>任务目标<input aria-label="任务目标" value={props.goal} onChange={(e) => props.setGoal(e.target.value)} /></label><div className="actions"><button type="button" onClick={props.startRun}>Start Run</button><button type="button" onClick={props.createGoal}>Create Goal</button><button type="button" disabled={!props.runId} onClick={props.runStep}>Run Step</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>Refresh Trace</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />刷新 Memory</button><button type="button" onClick={props.refreshPermissions}>刷新 Permissions</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>Run Gardener</button><button type="button" disabled={!props.runId} onClick={props.fetchTimeline}>Timeline</button><button type="button" onClick={props.runReview}>Review</button></div></header>;
 }
 
 function createInitialState(session: DesktopSession, memory: MemorySnapshot | undefined, permissions: PendingPermission[]): BoltState {
@@ -135,59 +154,49 @@ function createInitialState(session: DesktopSession, memory: MemorySnapshot | un
   return state;
 }
 
-function FirstRunWizard({ session, onComplete }: { session: DesktopSession; onComplete: (session: DesktopSession) => void }) {
+function FirstRunWizard({ session, onComplete }: { session: DesktopSession; onComplete: (s: DesktopSession) => void }) {
   const [workspacePath, setWorkspacePath] = useState(session.workspacePath || '');
   const [coreUrl, setCoreUrl] = useState(session.coreUrl);
-  return (
-    <main className="wizard">
-      <section className="wizardPanel">
-        <div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div>
-        <label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(event) => setWorkspacePath(event.target.value)} /></label>
-        <label>Agent Core URL<input aria-label="Agent Core URL" value={coreUrl} onChange={(event) => setCoreUrl(event.target.value)} /></label>
-        <p>API Key 不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p>
-        <button type="button" onClick={() => onComplete({ completed: true, workspacePath, coreUrl, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button>
-      </section>
-    </main>
-  );
+  return (<main className="wizard"><section className="wizardPanel"><div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div><label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(e) => setWorkspacePath(e.target.value)} /></label><label>Agent Core URL<input aria-label="Agent Core URL" value={coreUrl} onChange={(e) => setCoreUrl(e.target.value)} /></label><p>API Key 不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p><button type="button" onClick={() => onComplete({ completed: true, workspacePath, coreUrl, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button></section></main>);
 }
-function ModelPanel({ model, setModel, apiKey, setApiKey, saveModel, status }: { model: ModelSettings; setModel: (model: ModelSettings) => void; apiKey: string; setApiKey: (value: string) => void; saveModel: () => void; status: BoltState['modelSettingsStatus'] }) {
-  return <section className="modelPanel"><label>Provider<input aria-label="Provider" value={model.provider} onChange={(event) => setModel({ ...model, provider: event.target.value })} /></label><label>Base URL<input aria-label="Base URL" value={model.base_url} onChange={(event) => setModel({ ...model, base_url: event.target.value })} /></label><label>Model<input aria-label="Model" value={model.model} onChange={(event) => setModel({ ...model, model: event.target.value })} /></label><label>API Key<input aria-label="API Key" value={apiKey} onChange={(event) => setApiKey(event.target.value)} /></label><button type="button" onClick={saveModel}>Save Model Settings</button><span>{status?.has_api_key ? 'API key configured' : 'API key not configured'}</span></section>;
+
+function ModelPanel({ model, setModel, apiKey, setApiKey, saveModel, status }: { model: ModelSettings; setModel: (m: ModelSettings) => void; apiKey: string; setApiKey: (k: string) => void; saveModel: () => void; status: BoltState['modelSettingsStatus'] }) {
+  return <section className="modelPanel"><label>Provider<input aria-label="Provider" value={model.provider} onChange={(e) => setModel({ ...model, provider: e.target.value })} /></label><label>Base URL<input aria-label="Base URL" value={model.base_url} onChange={(e) => setModel({ ...model, base_url: e.target.value })} /></label><label>Model<input aria-label="Model" value={model.model} onChange={(e) => setModel({ ...model, model: e.target.value })} /></label><label>API Key<input aria-label="API Key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} /></label><button type="button" onClick={saveModel}>Save Model Settings</button><span>{status?.has_api_key ? 'API key configured' : 'API key not configured'}</span></section>;
 }
 
 function TaskLog({ state }: { state: BoltState }) {
-  const items = [...state.agentStepResults.map((result) => result.status), ...state.toolResults.map((result) => result.output || result.reason || result.status)];
+  const items = [...state.agentStepResults.map((r) => r.status), ...state.toolResults.map((r) => r.output || r.reason || r.status)];
   return <aside className="panel"><h2>Task Log</h2>{items.length ? items.map((item) => <p key={item}>{item}</p>) : <p>No execution results.</p>}</aside>;
 }
 
 function TracePanel({ state }: { state: BoltState }) {
-  return <aside className="panel"><h2>Harness Trace</h2>{state.traceEvents.length ? state.traceEvents.map((event) => <p key={`${event.sequence}-${event.type}`}>{event.type}</p>) : <p>No trace events.</p>}</aside>;
+  return <aside className="panel"><h2>Harness Trace</h2>{state.traceEvents.length ? state.traceEvents.map((e) => <p key={`${e.sequence}-${e.type}`}>{e.type}</p>) : <p>No trace events.</p>}</aside>;
 }
 
-function PermissionsPanel({ permissions, onDecision }: { permissions: PendingPermission[]; onDecision: (requestId: string, approved: boolean) => void }) {
-  return <aside className="panel"><h2>Pending Permissions</h2>{permissions.length ? permissions.map((permission) => <PermissionItem key={permission.request_id} permission={permission} onDecision={onDecision} />) : <p>No pending permission.</p>}</aside>;
+function DogfoodPanel({ goalInfo, reviewResult, timeline }: { goalInfo: Record<string, unknown> | null; reviewResult: { passed: boolean; failures: string[] } | null; timeline: unknown[] }) {
+  return <aside className="panel"><h2>Dogfood</h2>{goalInfo ? <div className="stack"><strong>Goal</strong><span>{String(goalInfo.id)}</span><span>{String(goalInfo.status)}</span></div> : <p>No goal created.</p>}{reviewResult ? <div className="stack"><strong>Review</strong><span>{reviewResult.passed ? <CheckCircle2 size={14} /> : 'FAIL'}</span>{reviewResult.failures.length ? <span>{reviewResult.failures.join(', ')}</span> : null}</div> : null}{timeline.length ? <div className="stack"><strong>Timeline</strong><span>{timeline.length} events</span></div> : null}</aside>;
 }
 
-function PermissionItem({ permission, onDecision }: { permission: PendingPermission; onDecision: (requestId: string, approved: boolean) => void }) {
+function PermissionsPanel({ permissions, onDecision }: { permissions: PendingPermission[]; onDecision: (id: string, approved: boolean) => void }) {
+  return <aside className="panel"><h2>Pending Permissions</h2>{permissions.length ? permissions.map((p) => <PermissionItem key={p.request_id} permission={p} onDecision={onDecision} />) : <p>No pending permission.</p>}</aside>;
+}
+
+function PermissionItem({ permission, onDecision }: { permission: PendingPermission; onDecision: (id: string, approved: boolean) => void }) {
   const change = permission.payload.change_set as { path?: string; diff?: string } | undefined;
   const command = typeof permission.payload.command === 'string' ? permission.payload.command : '';
   return <div className="stack"><strong>{permission.tool}</strong><span>{permission.operation}</span><span>{permission.reason}</span>{command ? <code>{command}</code> : null}{change ? <pre>{`${change.path}\n${change.diff}`}</pre> : null}<div className="actions"><button type="button" onClick={() => onDecision(permission.request_id, true)}>Approve</button><button type="button" onClick={() => onDecision(permission.request_id, false)}>Reject</button></div></div>;
 }
 
 function MemoryPanel({ snapshot }: { snapshot: MemorySnapshot | null }) {
-  const perception = snapshot?.records.filter((record) => record.tags?.includes('perception')) ?? [];
-  return <aside className="panel"><h2>Memory / Perception</h2>{perception.length ? perception.map((record) => <PerceptionRecord key={record.id} record={record} />) : <p>No memories loaded.</p>}</aside>;
+  const perception = snapshot?.records.filter((r) => r.tags?.includes('perception')) ?? [];
+  return <aside className="panel"><h2>Memory / Perception</h2>{perception.length ? perception.map((r) => <PerceptionRecord key={r.id} record={r} />) : <p>No memories loaded.</p>}</aside>;
 }
 
 function PerceptionRecord({ record }: { record: NonNullable<MemorySnapshot['records'][number]> }) {
   const metadata = record.metadata ?? {};
   const intent = readPath(metadata, ['intent', 'category']);
   const languages = Array.isArray(metadata.languages) ? metadata.languages.join(', ') : '';
-  const scheduler = Array.isArray(metadata.scheduler) ? metadata.scheduler.map((item) => isRecord(item) ? item.status : '').join(', ') : '';
-  return <div className="stack"><CheckCircle2 size={14} /><strong>{record.scope}</strong><span>{String(metadata.package_manager ?? '')}</span><span>{languages}</span><span>{String(intent ?? '')}</span><span>{scheduler}</span></div>;
-}
-
-function WorkbenchPanel({ title, body }: { title: string; body: string }) {
-  return <aside className="panel"><h2>{title}</h2><p>{body}</p></aside>;
+  return <div className="stack"><CheckCircle2 size={14} /><strong>{record.scope}</strong><span>{String(metadata.package_manager ?? '')}</span><span>{languages}</span><span>{String(intent ?? '')}</span></div>;
 }
 
 function StatusRow({ label, value }: { label: string; value: string }) {

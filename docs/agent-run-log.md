@@ -199,3 +199,22 @@
 - harnessClientAutonomy.test.ts: desktop client route contract coverage
 
 **Verification:** 287 pytest + pnpm quality (11 shared, 53 desktop) + desktop build pass
+
+---
+
+## M32 Desktop Dogfood Smoke
+
+**Started:** 2026-07-06
+
+**Changes:**
+- test_dogfood_smoke.py: backend dogfood path (run→goal→conv→read→patch→approve→checkpoint→review→timeline)
+- test_dogfood_smoke.py: reject permission does not modify file
+- test_dogfood_smoke.py: unwired surfaces return 404
+- dogfoodSmoke.test.ts: desktop client dogfood path + unwired surface explicit throw
+- workflowClient.ts: added goal/conversation/checkpoint/review/timeline/tool helpers
+- App.tsx: added Create Goal, Timeline, Review buttons; Dogfood panel; fixed corrupted labels
+- App.test.tsx: updated button/label selectors to match fixed Chinese text
+- check-docs.mjs: added M32 docs to quality gate
+- 032 exec plan + decision docs
+
+**Verification:** 290 pytest + 55 vitest + pnpm quality + desktop build pass

@@ -76,7 +76,7 @@ describe('App', () => {
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);
-    fireEvent.click(screen.getByRole('button', { name: '鍒锋柊 Memory' }));
+    fireEvent.click(screen.getByRole('button', { name: '刷新 Memory' }));
 
     expect(await screen.findByText(/无法连接 Agent Core/)).toBeInTheDocument();
   });
@@ -115,7 +115,7 @@ describe('App', () => {
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);
-    fireEvent.change(screen.getByLabelText('浠诲姟鐩爣'), { target: { value: 'fix bug' } });
+    fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: 'fix bug' } });
     fireEvent.click(screen.getByRole('button', { name: 'Start Run' }));
     expect(await screen.findByText('run_9')).toBeInTheDocument();
     expect(fetcher).toHaveBeenCalledWith('http://core/harness/runs', expect.objectContaining({ body: JSON.stringify({ goal: 'fix bug', workspace: 'C:/Projects/Bolt' }) }));
@@ -168,7 +168,7 @@ describe('App', () => {
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_1' }));
 
     render(<App fetcher={fetcher} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Run Document Gardener' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run Gardener' }));
 
     expect(await screen.findByText('workspace write')).toBeInTheDocument();
   });
