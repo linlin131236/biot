@@ -6,8 +6,8 @@ from bolt_core.harness import Harness
 
 
 @pytest.fixture
-def app():
-    return create_app()
+def app(tmp_path):
+    return create_app(tmp_path / "execution-audit.json")
 
 
 @pytest.mark.anyio
@@ -95,7 +95,7 @@ async def test_terminal_handoff_transitions_return_409(app):
 
 
 @pytest.mark.anyio
-async def test_handoff_api_does_not_execute_or_approve(monkeypatch):
+async def test_handoff_api_does_not_execute_or_approve(monkeypatch, tmp_path):
     calls: list[str] = []
 
     def submit_spy(self, run_id, request):
@@ -113,13 +113,37 @@ async def test_handoff_api_does_not_execute_or_approve(monkeypatch):
     monkeypatch.setattr(Harness, "submit_tool_request", submit_spy)
     monkeypatch.setattr(Harness, "approve_permission", approve_spy)
     monkeypatch.setattr(Harness, "run_agent_loop", loop_spy)
-    app = create_app()
+    app = create_app(tmp_path / "execution-audit.json")
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         item = await _approved_item(client)
         await client.post(f"/execution-queue/{item['id']}/handoff")
 
     assert calls == []
+
+
+@pytest.mark.anyio
+async def test_api_handoff_restores_after_app_rebuild(tmp_path):
+    audit_path = tmp_path / "execution-audit.json"
+    first_app = create_app(audit_path)
+    first_transport = ASGITransport(app=first_app)
+    async with AsyncClient(transport=first_transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+        other_item = await _approved_item(client)
+        await client.post(f"/execution-queue/{other_item['id']}/handoff")
+        await client.post(f"/execution-handoffs/{handoff.json()['id']}/complete", json={"result": "用户已完成"})
+
+    second_app = create_app(audit_path)
+    second_transport = ASGITransport(app=second_app)
+    async with AsyncClient(transport=second_transport, base_url="http://test") as client:
+        list_resp = await client.get(f"/execution-handoffs?closure_id={item['closure_id']}")
+        fail_completed = await client.post(f"/execution-handoffs/{handoff.json()['id']}/fail", json={"result": "用户标记失败"})
+
+    assert len(list_resp.json()) == 1
+    assert list_resp.json()[0]["id"] == handoff.json()["id"]
+    assert list_resp.json()[0]["status"] == "completed"
+    assert fail_completed.status_code == 409
 
 
 async def _pending_item(client: AsyncClient) -> dict:

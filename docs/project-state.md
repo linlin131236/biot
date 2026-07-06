@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M46 Controlled Execution Handoff
-- 最新本地提交：`b2d69ed feat(M46): add controlled execution handoff`
-- 远程状态：`main` 与 `origin/main` 已同步；M46 已 push
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff
+- 已完成到：M47 Execution Audit Persistence
+- 最新本地提交：M47 本地提交完成后以 `git log --oneline -1` 为准
+- 远程状态：`main` 本地领先 `origin/main`；M47 未 push
+- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence
 
 ## 当前进行中
-- 当前阶段：M46 已完成并已同步远程
-- 当前状态：M46 已提交并已 push，工作区干净，等待爸爸确认下一步
-- 当前结果：approved queue item 可转成安全交接记录，但不执行命令、不批准权限、不创建 goal、不启动 Agent Loop
-- 下一步：等待爸爸确认是否进入 M47 或先做只读复审；不要擅自进入 M47
+- 当前阶段：M47 已完成并已验证
+- 当前状态：execution queue 和 execution handoff 已接入本地审计 JSON 持久化，等待爸爸确认下一步
+- 当前结果：App 重启后可恢复 queue item、批准状态、拒绝原因、handoff 记录、完成/失败结果；不执行命令、不批准权限、不创建 goal、不启动 Agent Loop
+- 下一步：不要 push；不要进入 M48；等待爸爸人工确认是否进入 M48 PermissionGate-Bound Execution Bridge
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

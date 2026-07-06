@@ -6,8 +6,8 @@ from bolt_core.harness import Harness
 
 
 @pytest.fixture
-def app():
-    return create_app()
+def app(tmp_path):
+    return create_app(tmp_path / "execution-audit.json")
 
 
 @pytest.mark.anyio
@@ -118,7 +118,7 @@ async def test_route_names_are_safe(app):
 
 
 @pytest.mark.anyio
-async def test_queue_api_does_not_submit_tool_request(monkeypatch):
+async def test_queue_api_does_not_submit_tool_request(monkeypatch, tmp_path):
     calls = []
     original = Harness.submit_tool_request
 
@@ -127,7 +127,7 @@ async def test_queue_api_does_not_submit_tool_request(monkeypatch):
         return original(self, run_id, request)
 
     monkeypatch.setattr(Harness, "submit_tool_request", spy)
-    app = create_app()
+    app = create_app(tmp_path / "execution-audit.json")
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         item = await _proposed_item(client)
@@ -135,6 +135,25 @@ async def test_queue_api_does_not_submit_tool_request(monkeypatch):
         await client.post(f"/execution-queue/{item['id']}/complete", json={"result": "用户已运行"})
 
     assert calls == []
+
+
+@pytest.mark.anyio
+async def test_api_create_and_approve_restore_after_app_rebuild(tmp_path):
+    audit_path = tmp_path / "execution-audit.json"
+    first_app = create_app(audit_path)
+    first_transport = ASGITransport(app=first_app)
+    async with AsyncClient(transport=first_transport, base_url="http://test") as client:
+        item = await _proposed_item(client)
+        approved = await client.post(f"/execution-queue/{item['id']}/approve")
+
+    second_app = create_app(audit_path)
+    second_transport = ASGITransport(app=second_app)
+    async with AsyncClient(transport=second_transport, base_url="http://test") as client:
+        list_resp = await client.get(f"/execution-queue?closure_id={item['closure_id']}")
+
+    assert approved.json()["status"] == "approved"
+    assert list_resp.json()[0]["id"] == item["id"]
+    assert list_resp.json()[0]["status"] == "approved"
 
 
 async def _missing_evidence_closure(client: AsyncClient) -> str:

@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from bolt_core.checkpoint import CheckpointService
+from bolt_core.execution_audit_store import ExecutionAuditStore, execution_audit_path as resolve_execution_audit_path
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_queue import ExecutionQueueService
@@ -14,11 +15,12 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 
 
-def create_app() -> FastAPI:
+def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     task_closure_service = TaskClosureService()
-    execution_queue_service = ExecutionQueueService()
-    execution_handoff_service = ExecutionHandoffService()
+    audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
+    execution_queue_service = ExecutionQueueService(audit_store)
+    execution_handoff_service = ExecutionHandoffService(audit_store)
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}

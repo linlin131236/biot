@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
+from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.task_closure import TaskClosure
 from bolt_core.task_verification import VerificationAssessment, VerificationPlan
 
@@ -37,9 +38,12 @@ class ExecutionQueueItem:
 class ExecutionQueueService:
     """Stores human-approved actions. Does NOT execute commands or approve permissions."""
 
-    def __init__(self) -> None:
+    def __init__(self, store: ExecutionAuditStore | None = None) -> None:
+        self._store = store
         self._items: dict[str, ExecutionQueueItem] = {}
         self._counter = 0
+        if store is not None:
+            self._restore(store.load().queue_items)
 
     def create_item(self, closure_id: str, kind: str, title: str, description: str,
                     risk: str, command: str | None = None, reason: str = "") -> ExecutionQueueItem:
@@ -53,6 +57,7 @@ class ExecutionQueueService:
         )
         self._counter += 1
         self._items[item.id] = item
+        self._save()
         return item
 
     def list_items(self, closure_id: str | None = None) -> list[ExecutionQueueItem]:
@@ -72,6 +77,7 @@ class ExecutionQueueService:
         if item.status != "pending":
             raise ExecutionQueueInvalidTransition(f"cannot approve item in status {item.status}")
         item.status = "approved"
+        self._save()
         return item
 
     def reject(self, item_id: str, reason: str) -> ExecutionQueueItem:
@@ -80,6 +86,7 @@ class ExecutionQueueService:
             raise ExecutionQueueInvalidTransition(f"cannot reject item in status {item.status}")
         item.status = "rejected"
         item.reason = reason
+        self._save()
         return item
 
     def mark_completed(self, item_id: str, result: str) -> ExecutionQueueItem:
@@ -90,6 +97,7 @@ class ExecutionQueueService:
             raise ExecutionQueueInvalidTransition(f"cannot complete item in status {item.status}")
         item.status = "completed"
         item.result = result
+        self._save()
         return item
 
     def mark_failed(self, item_id: str, result: str) -> ExecutionQueueItem:
@@ -98,6 +106,7 @@ class ExecutionQueueService:
             raise ExecutionQueueInvalidTransition(f"cannot fail item in status {item.status}")
         item.status = "failed"
         item.result = result
+        self._save()
         return item
 
     def create_from_assessment(self, closure: TaskClosure, plan: VerificationPlan,
@@ -129,6 +138,23 @@ class ExecutionQueueService:
             if item.closure_id == closure_id and item.kind == kind and item.title == title and item.command == command and item.status == "pending":
                 return item
         return None
+
+    def _restore(self, items: list[dict]) -> None:
+        for data in items:
+            item = ExecutionQueueItem(**data)
+            self._items[item.id] = item
+            self._counter = max(self._counter, _next_counter(item.id, "eq_"))
+
+    def _save(self) -> None:
+        if self._store is not None:
+            self._store.save_queue_items([item.to_dict() for item in self._items.values()])
+
+
+def _next_counter(item_id: str, prefix: str) -> int:
+    if not item_id.startswith(prefix):
+        return 0
+    suffix = item_id.removeprefix(prefix)
+    return int(suffix) + 1 if suffix.isdigit() else 0
 
 
 def _joined(items: list[str]) -> str:

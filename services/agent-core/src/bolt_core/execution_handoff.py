@@ -4,6 +4,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
+from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.execution_queue import ExecutionQueueItem
 
 
@@ -40,9 +41,12 @@ class ExecutionHandoffRecord:
 class ExecutionHandoffService:
     """Creates handoff records only. Does NOT execute commands, approve permissions, create goals, or run loops."""
 
-    def __init__(self) -> None:
+    def __init__(self, store: ExecutionAuditStore | None = None) -> None:
+        self._store = store
         self._records: dict[str, ExecutionHandoffRecord] = {}
         self._counter = 0
+        if store is not None:
+            self._restore(store.load().handoff_records)
 
     def create_from_queue_item(self, item: ExecutionQueueItem) -> ExecutionHandoffRecord:
         existing = self._find_by_item(item.id)
@@ -58,6 +62,7 @@ class ExecutionHandoffService:
         )
         self._counter += 1
         self._records[record.id] = record
+        self._save()
         return record
 
     def list_records(self, closure_id: str | None = None) -> list[ExecutionHandoffRecord]:
@@ -78,6 +83,7 @@ class ExecutionHandoffService:
         record.status = "completed"
         record.result = result
         record.updated_at = time.time()
+        self._save()
         return record
 
     def fail(self, record_id: str, result: str) -> ExecutionHandoffRecord:
@@ -86,6 +92,7 @@ class ExecutionHandoffService:
         record.status = "failed"
         record.result = result
         record.updated_at = time.time()
+        self._save()
         return record
 
     def _find_by_item(self, item_id: str) -> ExecutionHandoffRecord | None:
@@ -97,6 +104,23 @@ class ExecutionHandoffService:
     def _require_open(self, record: ExecutionHandoffRecord) -> None:
         if record.status in ("completed", "failed"):
             raise ExecutionHandoffInvalidTransition(f"cannot update handoff in status {record.status}")
+
+    def _restore(self, records: list[dict]) -> None:
+        for data in records:
+            record = ExecutionHandoffRecord(**data)
+            self._records[record.id] = record
+            self._counter = max(self._counter, _next_counter(record.id, "eh_"))
+
+    def _save(self) -> None:
+        if self._store is not None:
+            self._store.save_handoff_records([record.to_dict() for record in self._records.values()])
+
+
+def _next_counter(record_id: str, prefix: str) -> int:
+    if not record_id.startswith(prefix):
+        return 0
+    suffix = record_id.removeprefix(prefix)
+    return int(suffix) + 1 if suffix.isdigit() else 0
 
 
 def _handoff_fields(item: ExecutionQueueItem) -> tuple[str, str, str, str]:

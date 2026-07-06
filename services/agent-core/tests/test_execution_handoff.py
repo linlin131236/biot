@@ -1,5 +1,6 @@
 import pytest
 
+from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.execution_handoff import ExecutionHandoffInvalidTransition, ExecutionHandoffNotFound, ExecutionHandoffService
 from bolt_core.execution_queue import ExecutionQueueService
 
@@ -98,3 +99,99 @@ def test_same_queue_item_does_not_create_duplicate_handoff():
 
     assert first.id == second.id
     assert len(handoffs.list_records("cl_1")) == 1
+
+
+def test_approved_queue_item_handoff_restores_from_store(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(item.id)
+    handoffs = ExecutionHandoffService(store)
+    record = handoffs.create_from_queue_item(item)
+
+    restored = ExecutionHandoffService(store).get_record(record.id)
+
+    assert restored.queue_item_id == item.id
+    assert restored.status == "ready_for_manual_action"
+
+
+def test_same_queue_item_after_restore_does_not_duplicate_handoff(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(item.id)
+    first = ExecutionHandoffService(store).create_from_queue_item(item)
+
+    restored_queue_item = ExecutionQueueService(store).get_item(item.id)
+    second = ExecutionHandoffService(store).create_from_queue_item(restored_queue_item)
+
+    assert second.id == first.id
+
+
+def test_completed_handoff_restores_terminal_status(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(item.id)
+    handoffs = ExecutionHandoffService(store)
+    record = handoffs.create_from_queue_item(item)
+    handoffs.complete(record.id, "用户已运行")
+
+    restored = ExecutionHandoffService(store).get_record(record.id)
+
+    assert restored.status == "completed"
+    assert restored.result == "用户已运行"
+
+
+def test_failed_handoff_restores_terminal_status(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(item.id)
+    handoffs = ExecutionHandoffService(store)
+    record = handoffs.create_from_queue_item(item)
+    handoffs.fail(record.id, "用户标记失败")
+
+    restored = ExecutionHandoffService(store).get_record(record.id)
+
+    assert restored.status == "failed"
+    assert restored.result == "用户标记失败"
+
+
+def test_restored_terminal_handoffs_cannot_be_rewritten(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    completed_item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    failed_item = queue.create_item("cl_2", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(completed_item.id)
+    queue.approve(failed_item.id)
+    handoffs = ExecutionHandoffService(store)
+    completed = handoffs.create_from_queue_item(completed_item)
+    failed = handoffs.create_from_queue_item(failed_item)
+    handoffs.complete(completed.id, "用户已运行")
+    handoffs.fail(failed.id, "用户标记失败")
+    restored = ExecutionHandoffService(store)
+
+    with pytest.raises(ExecutionHandoffInvalidTransition):
+        restored.fail(completed.id, "改写失败")
+    with pytest.raises(ExecutionHandoffInvalidTransition):
+        restored.complete(failed.id, "改写完成")
+
+
+def test_complete_and_fail_after_restore_do_not_update_queue_item(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    completed_item = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    failed_item = queue.create_item("cl_2", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(completed_item.id)
+    queue.approve(failed_item.id)
+    handoffs = ExecutionHandoffService(store)
+    completed = handoffs.create_from_queue_item(completed_item)
+    failed = handoffs.create_from_queue_item(failed_item)
+    restored_handoffs = ExecutionHandoffService(store)
+    restored_handoffs.complete(completed.id, "用户已运行")
+    restored_handoffs.fail(failed.id, "用户标记失败")
+    restored_queue = ExecutionQueueService(store)
+
+    assert restored_queue.get_item(completed_item.id).status == "approved"
+    assert restored_queue.get_item(failed_item.id).status == "approved"

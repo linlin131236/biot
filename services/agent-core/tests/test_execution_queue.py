@@ -1,5 +1,6 @@
 import pytest
 
+from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.execution_queue import ExecutionQueueService
 from bolt_core.task_closure import TaskTemplateId
 from bolt_core.task_closure_service import TaskClosureService
@@ -147,6 +148,80 @@ def test_repeated_propose_does_not_duplicate_pending_items():
 
     assert first[0]["id"] == second[0]["id"]
     assert len(queue.list_items(closure.id)) == 1
+
+
+def test_created_queue_item_restores_from_store(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "manual_review", "补充验证证据", "缺少证据", "read_only")
+
+    restored = ExecutionQueueService(store).get_item(item.id)
+
+    assert restored.closure_id == "cl_1"
+    assert restored.status == "pending"
+
+
+def test_approved_queue_item_restores_from_store(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "manual_review", "补充验证证据", "缺少证据", "read_only")
+    queue.approve(item.id)
+
+    restored = ExecutionQueueService(store).get_item(item.id)
+
+    assert restored.status == "approved"
+
+
+def test_rejected_queue_item_restores_reason(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "manual_review", "补充验证证据", "缺少证据", "read_only")
+    queue.reject(item.id, "暂不处理")
+
+    restored = ExecutionQueueService(store).get_item(item.id)
+
+    assert restored.status == "rejected"
+    assert restored.reason == "暂不处理"
+
+
+def test_completed_and_failed_queue_items_restore_results(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    completed = queue.create_item("cl_1", "manual_review", "补充验证证据", "缺少证据", "read_only")
+    queue.mark_completed(completed.id, "用户已处理")
+    failed = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    queue.approve(failed.id)
+    queue.mark_failed(failed.id, "用户标记失败")
+
+    restored = ExecutionQueueService(store)
+
+    assert restored.get_item(completed.id).result == "用户已处理"
+    assert restored.get_item(failed.id).status == "failed"
+    assert restored.get_item(failed.id).result == "用户标记失败"
+
+
+def test_pending_duplicate_semantics_survive_restore(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    first = queue.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+
+    restored = ExecutionQueueService(store)
+    second = restored.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+    restored.approve(first.id)
+    third = restored.create_item("cl_1", "verification_command", "记录验证命令", "缺少测试", "verification_command", "pytest")
+
+    assert second.id == first.id
+    assert third.id != first.id
+
+
+def test_workspace_write_pending_restore_still_cannot_complete_directly(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    queue = ExecutionQueueService(store)
+    item = queue.create_item("cl_1", "repair_suggestion", "处理修复建议", "需要修复", "workspace_write")
+    restored = ExecutionQueueService(store)
+
+    with pytest.raises(ValueError):
+        restored.mark_completed(item.id, "done")
 
 
 def _bugfix_with_file_change_only():
