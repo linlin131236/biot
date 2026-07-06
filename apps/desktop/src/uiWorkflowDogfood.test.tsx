@@ -247,3 +247,46 @@ describe('M35 Workspace binding', () => {
     }
   });
 });
+
+describe('M38 Goal Resume in App', () => {
+  it('fetches unfinished goals on mount and shows 发现未完成长任务', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      if (input.endsWith('/goals/unfinished')) return Promise.resolve(json([{ id: 'goal_38', objective: 'M38测试', criteria: [], status: 'paused', max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: 'C:/Projects/Bolt', step_count: 3 }]));
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+    expect(await screen.findByText('发现未完成长任务')).toBeInTheDocument();
+    expect(fetcher).toHaveBeenCalledWith('http://core/goals/unfinished');
+  });
+
+  it('does not auto-call runAgentLoop for unfinished goals', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
+      if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      if (input.endsWith('/goals/unfinished')) return Promise.resolve(json([{ id: 'goal_38', objective: 'M38测试', criteria: [], status: 'paused', max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: 'C:/Projects/Bolt', step_count: 3 }]));
+      if (input.endsWith('/agent-loops') && init?.method === 'POST') return Promise.resolve(json({ status: 'executed', steps: 4 }));
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+    await screen.findByText('发现未完成长任务');
+    // agent-loops should not be called without user click
+    const agentLoopCalls = fetcher.mock.calls.filter((c: string[]) => c[0].includes('/agent-loops'));
+    expect(agentLoopCalls.length).toBe(0);
+  });
+
+  it('shows 等待人工批准 for paused unfinished goal', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      if (input.endsWith('/goals/unfinished')) return Promise.resolve(json([{ id: 'goal_38', objective: 'M38测试', criteria: [], status: 'paused', max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: 'C:/Projects/Bolt', step_count: 3 }]));
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+
+    render(<App fetcher={fetcher} />);
+    expect(await screen.findByText('等待人工批准')).toBeInTheDocument();
+  });
+});
