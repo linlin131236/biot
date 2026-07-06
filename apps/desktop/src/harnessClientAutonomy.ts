@@ -100,6 +100,22 @@ export async function getTaskClosure(baseUrl: string, closureId: string, fetcher
   return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}`));
 }
 
+export async function bindTaskClosureRun(baseUrl: string, closureId: string, runId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/bind-run`, jsonPost({ run_id: runId })));
+}
+
+export async function bindTaskClosureGoal(baseUrl: string, closureId: string, goalId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/bind-goal`, jsonPost({ goal_id: goalId })));
+}
+
+export async function getTaskClosureByRun(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/by-run/${runId}`));
+}
+
+export async function getTaskClosureByGoal(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/by-goal/${goalId}`));
+}
+
 export async function addClosureEvent(baseUrl: string, closureId: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
   return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/events`, jsonPost(payload)));
 }

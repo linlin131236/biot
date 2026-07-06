@@ -26,10 +26,12 @@ async def test_get_task_templates(app):
 async def test_create_task_closure(app):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
+        run_resp = await client.post("/harness/runs", json={"goal": "修复 README 拼写错误"})
+        run_id = run_resp.json()["id"]
         resp = await client.post("/task-closures", json={
             "objective": "修复 README 拼写错误",
             "template_id": "docs",
-            "run_id": "run_1",
+            "run_id": run_id,
         })
         assert resp.status_code == 200
         data = resp.json()
@@ -37,7 +39,7 @@ async def test_create_task_closure(app):
         assert data["template_id"] == "docs"
         assert data["status"] == "pending"
         assert data["final_status"] == "pending"
-        assert data["run_id"] == "run_1"
+        assert data["run_id"] == run_id
 
 
 @pytest.mark.anyio
@@ -49,12 +51,89 @@ async def test_create_closure_empty_objective_fails(app):
 
 
 @pytest.mark.anyio
+async def test_create_closure_unknown_run_fails(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix", "run_id": "run_missing"})
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "运行不存在"
+
+
+@pytest.mark.anyio
+async def test_create_closure_unknown_goal_fails(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix", "goal_id": "goal_missing"})
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "目标不存在"
+
+
+@pytest.mark.anyio
 async def test_create_closure_unknown_template_fails(app):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "shell"})
         assert resp.status_code == 400
         assert resp.json()["detail"] == "未知任务模板"
+
+
+@pytest.mark.anyio
+async def test_bind_run_and_get_by_run(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        run_resp = await client.post("/harness/runs", json={"goal": "修复拼写"})
+        run_id = run_resp.json()["id"]
+        create_resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix"})
+        closure_id = create_resp.json()["id"]
+
+        bind_resp = await client.post(f"/task-closures/{closure_id}/bind-run", json={"run_id": run_id})
+        by_run_resp = await client.get(f"/task-closures/by-run/{run_id}")
+
+        assert bind_resp.status_code == 200
+        assert bind_resp.json()["run_id"] == run_id
+        assert by_run_resp.status_code == 200
+        assert by_run_resp.json()["id"] == closure_id
+
+
+@pytest.mark.anyio
+async def test_bind_goal_and_get_by_goal(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        goal_resp = await client.post("/goals", json={"objective": "修复拼写", "criteria": ["完成"], "workspace": "D:/Bolt/Bolt"})
+        goal_id = goal_resp.json()["id"]
+        create_resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix"})
+        closure_id = create_resp.json()["id"]
+
+        bind_resp = await client.post(f"/task-closures/{closure_id}/bind-goal", json={"goal_id": goal_id})
+        by_goal_resp = await client.get(f"/task-closures/by-goal/{goal_id}")
+
+        assert bind_resp.status_code == 200
+        assert bind_resp.json()["goal_id"] == goal_id
+        assert by_goal_resp.status_code == 200
+        assert by_goal_resp.json()["id"] == closure_id
+
+
+@pytest.mark.anyio
+async def test_bind_unknown_run_404(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        create_resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix"})
+        closure_id = create_resp.json()["id"]
+
+        bind_resp = await client.post(f"/task-closures/{closure_id}/bind-run", json={"run_id": "run_missing"})
+
+        assert bind_resp.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_bind_unknown_closure_404(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        run_resp = await client.post("/harness/runs", json={"goal": "修复拼写"})
+
+        bind_resp = await client.post("/task-closures/missing/bind-run", json={"run_id": run_resp.json()["id"]})
+
+        assert bind_resp.status_code == 404
 
 
 @pytest.mark.anyio

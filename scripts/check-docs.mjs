@@ -68,6 +68,9 @@ const required = [
   'docs/decisions/041-end-to-end-dogfood-reliability.md',
   'docs/exec-plans/active/042-real-agent-task-closure.md',
   'docs/decisions/042-real-agent-task-closure.md',
+  'docs/exec-plans/active/043-real-agent-loop-task-closure.md',
+  'docs/decisions/043-real-agent-loop-task-closure.md',
+  'docs/phase-43-review-gate.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

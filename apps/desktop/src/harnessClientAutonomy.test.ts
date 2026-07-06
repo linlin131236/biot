@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, steerRun } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -119,6 +119,30 @@ describe('harness autonomy client', () => {
       'http://core/runs/run_1/steering',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ content: '请优先修复测试' }) }),
     );
+  });
+
+  it('calls task closure binding endpoints', async () => {
+    const closure = { id: 'cl_43', objective: '修复拼写', template_id: 'bugfix', status: 'executing', final_status: 'executing' };
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(closure))));
+
+    await bindTaskClosureRun('http://core', 'cl_43', 'run_43', fetcher);
+    await bindTaskClosureGoal('http://core', 'cl_43', 'goal_43', fetcher);
+
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_43/bind-run', expect.objectContaining({ method: 'POST', body: JSON.stringify({ run_id: 'run_43' }) }));
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_43/bind-goal', expect.objectContaining({ method: 'POST', body: JSON.stringify({ goal_id: 'goal_43' }) }));
+  });
+
+  it('calls task closure lookup endpoints', async () => {
+    const closure = { id: 'cl_43', objective: '修复拼写', template_id: 'bugfix', status: 'stopped', final_status: 'stopped' };
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(closure))));
+
+    const byRun = await getTaskClosureByRun('http://core', 'run_43', fetcher);
+    const byGoal = await getTaskClosureByGoal('http://core', 'goal_43', fetcher);
+
+    expect(byRun.final_status).toBe('stopped');
+    expect(byGoal.status).toBe('stopped');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-run/run_43');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-goal/goal_43');
   });
 
   it('loadCheckpoint returns null for bad id', async () => {

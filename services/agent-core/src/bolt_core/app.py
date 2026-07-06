@@ -5,17 +5,23 @@ from fastapi import FastAPI, HTTPException, Query
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.harness import Harness
 from bolt_core.review_gate import ReviewChecklist, ReviewGate
-from bolt_core.task_closure_api import router as task_closure_router
+from bolt_core.task_closure_api import create_task_closure_router
+from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
-    harness = Harness(workspace=str(Path.cwd()))
+    task_closure_service = TaskClosureService()
+    harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
-    app.include_router(task_closure_router)
+    app.include_router(create_task_closure_router(
+        task_closure_service,
+        run_exists=lambda run_id: run_id in harness.runs,
+        goal_exists=lambda goal_id: _goal_exists(harness, goal_id),
+    ))
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -227,6 +233,14 @@ def create_app() -> FastAPI:
         return {"passed": result.passed, "failures": result.failures}
 
     return app
+
+
+def _goal_exists(harness: Harness, goal_id: str) -> bool:
+    try:
+        harness.goal_service.get_goal(goal_id)
+        return True
+    except Exception:
+        return False
 
 
 def _agent_step_dict(result) -> dict:

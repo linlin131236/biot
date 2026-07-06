@@ -138,17 +138,22 @@ export type TaskClosureStatus =
   | 'completed' | 'failed' | 'stopped';
 
 export interface TaskClosureEvidence {
+  id: string;
   objective: string;
   template_id: TaskTemplateId;
+  run_id?: string | null;
+  goal_id?: string | null;
+  status: TaskClosureStatus;
+  final_status: TaskClosureStatus;
   plan_summary: string;
   changed_files: string[];
   commands: string[];
   command_results: string[];
   permission_request_ids: string[];
   retry_count: number;
-  final_status: TaskClosureStatus;
   review_summary: string;
   next_action: string;
+  created_at?: number;
 }
 
 export const TASK_TEMPLATES: TaskTemplate[] = [

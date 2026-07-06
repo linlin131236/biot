@@ -6,6 +6,78 @@ from bolt_core.task_closure import (
 )
 
 
+def test_service_bind_run_and_find_by_run():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    svc.bind_run(closure.id, "run_43")
+
+    found = svc.find_by_run("run_43")
+    assert found is not None
+    assert found.id == closure.id
+
+
+def test_service_bind_goal_and_find_by_goal():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    svc.bind_goal(closure.id, "goal_43")
+
+    found = svc.find_by_goal("goal_43")
+    assert found is not None
+    assert found.id == closure.id
+
+
+def test_service_record_loop_status_waiting_permission():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    updated = svc.record_loop_status(closure.id, "pending_permission")
+
+    assert updated.status == TaskClosureStatus.WAITING_PERMISSION
+
+
+def test_service_record_loop_status_max_steps_stopped():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    updated = svc.record_loop_status(closure.id, "max_steps_reached")
+
+    assert updated.status == TaskClosureStatus.STOPPED
+
+
+def test_service_mark_completed_sets_final_status():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    svc.mark_completed(closure.id, "全部通过")
+    data = svc.to_dict(closure.id)
+
+    assert data["status"] == TaskClosureStatus.COMPLETED
+    assert data["final_status"] == TaskClosureStatus.COMPLETED
+
+
+def test_service_record_tool_result_only_records():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+
+    updated = svc.record_tool_result(closure.id, {"request_id": "tool_43", "status": "executed", "output": "读取完成"})
+
+    assert updated.commands == ["tool:tool_43"]
+    assert updated.command_results == ["读取完成"]
+    assert not hasattr(svc, "approve_permission")
+
+
+def test_service_mark_unknown_closure_raises():
+    svc = TaskClosureService()
+
+    try:
+        svc.mark_completed("missing", "完成")
+        assert False
+    except ValueError as exc:
+        assert "not found" in str(exc)
+
+
 def test_service_start_creates_closure():
     svc = TaskClosureService()
     closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)

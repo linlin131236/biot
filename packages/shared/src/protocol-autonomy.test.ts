@@ -83,8 +83,13 @@ describe('shared autonomy protocol', () => {
   it('supports TaskClosureEvidence shape', async () => {
     const type = await import('./protocol-autonomy');
     const evidence: type.TaskClosureEvidence = {
+      id: 'cl_43',
       objective: '修复拼写错误',
       template_id: 'bugfix',
+      run_id: 'run_43',
+      goal_id: 'goal_43',
+      status: 'completed',
+      final_status: 'completed',
       plan_summary: '读取文件→修改→验证',
       changed_files: ['README.md'],
       commands: ['pnpm test'],

@@ -19,6 +19,8 @@ from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
 from bolt_core.perception_types import PerceptionSnapshot, dataclass_dict
 from bolt_core.terminal_service import TerminalService
+from bolt_core.task_closure_recorder import TaskClosureRecorder
+from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
@@ -33,7 +35,8 @@ class HarnessRun:
 
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
-                 memory_db_path: str | None = None) -> None:
+                 memory_db_path: str | None = None,
+                 task_closure_service: TaskClosureService | None = None) -> None:
         self.workspace = workspace
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
@@ -42,6 +45,8 @@ class Harness:
         self.consolidator = MemoryConsolidator()
         self.terminal = TerminalService(workspace)
         self.goal_service = GoalService(workspace)
+        self.task_closure_service = task_closure_service
+        self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
         self.conversation_store = ConversationStore(
             str(Path(workspace) / ".bolt" / "conversations.db"))
         self.runs: dict[str, HarnessRun] = {}
@@ -60,16 +65,16 @@ class Harness:
         decision = PermissionGate(self._workspace(run_id)).evaluate(request)
         self.traces[run_id].record("permission.evaluated", {"status": decision.status})
         if decision.status == "denied":
-            return self._deny(request, decision.reason)
+            return self._record_task_closure_tool_result(run_id, self._deny(request, decision.reason))
         if decision.action == "allow":
-            return self._run_immediate(run_id, request)
+            return self._record_task_closure_tool_result(run_id, self._run_immediate(run_id, request))
         if request.tool == "file.write":
-            return self._queue_file_write(run_id, request, decision)
+            return self._record_task_closure_tool_result(run_id, self._queue_file_write(run_id, request, decision))
         if request.tool == "file.patch":
-            return self._queue_file_patch(run_id, request, decision)
+            return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
         self.permissions.add(run_id, request, decision)
         self.traces[run_id].record("permission.pending", {"request_id": request.id})
-        return ToolResult.pending(request.id, decision.reason)
+        return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
 
     def trace(self, run_id: str) -> list[TraceEvent]:
         return self.traces[run_id].events()
@@ -146,7 +151,10 @@ class Harness:
         run = self.runs[run_id]
         trace = self.traces[run_id]
         config = self.model_settings.config()
-        return self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps)
+        closure_id = self.task_closure_recorder.start_loop(run_id)
+        result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps)
+        self.task_closure_recorder.record_loop_result(closure_id, result, max_steps)
+        return result
 
     # Terminal delegation
     def terminal_poll(self, session_id: str) -> dict:
@@ -160,6 +168,13 @@ class Harness:
 
     def terminal_output(self, session_id: str) -> dict:
         return self.terminal.full_output(session_id)
+
+    def _record_task_closure_tool_result(self, run_id: str, result: ToolResult) -> ToolResult:
+        if self.task_closure_service:
+            closure = self.task_closure_service.find_by_run(run_id)
+            if closure is not None:
+                self.task_closure_recorder.record_tool_result(closure.id, result)
+        return result
 
     def _agent_memories(self) -> list[MemoryRecord]:
         records = [r for r in self.memory.list(status="active") if r.kind != "failure"]

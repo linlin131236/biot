@@ -1,17 +1,20 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TASK_TEMPLATES, type TaskClosureEvidence, type TaskClosureStatus, type TaskTemplateId } from '@bolt/shared/autonomy';
+import { TASK_TEMPLATES, type TaskClosureEvidence, type TaskTemplateId } from '@bolt/shared/autonomy';
 import TaskClosurePanel, { type TaskClosurePanelApi } from './TaskClosurePanel';
 
 const baseUrl = 'http://core';
 const workspace = 'D:/Bolt/Bolt';
 const fetcher = vi.fn();
 
-function closure(overrides: Partial<TaskClosureEvidence> & { id?: string; status?: TaskClosureStatus } = {}): TaskClosureEvidence & { id?: string; status?: TaskClosureStatus } {
+function closure(overrides: Partial<TaskClosureEvidence> = {}): TaskClosureEvidence {
   return {
     id: 'cl_42',
     objective: '修复拼写',
     template_id: 'bugfix',
+    run_id: null,
+    goal_id: null,
+    status: 'pending',
     plan_summary: '',
     changed_files: [],
     commands: [],
@@ -30,8 +33,10 @@ function apiFixture(): TaskClosurePanelApi {
     fetchTaskTemplates: vi.fn().mockResolvedValue(TASK_TEMPLATES),
     createTaskClosure: vi.fn().mockResolvedValue(closure()),
     getTaskClosure: vi.fn().mockResolvedValue(closure()),
-    addClosureEvent: vi.fn().mockResolvedValue(closure({ final_status: 'verifying', commands: ['pnpm test'], command_results: ['335 passed'] })),
-    addClosureReview: vi.fn().mockResolvedValue(closure({ final_status: 'completed', review_summary: '全部通过' })),
+    addClosureEvent: vi.fn().mockResolvedValue(closure({ status: 'verifying', final_status: 'verifying', commands: ['pnpm test'], command_results: ['335 passed'] })),
+    addClosureReview: vi.fn().mockResolvedValue(closure({ status: 'completed', final_status: 'completed', review_summary: '全部通过' })),
+    bindTaskClosureRun: vi.fn().mockImplementation((_b, _id, runId) => Promise.resolve(closure({ run_id: runId }))),
+    bindTaskClosureGoal: vi.fn().mockImplementation((_b, _id, goalId) => Promise.resolve(closure({ goal_id: goalId }))),
   };
 }
 
@@ -66,6 +71,12 @@ describe('TaskClosurePanel', () => {
 
     expect(screen.getByRole('button', { name: '创建闭环任务' })).toBeDisabled();
     expect(screen.getByText('请先选择工作区')).toBeInTheDocument();
+  });
+
+  it('workspace 为空时禁用绑定按钮', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace="" runId="run_43" goalId="goal_43" api={api} />);
+    expect(screen.getByRole('button', { name: '创建闭环任务' })).toBeDisabled();
   });
 
   it('点击创建调用 createTaskClosure', async () => {
@@ -116,6 +127,45 @@ describe('TaskClosurePanel', () => {
 
     await vi.waitFor(() => expect(api.addClosureReview).toHaveBeenCalledWith(baseUrl, 'cl_42', { summary: '全部通过', passed: true }, fetcher));
     await vi.waitFor(() => expect(container).toHaveTextContent('审查摘要：全部通过'));
+  });
+
+  it('点击绑定当前运行调用 bindTaskClosureRun', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId="run_43" api={api} />);
+    await createClosure(api);
+
+    fireEvent.click(screen.getByRole('button', { name: '绑定当前运行' }));
+
+    await vi.waitFor(() => expect(api.bindTaskClosureRun).toHaveBeenCalledWith(baseUrl, 'cl_42', 'run_43', fetcher));
+    expect(await screen.findByText('已绑定运行：run_43')).toBeInTheDocument();
+  });
+
+  it('点击绑定当前目标调用 bindTaskClosureGoal', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} goalId="goal_43" api={api} />);
+    await createClosure(api);
+
+    fireEvent.click(screen.getByRole('button', { name: '绑定当前目标' }));
+
+    await vi.waitFor(() => expect(api.bindTaskClosureGoal).toHaveBeenCalledWith(baseUrl, 'cl_42', 'goal_43', fetcher));
+    expect(await screen.findByText('已绑定目标：goal_43')).toBeInTheDocument();
+  });
+
+  it('显示自动同步状态提示', async () => {
+    const cases = [
+      { status: 'waiting_permission', text: '等待人工批准' },
+      { status: 'stopped', text: '已达到最大步数' },
+      { status: 'failed', text: '需要人工处理' },
+    ] as const;
+
+    for (const item of cases) {
+      const api = apiFixture();
+      api.createTaskClosure = vi.fn().mockResolvedValue(closure({ status: item.status, final_status: item.status }));
+      const { unmount } = render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} api={api} />);
+      await createClosure(api);
+      expect(await screen.findByText(item.text)).toBeInTheDocument();
+      unmount();
+    }
   });
 
   it('没有 push/release/delete 按钮', () => {
