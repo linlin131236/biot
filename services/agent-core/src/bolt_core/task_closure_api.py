@@ -57,6 +57,25 @@ def create_task_closure_router(
         _require_closure(service, closure_id)
         return service.to_dict(closure_id)
 
+    @router.get("/{closure_id}/verification-plan")
+    def get_task_closure_verification_plan(closure_id: str) -> dict:
+        """Get verification plan. Does NOT execute commands."""
+        _require_closure(service, closure_id)
+        return service.verification_plan(closure_id)
+
+    @router.get("/{closure_id}/assessment")
+    def get_task_closure_assessment(closure_id: str) -> dict:
+        """Assess completion without mutating closure."""
+        _require_closure(service, closure_id)
+        return service.assess_completion(closure_id)
+
+    @router.post("/{closure_id}/assessment")
+    def update_task_closure_assessment(closure_id: str) -> dict:
+        """Update closure from recorded evidence only."""
+        _require_closure(service, closure_id)
+        service.update_assessment(closure_id)
+        return service.to_dict(closure_id)
+
     @router.post("/{closure_id}/bind-run")
     def bind_task_closure_run(closure_id: str, payload: dict) -> dict:
         _require_closure(service, closure_id)

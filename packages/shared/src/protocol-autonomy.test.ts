@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -96,12 +96,25 @@ describe('shared autonomy protocol', () => {
       command_results: ['pass'],
       permission_request_ids: [],
       retry_count: 0,
-      final_status: 'completed',
       review_summary: '所有测试通过',
       next_action: '无',
     };
     expect(evidence.template_id).toBe('bugfix');
     expect(evidence.retry_count).toBe(0);
     expect(evidence.final_status).toBe('completed');
+  });
+
+  it('supports verification plan with Chinese check labels', async () => {
+    const type = await import('./protocol-autonomy');
+    const plan: type.VerificationPlan = {
+      template_id: 'bugfix',
+      checks: [{ id: 'quality', label: '测试或质量门证据', command: 'pytest', required: true, satisfied: false, evidence: '', missing_reason: '缺少测试证据' }],
+    };
+    expect(plan.checks[0].label).toBe('测试或质量门证据');
+  });
+
+  it('covers all verification assessment statuses', () => {
+    const statuses: VerificationAssessmentStatus[] = ['passed', 'failed', 'missing_evidence', 'waiting_permission', 'needs_repair', 'stopped'];
+    expect(statuses).toHaveLength(6);
   });
 });

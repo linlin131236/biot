@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TASK_TEMPLATES, type TaskClosureEvidence, type TaskTemplateId } from '@bolt/shared/autonomy';
+import { TASK_TEMPLATES, type TaskClosureEvidence, type TaskTemplateId, type VerificationAssessment } from '@bolt/shared/autonomy';
 import TaskClosurePanel, { type TaskClosurePanelApi } from './TaskClosurePanel';
 
 const baseUrl = 'http://core';
@@ -28,6 +28,10 @@ function closure(overrides: Partial<TaskClosureEvidence> = {}): TaskClosureEvide
   };
 }
 
+function assessment(overrides: Partial<VerificationAssessment> = {}): VerificationAssessment {
+  return { status: 'missing_evidence', summary: '缺少验证证据', missing: ['缺少测试证据'], repair_suggestions: ['补充缺少的验证证据后重新评估完成度'], ...overrides };
+}
+
 function apiFixture(): TaskClosurePanelApi {
   return {
     fetchTaskTemplates: vi.fn().mockResolvedValue(TASK_TEMPLATES),
@@ -37,6 +41,9 @@ function apiFixture(): TaskClosurePanelApi {
     addClosureReview: vi.fn().mockResolvedValue(closure({ status: 'completed', final_status: 'completed', review_summary: '全部通过' })),
     bindTaskClosureRun: vi.fn().mockImplementation((_b, _id, runId) => Promise.resolve(closure({ run_id: runId }))),
     bindTaskClosureGoal: vi.fn().mockImplementation((_b, _id, goalId) => Promise.resolve(closure({ goal_id: goalId }))),
+    fetchTaskClosureVerificationPlan: vi.fn().mockResolvedValue({ template_id: 'bugfix', checks: [{ id: 'quality', label: '测试或质量门证据', command: 'pytest', required: true, satisfied: false, evidence: '', missing_reason: '缺少测试证据' }] }),
+    fetchTaskClosureAssessment: vi.fn().mockResolvedValue(assessment()),
+    updateTaskClosureAssessment: vi.fn().mockResolvedValue(closure({ status: 'completed', final_status: 'completed', next_action: '已完成' })),
   };
 }
 
@@ -187,5 +194,59 @@ describe('TaskClosurePanel', () => {
 
     expect(runAgentLoop).not.toHaveBeenCalled();
     expect(approvePermission).not.toHaveBeenCalled();
+  });
+
+  it('点击评估完成度调用 update API', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} api={api} />);
+    await createClosure(api);
+
+    fireEvent.click(screen.getByRole('button', { name: '评估完成度' }));
+
+    await vi.waitFor(() => expect(api.updateTaskClosureAssessment).toHaveBeenCalledWith(baseUrl, 'cl_42', fetcher));
+  });
+
+  it('显示已通过验收状态', async () => {
+    const api = apiFixture();
+    api.fetchTaskClosureAssessment = vi.fn().mockResolvedValue(assessment({ status: 'passed', summary: '验证证据已满足', missing: [], repair_suggestions: [] }));
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} api={api} />);
+
+    await createClosure(api);
+
+    expect(await screen.findByText('已通过')).toBeInTheDocument();
+  });
+
+  it('显示缺少证据和建议修复', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} api={api} />);
+
+    await createClosure(api);
+
+    expect(await screen.findByText('缺少证据')).toBeInTheDocument();
+    expect(screen.getByText(/建议修复：/)).toBeInTheDocument();
+  });
+
+  it('显示等待人工批准和最大步数状态', async () => {
+    for (const item of [
+      { status: 'waiting_permission', text: '等待人工批准' },
+      { status: 'stopped', text: '已达到最大步数' },
+    ] as const) {
+      const api = apiFixture();
+      api.fetchTaskClosureAssessment = vi.fn().mockResolvedValue(assessment({ status: item.status, summary: item.text }));
+      const { unmount } = render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} api={api} />);
+      await createClosure(api);
+      expect(await screen.findByText(item.text)).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('command 只显示为命令建议，不出现执行按钮', async () => {
+    const api = apiFixture();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} api={api} />);
+
+    await createClosure(api);
+
+    expect(await screen.findByText('命令建议：pytest（不执行命令）')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '执行命令' })).not.toBeInTheDocument();
   });
 });

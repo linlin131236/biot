@@ -215,7 +215,7 @@ async def test_event_on_unknown_closure_404(app):
 
 
 @pytest.mark.anyio
-async def test_api_does_not_trigger_tool_execution(app):
+async def test_api_does_not_trigger_tool_execution():
     """API endpoints only record evidence, never execute tools."""
     import inspect
     from bolt_core.task_closure_api import router

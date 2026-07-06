@@ -210,3 +210,61 @@ def test_service_does_not_execute_tools():
     assert not hasattr(svc, "push")
     assert not hasattr(svc, "release")
     assert not hasattr(svc, "approve_permission")
+
+
+def test_service_assess_completion_missing_does_not_complete():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+    svc.record_file_change(closure.id, "src/app.py")
+
+    assessment = svc.assess_completion(closure.id)
+    updated = svc.update_assessment(closure.id)
+
+    assert assessment["status"] == "missing_evidence"
+    assert updated.status != TaskClosureStatus.COMPLETED
+    assert updated.next_action == "缺少验证证据"
+
+
+def test_service_waiting_permission_not_completed_by_assessment():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+    svc.mark_waiting_permission(closure.id, "perm_44")
+
+    updated = svc.update_assessment(closure.id)
+
+    assert updated.status == TaskClosureStatus.WAITING_PERMISSION
+    assert updated.next_action == "等待人工批准"
+
+
+def test_service_stopped_not_completed_by_assessment():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+    svc.record_loop_status(closure.id, "max_steps_reached")
+
+    updated = svc.update_assessment(closure.id)
+
+    assert updated.status == TaskClosureStatus.STOPPED
+    assert updated.next_action == "已达到最大步数，需要重新规划或人工处理"
+
+
+def test_service_passed_assessment_completes():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+    svc.record_file_change(closure.id, "src/app.py")
+    svc.record_command(closure.id, "pytest", "12 passed")
+
+    updated = svc.update_assessment(closure.id)
+
+    assert updated.status == TaskClosureStatus.COMPLETED
+    assert updated.next_action == "已完成"
+
+
+def test_service_failed_assessment_sets_repair_suggestion():
+    svc = TaskClosureService()
+    closure = svc.start("修复拼写", TaskTemplateId.BUGFIX)
+    svc.mark_failed(closure.id, "pytest failed")
+
+    updated = svc.update_assessment(closure.id)
+
+    assert updated.status == TaskClosureStatus.FAILED
+    assert updated.next_action == "根据失败输出修复问题后重新记录验证证据"

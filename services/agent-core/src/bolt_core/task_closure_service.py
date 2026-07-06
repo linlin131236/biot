@@ -6,6 +6,12 @@ from typing import Optional
 from bolt_core.task_closure import (
     TaskClosure, TaskClosureStatus, TaskTemplateId, MAX_RETRIES, can_transition,
 )
+from bolt_core.task_verification import (
+    assess_completion as _assess_completion,
+    build_verification_plan,
+    verification_assessment_dict,
+    verification_plan_dict,
+)
 
 
 @dataclass
@@ -177,6 +183,35 @@ class TaskClosureService:
         """Load a closure by id. Returns None if not found."""
         record = self._store.get(closure_id)
         return record.closure if record else None
+
+    def verification_plan(self, closure_id: str) -> dict:
+        """Return a verification plan. Does NOT execute commands."""
+        closure = self._record(closure_id).closure
+        return verification_plan_dict(build_verification_plan(closure))
+
+    def assess_completion(self, closure_id: str) -> dict:
+        """Assess completion from recorded evidence only."""
+        closure = self._record(closure_id).closure
+        return verification_assessment_dict(_assess_completion(closure))
+
+    def update_assessment(self, closure_id: str) -> TaskClosure:
+        """Update closure status/next action from evidence only."""
+        closure = self._record(closure_id).closure
+        assessment = _assess_completion(closure)
+        if assessment.status == "waiting_permission":
+            closure.status = TaskClosureStatus.WAITING_PERMISSION
+            closure.next_action = "等待人工批准"
+        elif assessment.status == "stopped":
+            closure.next_action = "已达到最大步数，需要重新规划或人工处理"
+        elif assessment.status == "missing_evidence":
+            closure.next_action = "缺少验证证据"
+        elif assessment.status == "needs_repair":
+            closure.next_action = assessment.repair_suggestions[0] if assessment.repair_suggestions else "需要修复"
+        elif assessment.status == "passed":
+            closure.status = TaskClosureStatus.COMPLETED
+            closure.next_action = "已完成"
+            closure.review_summary = assessment.summary
+        return closure
 
     def _record(self, closure_id: str) -> TaskClosureRecord:
         record = self._store.get(closure_id)

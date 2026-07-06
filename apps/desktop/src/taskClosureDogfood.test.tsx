@@ -22,6 +22,9 @@ describe('M43 task closure dogfood', () => {
         requests.push({ url: input, body: JSON.parse(String(init.body)) });
         return Promise.resolve(json(closure({ run_id: 'run_43', status: 'executing', final_status: 'executing' })));
       }
+      if (input.endsWith('/task-closures/cl_43/verification-plan')) return Promise.resolve(json({ template_id: 'bugfix', checks: [{ id: 'quality', label: '测试或质量门证据', command: 'pytest', required: true, satisfied: false, evidence: '', missing_reason: '缺少测试证据' }] }));
+      if (input.endsWith('/task-closures/cl_43/assessment') && init?.method === 'POST') return Promise.resolve(json(closure({ run_id: 'run_43', status: 'waiting_permission', final_status: 'waiting_permission', next_action: '等待人工批准' })));
+      if (input.endsWith('/task-closures/cl_43/assessment')) return Promise.resolve(json({ status: 'waiting_permission', summary: '等待人工批准', missing: [], repair_suggestions: ['等待人工批准后再继续验证'] }));
       if (input.endsWith('/task-closures/cl_43')) return Promise.resolve(json(closure({ run_id: 'run_43', status: 'waiting_permission', final_status: 'waiting_permission', permission_request_ids: ['tool_43'] })));
       return Promise.resolve(json({}));
     });

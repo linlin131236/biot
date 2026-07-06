@@ -3,7 +3,7 @@ import { GoalConsole } from './GoalConsole';
 import { SideChatPanel } from './SideChatPanel';
 import TaskClosurePanel from './TaskClosurePanel';
 import type { AgentLoopResult } from '@bolt/shared';
-import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent } from '@bolt/shared/autonomy';
+import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -19,7 +19,7 @@ interface PanelsProps {
     checkpoint: { createCheckpoint: (url: string, p: Record<string, unknown>) => Promise<unknown>; loadCheckpoint: (url: string, cpId: string) => Promise<unknown> };
     goal: { createGoal: (url: string, p: Record<string, unknown>) => Promise<Goal>; startRun: (url: string, g: string, ws: string) => Promise<{ id: string }>; runAgentLoop: (url: string, runId: string, steps: number) => Promise<AgentLoopResult>; pauseGoal: (url: string, id: string) => Promise<Goal>; resumeGoal: (url: string, id: string) => Promise<Goal>; clearGoal: (url: string, id: string) => Promise<Goal>; getGoal: (_url: string, _id: string) => Promise<Goal | null>; fetchGoalEvidence: (url: string, id: string) => Promise<GoalEvidence[]>; fetchRunTimeline: (url: string, runId: string) => Promise<TimelineEvent[]> };
     sideChat: { steerRun: (url: string, rId: string, content: string) => Promise<SteeringResult> };
-    taskClosure: { fetchTaskTemplates: (b: string, f?: Fetcher) => Promise<TaskTemplate[]>; createTaskClosure: (b: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; getTaskClosure: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureEvent: (b: string, id: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureReview: (b: string, id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureRun: (b: string, id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureGoal: (b: string, id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence> };
+    taskClosure: { fetchTaskTemplates: (b: string, f?: Fetcher) => Promise<TaskTemplate[]>; createTaskClosure: (b: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; getTaskClosure: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureEvent: (b: string, id: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureReview: (b: string, id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureRun: (b: string, id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureGoal: (b: string, id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; fetchTaskClosureVerificationPlan: (b: string, id: string, f?: Fetcher) => Promise<VerificationPlan>; fetchTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<VerificationAssessment>; updateTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence> };
   };
 }
 

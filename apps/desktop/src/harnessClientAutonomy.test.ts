@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -143,6 +143,25 @@ describe('harness autonomy client', () => {
     expect(byGoal.status).toBe('stopped');
     expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-run/run_43');
     expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-goal/goal_43');
+  });
+
+  it('calls task closure verification endpoints', async () => {
+    const fetcher = vi.fn().mockImplementation((input: string) => {
+      if (input.endsWith('/verification-plan')) return Promise.resolve(new Response(JSON.stringify({ template_id: 'bugfix', checks: [] })));
+      if (input.endsWith('/assessment')) return Promise.resolve(new Response(JSON.stringify({ status: 'missing_evidence', summary: '缺少验证证据', missing: [], repair_suggestions: [] })));
+      return Promise.resolve(new Response(JSON.stringify({ id: 'cl_44', status: 'completed', final_status: 'completed' })));
+    });
+
+    const plan = await fetchTaskClosureVerificationPlan('http://core', 'cl_44', fetcher);
+    const assessment = await fetchTaskClosureAssessment('http://core', 'cl_44', fetcher);
+    const updated = await updateTaskClosureAssessment('http://core', 'cl_44', fetcher);
+
+    expect(plan.template_id).toBe('bugfix');
+    expect(assessment.status).toBe('missing_evidence');
+    expect(updated.status).toBe('missing_evidence');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/verification-plan');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/assessment');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/assessment', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
   });
 
   it('loadCheckpoint returns null for bad id', async () => {

@@ -156,6 +156,30 @@ export interface TaskClosureEvidence {
   created_at?: number;
 }
 
+export type VerificationAssessmentStatus = 'passed' | 'failed' | 'missing_evidence' | 'waiting_permission' | 'needs_repair' | 'stopped';
+
+export interface VerificationCheck {
+  id: string;
+  label: string;
+  command?: string | null;
+  required: boolean;
+  satisfied: boolean;
+  evidence: string;
+  missing_reason: string;
+}
+
+export interface VerificationPlan {
+  template_id: TaskTemplateId;
+  checks: VerificationCheck[];
+}
+
+export interface VerificationAssessment {
+  status: VerificationAssessmentStatus;
+  summary: string;
+  missing: string[];
+  repair_suggestions: string[];
+}
+
 export const TASK_TEMPLATES: TaskTemplate[] = [
   { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
   { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },
