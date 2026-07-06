@@ -4,7 +4,7 @@
 import type {
   Goal, ConversationMessage, SkillManifest, DelegationTask,
   Checkpoint, ReviewChecklist, ReviewResult,
-  TimelineEvent, GoalEvidence,
+  TimelineEvent, GoalEvidence, SteeringResult,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -63,7 +63,7 @@ export async function addMessage(baseUrl: string, conversationId: string, payloa
 }
 
 // === Timeline / Steering ===
-export async function steerRun(baseUrl: string, runId: string, content: string, fetcher: Fetcher = fetch): Promise<{ status: string }> {
+export async function steerRun(baseUrl: string, runId: string, content: string, fetcher: Fetcher = fetch): Promise<SteeringResult> {
   return readJson(await fetcher(`${baseUrl}/runs/${runId}/steering`, jsonPost({ content })));
 }
 

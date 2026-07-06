@@ -102,6 +102,11 @@ export interface ReviewResult {
   failures: string[];
 }
 
+// === Steering ===
+export interface SteeringResult {
+  status: string;
+}
+
 // === Goal Timeline & Evidence ===
 export interface TimelineEvent {
   type: string;

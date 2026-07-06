@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline } from './harnessClientAutonomy';
+import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, steerRun } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -109,5 +109,21 @@ describe('harness autonomy client', () => {
     const result = await fetchRunTimeline('http://core', 'run_1', fetcher);
     expect(result).toHaveLength(1);
     expect(fetcher).toHaveBeenCalledWith('http://core/runs/run_1/timeline');
+  });
+
+  it('calls steerRun endpoint with typed result', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'injected' })));
+    const result = await steerRun('http://core', 'run_1', '请优先修复测试', fetcher);
+    expect(result.status).toBe('injected');
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://core/runs/run_1/steering',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ content: '请优先修复测试' }) }),
+    );
+  });
+
+  it('loadCheckpoint returns null for bad id', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response('null', { status: 200 }));
+    const result = await loadCheckpoint('http://core', 'cp_nonexist', fetcher);
+    expect(result).toBeNull();
   });
 });

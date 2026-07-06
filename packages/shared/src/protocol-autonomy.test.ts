@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -52,5 +52,10 @@ describe('shared autonomy protocol', () => {
     const result: ReviewResult = { passed: false, failures: ['lint'] };
     expect(result.passed).toBe(false);
     expect(result.failures).toContain('lint');
+  });
+
+  it('supports SteeringResult shape', () => {
+    const s: SteeringResult = { status: 'injected' };
+    expect(s.status).toBe('injected');
   });
 });
