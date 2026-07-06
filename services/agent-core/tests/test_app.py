@@ -263,3 +263,22 @@ async def test_agent_loop_endpoint_runs_bounded_loop():
 def _client() -> AsyncClient:
     transport = ASGITransport(app=create_app())
     return AsyncClient(transport=transport, base_url="http://test")
+
+
+@pytest.mark.anyio
+async def test_goals_unfinished_before_dynamic_route(tmp_path):
+    """P1-1: /goals/unfinished must not be swallowed by /goals/{goal_id}."""
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    async with _client() as client:
+        run_id = (await client.post("/harness/runs", json={"goal": "test", "workspace": str(workspace)})).json()["id"]
+        # Create a goal first
+        goal_resp = await client.post("/goals", json={
+            "objective": "test goal", "criteria": ["done"],
+            "max_steps": 5, "max_cost": 1.0, "max_wall_time": 60,
+        })
+        assert goal_resp.status_code == 200
+        # Now request /goals/unfinished — must NOT 500
+        unfinished_resp = await client.get("/goals/unfinished")
+        assert unfinished_resp.status_code == 200
+        assert isinstance(unfinished_resp.json(), list)

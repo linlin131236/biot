@@ -13,6 +13,7 @@ from uuid import uuid4
 
 _MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 _SECRET_PATTERN = re.compile(r"sk-[a-zA-Z0-9]{20,}")
+_CP_ID_PATTERN = re.compile(r"^cp_[a-f0-9]{8}$")
 
 
 @dataclass
@@ -59,9 +60,11 @@ class CheckpointService:
         cp_id = f"cp_{uuid4().hex[:8]}"
         contents = {}
         if changed_files and self._workspace:
-            ws = Path(self._workspace)
+            ws = Path(self._workspace).resolve()
             for f in changed_files:
-                fp = ws / f
+                fp = (ws / f).resolve()
+                if not str(fp).lower().startswith(str(ws).lower()):
+                    continue  # skip paths outside workspace
                 if fp.is_file():
                     try:
                         size = fp.stat().st_size
@@ -84,6 +87,8 @@ class CheckpointService:
         return cp
 
     def load(self, cp_id: str) -> Checkpoint | None:
+        if not _CP_ID_PATTERN.match(cp_id):
+            return None
         cp_path = self._dir / f"{cp_id}.json"
         if not cp_path.is_file():
             return None

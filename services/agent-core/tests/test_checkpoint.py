@@ -94,3 +94,22 @@ def test_project_status_local_commits(tmp_path):
     status = svc.project_status()
     assert "commits" in status
     assert "uncommitted_changes" in status
+
+
+def test_checkpoint_traversal_denied(tmp_path):
+    """P2-1: changed_files with .. must not read outside workspace."""
+    svc = CheckpointService(workspace=str(tmp_path))
+    outside = tmp_path.parent / "outside_secret.txt"
+    outside.write_text("LEAKED", encoding="utf-8")
+    cp = svc.create(run_id="run_trav", goal_id="goal_trav0000",
+                    changed_files=["../outside_secret.txt"])
+    # Should not contain the outside file
+    assert cp.file_contents is None or "outside_secret.txt" not in (cp.file_contents or {})
+
+
+def test_checkpoint_load_rejects_bad_id(tmp_path):
+    """P2-1: cp_id must match ^cp_[a-f0-9]{8}$."""
+    svc = CheckpointService(workspace=str(tmp_path))
+    assert svc.load("../../../etc/passwd") is None
+    assert svc.load("unfinished") is None
+    assert svc.load("cp_ZZZZZZZZ") is None  # uppercase not hex

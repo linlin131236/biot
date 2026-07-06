@@ -57,22 +57,25 @@ export async function fetchRunTimeline(baseUrl: string, runId: string, fetcher: 
 
 // === Skill API (read-only via harness) ===
 export async function fetchSkills(baseUrl: string, fetcher: Fetcher = fetch): Promise<SkillManifest[]> {
-  // Skills are loaded server-side; expose via a read endpoint if available
-  return readJson(await fetcher(`${baseUrl}/skills`));
+  // NOT WIRED: backend has no /skills route yet
+  throw new Error("Not implemented: /skills endpoint not registered in app.py");
 }
 
 // === Checkpoint API ===
 export async function createCheckpoint(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Checkpoint> {
-  return readJson(await fetcher(`${baseUrl}/checkpoints`, jsonPost(payload)));
+  // NOT WIRED: backend has no /checkpoints route yet
+  throw new Error("Not implemented: /checkpoints endpoint not registered in app.py");
 }
 
 export async function loadCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher = fetch): Promise<Checkpoint | null> {
-  return readJson(await fetcher(`${baseUrl}/checkpoints/${cpId}`));
+  // NOT WIRED: backend has no /checkpoints route yet
+  throw new Error("Not implemented: /checkpoints endpoint not registered in app.py");
 }
 
 // === Review Gate ===
 export async function evaluateReview(baseUrl: string, payload: { items: string[]; results: Record<string, boolean> }, fetcher: Fetcher = fetch): Promise<ReviewResult> {
-  return readJson(await fetcher(`${baseUrl}/review/evaluate`, jsonPost(payload)));
+  // NOT WIRED: backend has no /review/evaluate route yet
+  throw new Error("Not implemented: /review/evaluate endpoint not registered in app.py");
 }
 
 function jsonPost(body: unknown): RequestInit {

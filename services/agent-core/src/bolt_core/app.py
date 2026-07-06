@@ -115,6 +115,10 @@ def create_app() -> FastAPI:
     def create_goal(payload: dict) -> dict:
         return harness.goal_service.create_goal(payload).to_dict()
 
+    @app.get("/goals/unfinished")
+    def unfinished_goals() -> list[dict]:
+        return [g.to_dict() for g in harness.goal_service.unfinished_goals()]
+
     @app.get("/goals/{goal_id}")
     def get_goal(goal_id: str) -> dict:
         return harness.goal_service.get_goal(goal_id).to_dict()
@@ -138,10 +142,6 @@ def create_app() -> FastAPI:
     @app.get("/goals/{goal_id}/budget")
     def goal_budget(goal_id: str) -> dict:
         return harness.goal_service.goal_budget(goal_id)
-
-    @app.get("/goals/unfinished")
-    def unfinished_goals() -> list[dict]:
-        return [g.to_dict() for g in harness.goal_service.unfinished_goals()]
 
     @app.post("/conversations")
     def create_conversation(payload: dict) -> dict:

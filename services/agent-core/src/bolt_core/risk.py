@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from pathlib import PureWindowsPath
+from pathlib import Path, PureWindowsPath
 
 
 @dataclass(frozen=True)
@@ -76,6 +76,9 @@ def _is_secret_path(path: PureWindowsPath) -> bool:
 
 
 def _is_inside_workspace(path: str, workspace: str) -> bool:
-    target = str(PureWindowsPath(path)).lower()
-    root = str(PureWindowsPath(workspace)).lower()
-    return target == root or target.startswith(root + "\\")
+    try:
+        resolved = Path(path).resolve()
+        ws = Path(workspace).resolve()
+        return str(resolved).lower().startswith(str(ws).lower() + "\\") or resolved == ws
+    except (ValueError, OSError):
+        return False
