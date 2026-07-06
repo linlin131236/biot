@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M50 End-to-End Dogfood + Release Hardening（本地已提交，审核修复中）
-- 最新本地提交：`b893db7 feat(M50): dogfood permission-gated execution flow`
+- 已完成到：M50 End-to-End Dogfood + Release Hardening（本地已提交，P1 修复已复审通过）
+- 最新本地提交：`a4e14ef fix(M50): bind permission requests to run workspace`
 - 远程状态：`main` 本地领先 `origin/main`；M50 committed locally, not pushed
 - 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening
 
 ## 当前进行中
 - 当前阶段：M50 P1 Review Fix
-- 当前状态：已修复 request-permission workspace 绑定问题，正在重跑验证和准备修复提交；不要进入 M51
+- 当前状态：已修复 request-permission workspace 绑定问题，P1 修复已提交并复审通过；不要进入 M51
 - 当前结果：Permission bridge 根据 handoff -> closure -> run 解析真实 run.workspace，pending permission 的 run_id/workdir 绑定用户任务 workspace；不新增自动批准、不绕过 PermissionGate、不新增执行入口
-- 下一步：完成验证后提交 P1 修复；不要 push，等待爸爸审核
+- 下一步：等待爸爸确认 push；不要进入 M51
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
