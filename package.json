@@ -11,7 +11,8 @@
     "lint:architecture": "node scripts/check-architecture.mjs",
     "lint:release": "node scripts/check-release-policy.mjs",
     "lint:package-runtime": "node scripts/check-desktop-package-runtime.mjs",
-    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm lint:release && pnpm lint:package-runtime && pnpm test"
+    "lint:chinese-ui": "node scripts/check-chinese-ui.mjs",
+    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm lint:release && pnpm lint:package-runtime && pnpm lint:chinese-ui && pnpm test"
   },
   "engines": {
     "node": ">=22"

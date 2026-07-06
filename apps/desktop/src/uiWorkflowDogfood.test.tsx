@@ -105,7 +105,7 @@ describe('M33 UI workflow click path', () => {
   it('shows pending permission with Chinese approve/reject', async () => {
     const fetcher = vi.fn().mockImplementation((input: string) => {
       if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
-      if (input.endsWith('/permissions/pending')) return Promise.resolve(json([{ request_id: 'perm_1', tool: 'file', operation: 'patch', reason: '修改文件', payload: {} }]));
+      if (input.endsWith('/permissions/pending')) return Promise.resolve(json([{ request_id: 'perm_1', tool: 'file.patch', operation: 'patch', reason: '修改文件', payload: {} }]));
       if (input.includes('/permissions/perm_1/approve')) return Promise.resolve(json({ request_id: 'perm_1', status: 'approved' }));
       return Promise.resolve(json({}));
     });

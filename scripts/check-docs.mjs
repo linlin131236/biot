@@ -50,6 +50,8 @@ const required = [
   'docs/decisions/032-desktop-dogfood-smoke.md',
   'docs/exec-plans/active/033-ui-workflow-dogfood.md',
   'docs/decisions/033-ui-workflow-dogfood.md',
+  'docs/exec-plans/active/034-chinese-desktop-quality.md',
+  'docs/decisions/034-chinese-desktop-quality.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

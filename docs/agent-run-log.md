@@ -234,3 +234,18 @@
 - check-docs.mjs: added M33 docs to quality gate
 
 **Verification:** 290 pytest + 65 vitest + pnpm quality + desktop build pass
+
+---
+
+## M34 Chinese Desktop Quality
+
+**Started:** 2026-07-06
+
+**Changes:**
+- scripts/check-chinese-ui.mjs: mojibake + tool-protocol quality gate
+- package.json: added lint:chinese-ui to quality pipeline
+- uiWorkflowDogfood.test.tsx: fixed mock tool "file" → "file.patch"
+- 034 exec plan + decision docs
+- check-docs.mjs: added M34 docs to quality gate
+
+**Verification:** 290 pytest + vitest + pnpm quality (incl. lint:chinese-ui) + desktop build pass
