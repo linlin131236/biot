@@ -10,7 +10,6 @@ def create_execution_handoff_router(
     handoff_service: ExecutionHandoffService,
     queue_service: ExecutionQueueService,
     permission_bridge: ExecutionPermissionBridgeService | None = None,
-    permission_run_id: str = "execution_bridge",
 ) -> APIRouter:
     router = APIRouter(tags=["execution-handoff"])
 
@@ -40,7 +39,7 @@ def create_execution_handoff_router(
     def request_execution_handoff_permission(handoff_id: str) -> dict:
         if permission_bridge is None:
             raise HTTPException(status_code=409, detail="执行权限桥接未启用")
-        return _handoff_response(lambda: permission_bridge.request_permission(handoff_id, permission_run_id))
+        return _handoff_response(lambda: permission_bridge.request_permission(handoff_id))
 
     return router
 

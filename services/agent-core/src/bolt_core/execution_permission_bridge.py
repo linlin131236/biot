@@ -1,6 +1,7 @@
 """Request-only bridge from handoff records to PermissionGate pending permissions."""
 from __future__ import annotations
 
+from collections.abc import Callable
 import time
 
 from bolt_core.execution_handoff import ExecutionHandoffRecord, ExecutionHandoffService
@@ -16,12 +17,13 @@ class ExecutionPermissionBridgeInvalidRequest(ValueError):
 class ExecutionPermissionBridgeService:
     """Creates pending permissions only. Does NOT execute, approve, create goals, or run loops."""
 
-    def __init__(self, handoffs: ExecutionHandoffService, permissions: PermissionQueue, workspace: str) -> None:
+    def __init__(self, handoffs: ExecutionHandoffService, permissions: PermissionQueue,
+                 workspace: str | Callable[[ExecutionHandoffRecord], tuple[str, str]]) -> None:
         self._handoffs = handoffs
         self._permissions = permissions
         self._workspace = workspace
 
-    def request_permission(self, handoff_id: str, run_id: str) -> ExecutionHandoffRecord:
+    def request_permission(self, handoff_id: str, run_id: str | None = None) -> ExecutionHandoffRecord:
         record = self._handoffs.get_record(handoff_id)
         if record.permission_request_id:
             return record
@@ -32,14 +34,20 @@ class ExecutionPermissionBridgeService:
         if not record.command:
             raise ExecutionPermissionBridgeInvalidRequest("缺少验证命令")
 
-        request = ToolRequest.create("shell.execute", "command", {"command": record.command, "workdir": self._workspace})
-        decision = PermissionGate(self._workspace).evaluate(request)
+        permission_run_id, workspace = self._permission_target(record, run_id)
+        request = ToolRequest.create("shell.execute", "command", {"command": record.command, "workdir": workspace})
+        decision = PermissionGate(workspace).evaluate(request)
         if decision.status == "denied":
             self._handoffs.mark_bridge_failed(record.id, "denied", decision.reason)
             return self._handoffs.get_record(record.id)
 
-        pending = self._permissions.add(run_id, request, decision)
+        pending = self._permissions.add(permission_run_id, request, decision)
         self._handoffs.mark_permission_requested(record.id, pending.request_id, pending.status)
         updated = self._handoffs.get_record(record.id)
         updated.updated_at = time.time()
         return updated
+
+    def _permission_target(self, record: ExecutionHandoffRecord, fallback_run_id: str | None) -> tuple[str, str]:
+        if callable(self._workspace):
+            return self._workspace(record)
+        return fallback_run_id or "execution_bridge", self._workspace

@@ -25,8 +25,9 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     execution_queue_service = ExecutionQueueService(audit_store)
     execution_handoff_service = ExecutionHandoffService(audit_store)
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
-    execution_bridge_run = harness.register_internal_run("run_execution_bridge", "申请人工执行权限")
-    permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, harness.workspace)
+    bridge_run_id = "run_execution_bridge"
+    harness.register_internal_run(bridge_run_id, "申请人工执行权限")
+    permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: _permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
     result_ingestion = ExecutionResultIngestionService(execution_handoff_service, execution_queue_service, task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
@@ -37,15 +38,13 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
         goal_exists=lambda goal_id: _goal_exists(harness, goal_id),
     ))
     app.include_router(create_execution_queue_router(execution_queue_service, task_closure_service))
-    app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service, permission_bridge, execution_bridge_run.id))
+    app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service, permission_bridge))
 
     @app.get("/health")
-    def health() -> dict[str, str]:
-        return {"status": "ok", "service": "bolt-agent-core"}
+    def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
 
     @app.get("/context/p0")
-    def p0_context() -> dict[str, list]:
-        return harness.p0_context()
+    def p0_context() -> dict[str, list]: return harness.p0_context()
 
     @app.post("/harness/runs")
     def create_run(payload: dict) -> dict[str, str]:
@@ -259,6 +258,11 @@ def _goal_exists(harness: Harness, goal_id: str) -> bool:
         return True
     except Exception:
         return False
+
+
+def _permission_bridge_target(record, closures: TaskClosureService, harness: Harness, fallback_run_id: str) -> tuple[str, str]:
+    closure = closures.load(record.closure_id); run_id = closure.run_id if closure is not None and closure.run_id in harness.runs else fallback_run_id
+    return run_id, harness.runs[run_id].workspace
 
 
 def _agent_step_dict(result) -> dict:
