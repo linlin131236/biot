@@ -19,7 +19,7 @@ class PathGuard:
         self.workspace = Path(workspace).resolve()
 
     def check(self, target: str) -> PathCheck:
-        path = Path(target).resolve(strict=False)
+        path = (self.workspace / target).resolve(strict=False)
         if not self._inside_workspace(path):
             return PathCheck(False, path, "path outside workspace")
         if self._is_secret(path):

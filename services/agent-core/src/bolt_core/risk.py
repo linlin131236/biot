@@ -77,8 +77,11 @@ def _is_secret_path(path: PureWindowsPath) -> bool:
 
 def _is_inside_workspace(path: str, workspace: str) -> bool:
     try:
-        resolved = Path(path).resolve()
         ws = Path(workspace).resolve()
-        return str(resolved).lower().startswith(str(ws).lower() + "\\") or resolved == ws
-    except (ValueError, OSError):
+        resolved = (ws / path).resolve(strict=False)
+        resolved.relative_to(ws)
+        return True
+    except ValueError:
+        return False
+    except (OSError,):
         return False

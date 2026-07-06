@@ -10,13 +10,22 @@ import './styles.css';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
+async function defaultSelectWorkspace(): Promise<string | null> {
+  if (typeof window !== 'undefined' && typeof (window as unknown as Record<string, unknown>).selectWorkspace === 'function') {
+    return (window as unknown as Record<string, () => Promise<string | null>>).selectWorkspace();
+  }
+  const path = prompt('请输入工作区路径：');
+  return path || null;
+}
+
 interface AppProps {
   fetcher?: Fetcher;
   initialMemorySnapshot?: MemorySnapshot;
   initialPendingPermissions?: PendingPermission[];
+  selectWorkspace?: () => Promise<string | null>;
 }
 
-export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPermissions = [] }: AppProps) {
+export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPermissions = [], selectWorkspace = defaultSelectWorkspace }: AppProps) {
   const [session, setSession] = useState<DesktopSession>(() => loadDesktopSession());
   const [goal, setGoal] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +80,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   async function runReview() { await guarded(async () => { const result = await evaluateWorkflowReview(session.coreUrl, { items: ['pytest', 'build'], results: { pytest: true, build: true } }, fetcher); setReviewResult(result); }, '无法评估审查。'); }
 
   async function readFile() {
-    if (!filePath || !runId) return;
+    if (!hasWorkspace || !filePath || !runId) return;
     await guarded(async () => {
       const result = await submitToolRequest(session.coreUrl, runId, { tool: 'file.read', operation: 'read', payload: { path: filePath } }, fetcher);
       dispatch({ type: 'tool.result.recorded', result });
@@ -79,7 +88,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   }
 
   async function submitPatch() {
-    if (!filePath || !oldText || !newText || !runId) return;
+    if (!hasWorkspace || !filePath || !oldText || !newText || !runId) return;
     await guarded(async () => {
       const result = await submitToolRequest(session.coreUrl, runId, { tool: 'file.patch', operation: 'patch', payload: { path: filePath, old_string: oldText, new_string: newText } }, fetcher);
       dispatch({ type: 'tool.result.recorded', result });
@@ -95,17 +104,24 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   function recordToolResult(result: ToolResult) { dispatch({ type: 'tool.result.recorded', result }); }
   function saveSession(next: DesktopSession) { saveDesktopSession(next); setSession(next); }
 
+  async function changeWorkspace() {
+    const path = await selectWorkspace();
+    if (path) { const next = { ...session, workspacePath: path }; saveSession(next); dispatch({ type: 'workspace.selected', path }); }
+  }
+
+  const hasWorkspace = !!(state.workspacePath || session.workspacePath);
+
   if (!session.completed) return <FirstRunWizard session={session} onComplete={completeFirstRun} />;
 
-  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core 状态" value={state.coreStatus} /><StatusRow label="工作区" value={state.workspacePath || session.workspacePath} /><StatusRow label="核心服务地址" value={session.coreUrl} /><StatusRow label="当前运行" value={runId || '无'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} startRun={startRun} createGoal={createGoal} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} fetchTimeline={fetchTimelineAction} runReview={runReview} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ToolFlowPanel filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} /><ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
+  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core 状态" value={state.coreStatus} /><div className="statusRow"><span>工作区</span><strong>{hasWorkspace ? (state.workspacePath || session.workspacePath) : '工作区未选择'}</strong></div><button type="button" className="link" onClick={changeWorkspace}>{hasWorkspace ? '更换工作区' : '选择工作区'}</button><StatusRow label="核心服务地址" value={session.coreUrl} /><StatusRow label="当前运行" value={runId || '无'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} hasWorkspace={hasWorkspace} startRun={startRun} createGoal={createGoal} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} fetchTimeline={fetchTimelineAction} runReview={runReview} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} /><ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
 }
 
-function Toolbar(props: { goal: string; setGoal: (v: string) => void; runId: string | null; startRun: () => void; createGoal: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void; fetchTimeline: () => void; runReview: () => void }) {
-  return <header className="toolbar"><label>任务目标<input aria-label="任务目标" value={props.goal} onChange={(e) => props.setGoal(e.target.value)} /></label><div className="actions"><button type="button" onClick={props.startRun}>开始任务</button><button type="button" onClick={props.createGoal}>创建目标</button><button type="button" disabled={!props.runId} onClick={props.runStep}>执行一步</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>刷新轨迹</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />刷新记忆</button><button type="button" onClick={props.refreshPermissions}>刷新权限</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>整理文档</button><button type="button" disabled={!props.runId} onClick={props.fetchTimeline}>时间线</button><button type="button" onClick={props.runReview}>审查</button></div></header>;
+function Toolbar(props: { goal: string; setGoal: (v: string) => void; runId: string | null; hasWorkspace: boolean; startRun: () => void; createGoal: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void; fetchTimeline: () => void; runReview: () => void }) {
+  return <header className="toolbar"><label>任务目标<input aria-label="任务目标" value={props.goal} onChange={(e) => props.setGoal(e.target.value)} /></label><div className="actions"><button type="button" disabled={!props.hasWorkspace} onClick={props.startRun}>开始任务</button><button type="button" disabled={!props.hasWorkspace} onClick={props.createGoal}>创建目标</button><button type="button" disabled={!props.runId} onClick={props.runStep}>执行一步</button><button type="button" disabled={!props.runId} onClick={props.refreshTrace}>刷新轨迹</button><button type="button" onClick={props.refreshMemory}><RefreshCw size={16} />刷新记忆</button><button type="button" onClick={props.refreshPermissions}>刷新权限</button><button type="button" disabled={!props.runId} onClick={props.runGardener}>整理文档</button><button type="button" disabled={!props.runId} onClick={props.fetchTimeline}>时间线</button><button type="button" onClick={props.runReview}>审查</button></div></header>;
 }
 
-function ToolFlowPanel(props: { filePath: string; setFilePath: (v: string) => void; oldText: string; setOldText: (v: string) => void; newText: string; setNewText: (v: string) => void; readFile: () => void; submitPatch: () => void }) {
-  return <section className="toolPanel"><label>文件路径<input aria-label="文件路径" value={props.filePath} onChange={(e) => props.setFilePath(e.target.value)} /></label><label>原文本<input aria-label="原文本" value={props.oldText} onChange={(e) => props.setOldText(e.target.value)} /></label><label>新文本<input aria-label="新文本" value={props.newText} onChange={(e) => props.setNewText(e.target.value)} /></label><button type="button" onClick={props.readFile}>读取文件</button><button type="button" onClick={props.submitPatch}>提交补丁</button></section>;
+function ToolFlowPanel(props: { hasWorkspace: boolean; filePath: string; setFilePath: (v: string) => void; oldText: string; setOldText: (v: string) => void; newText: string; setNewText: (v: string) => void; readFile: () => void; submitPatch: () => void }) {
+  return <section className="toolPanel"><label>文件路径<input aria-label="文件路径" placeholder="可输入相对路径，如 README.md" value={props.filePath} onChange={(e) => props.setFilePath(e.target.value)} /></label><label>原文本<input aria-label="原文本" value={props.oldText} onChange={(e) => props.setOldText(e.target.value)} /></label><label>新文本<input aria-label="新文本" value={props.newText} onChange={(e) => props.setNewText(e.target.value)} /></label><button type="button" disabled={!props.hasWorkspace} onClick={props.readFile}>读取文件</button><button type="button" disabled={!props.hasWorkspace} onClick={props.submitPatch}>提交补丁</button></section>;
 }
 
 function createInitialState(session: DesktopSession, memory: MemorySnapshot | undefined, permissions: PendingPermission[]): BoltState {

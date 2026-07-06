@@ -160,3 +160,61 @@ describe('M33 UI workflow click path', () => {
     ]);
   });
 });
+
+describe('M35 Workspace binding', () => {
+  it('shows 更换工作区 button in sidebar', () => {
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: '更换工作区' })).toBeInTheDocument();
+  });
+
+  it('shows 工作区未选择 when workspace is empty', () => {
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core' }));
+    render(<App />);
+
+    expect(screen.getByText('工作区未选择')).toBeInTheDocument();
+  });
+
+  it('sends relative path via tool flow, backend resolves against workspace', async () => {
+    const requests: unknown[] = [];
+    const fetcher = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
+      if (input.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+      if (input.endsWith('/harness/runs/run_35/tool-requests') && init?.method === 'POST') {
+        const body = JSON.parse((init as RequestInit & { body: string }).body as string);
+        requests.push(body);
+        return Promise.resolve(json({ request_id: 'tool_35', status: 'executed', output: 'relative ok' }));
+      }
+      return Promise.resolve(json({}));
+    });
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_35' }));
+
+    render(<App fetcher={fetcher} />);
+    fireEvent.change(screen.getByLabelText('文件路径'), { target: { value: 'README.md' } });
+    fireEvent.click(screen.getByRole('button', { name: '读取文件' }));
+    expect(await screen.findByText('relative ok')).toBeInTheDocument();
+
+    expect(requests[0]).toEqual({ tool: 'file.read', operation: 'read', payload: { path: 'README.md' } });
+  });
+
+  it('disables tool actions when no workspace is selected', () => {
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core', lastRunId: 'run_stale' }));
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: '开始任务' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '创建目标' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '读取文件' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '提交补丁' })).toBeDisabled();
+  });
+
+  it('persists selected workspace from the workspace picker', async () => {
+    const selectWorkspace = vi.fn().mockResolvedValue('D:/Projects/RealBolt');
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core' }));
+
+    render(<App selectWorkspace={selectWorkspace} />);
+    fireEvent.click(screen.getByRole('button', { name: '选择工作区' }));
+
+    expect(await screen.findByText('D:/Projects/RealBolt')).toBeInTheDocument();
+    expect(localStorage.getItem('bolt.desktop.session')).toContain('D:/Projects/RealBolt');
+  });
+});

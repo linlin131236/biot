@@ -249,3 +249,21 @@
 - check-docs.mjs: added M34 docs to quality gate
 
 **Verification:** 290 pytest + vitest + pnpm quality (incl. lint:chinese-ui) + desktop build pass
+
+---
+
+## M35 Real Workspace File Picker + Safe Workspace Binding
+
+**Started:** 2026-07-06
+
+**Changes:**
+- risk.py: _is_inside_workspace uses relative_to (fixes sibling prefix)
+- path_guard.py: check resolves relative paths against workspace (ws / target)
+- harness.py: _queue_file_patch uses PathGuard instead of raw _is_inside_workspace
+- App.tsx: selectWorkspace adapter, changeWorkspace action, 更换工作区/选择工作区 button, 工作区未选择 display, hasWorkspace guard, relative path placeholder
+- uiWorkflowDogfood.test.tsx: 4 M35 workspace binding tests
+- test_workspace_binding.py: 9 pytest tests (relative, traversal, sibling, secret)
+- 035 exec plan + decision docs
+- check-docs.mjs: added M35 docs
+
+**Verification:** 299 pytest + 25 vitest + pnpm quality + desktop build pass

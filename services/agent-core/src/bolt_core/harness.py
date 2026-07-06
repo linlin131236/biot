@@ -209,11 +209,13 @@ class Harness:
         path = str(request.payload.get("path", ""))
         old_string = str(request.payload.get("old_string", ""))
         new_string = str(request.payload.get("new_string", ""))
-        from bolt_core.risk import _is_inside_workspace
+        from bolt_core.path_guard import PathGuard
         ws = self._workspace(run_id)
-        if not _is_inside_workspace(path, ws):
-            return self._deny(request, f"patch target outside workspace: {path}")
-        target = Path(path).resolve()
+        guard = PathGuard(ws)
+        check = guard.check(path)
+        if not check.allowed:
+            return self._deny(request, check.reason)
+        target = check.path
         if not target.exists():
             return self._deny(request, f"file not found: {path}")
         try:
