@@ -101,3 +101,18 @@ export interface ReviewResult {
   passed: boolean;
   failures: string[];
 }
+
+// === Goal Timeline & Evidence ===
+export interface TimelineEvent {
+  type: string;
+  sequence: number;
+  payload: Record<string, unknown>;
+}
+
+export interface GoalEvidence {
+  phase: string;
+  action: string;
+  result: string;
+  summary?: string;
+  timestamp?: string;
+}

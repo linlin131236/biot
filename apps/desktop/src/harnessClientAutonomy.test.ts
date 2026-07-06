@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget } from './harnessClientAutonomy';
+import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -93,5 +93,21 @@ describe('harness autonomy client', () => {
       'http://core/harness/runs/run_1/agent-loops',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ max_steps: 10 }) }),
     );
+  });
+
+  it('calls fetchUnfinishedGoals endpoint', async () => {
+    const goals = [{ id: 'goal_1', objective: 'test', status: 'paused' }];
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(goals)));
+    const result = await fetchUnfinishedGoals('http://core', fetcher);
+    expect(result).toHaveLength(1);
+    expect(fetcher).toHaveBeenCalledWith('http://core/goals/unfinished');
+  });
+
+  it('calls fetchRunTimeline endpoint', async () => {
+    const timeline = [{ type: 'run.created', sequence: 1 }];
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(timeline)));
+    const result = await fetchRunTimeline('http://core', 'run_1', fetcher);
+    expect(result).toHaveLength(1);
+    expect(fetcher).toHaveBeenCalledWith('http://core/runs/run_1/timeline');
   });
 });

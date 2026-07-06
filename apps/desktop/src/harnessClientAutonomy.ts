@@ -4,6 +4,7 @@
 import type {
   Goal, ConversationMessage, SkillManifest, DelegationTask,
   Checkpoint, ReviewChecklist, ReviewResult,
+  TimelineEvent,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -66,7 +67,7 @@ export async function steerRun(baseUrl: string, runId: string, content: string, 
   return readJson(await fetcher(`${baseUrl}/runs/${runId}/steering`, jsonPost({ content })));
 }
 
-export async function fetchRunTimeline(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<unknown[]> {
+export async function fetchRunTimeline(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<TimelineEvent[]> {
   return readJson(await fetcher(`${baseUrl}/runs/${runId}/timeline`));
 }
 
