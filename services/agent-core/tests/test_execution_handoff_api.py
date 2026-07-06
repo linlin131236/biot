@@ -3,6 +3,7 @@ from httpx import ASGITransport, AsyncClient
 
 from bolt_core.app import create_app
 from bolt_core.harness import Harness
+from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 
 
 @pytest.fixture
@@ -233,6 +234,48 @@ async def test_request_permission_does_not_execute_or_approve(monkeypatch, tmp_p
         await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
 
     assert calls == []
+
+
+@pytest.mark.anyio
+async def test_approve_permission_ingests_execution_result(app, monkeypatch):
+    def execute_spy(self, request):
+        return ToolExecution(request.id, "executed", "12 passed", None)
+
+    monkeypatch.setattr(ReadOnlyToolExecutor, "execute", execute_spy)
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+        requested = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+        approved = await client.post(f"/permissions/{requested.json()['permission_request_id']}/approve")
+        handoffs = await client.get(f"/execution-handoffs?closure_id={item['closure_id']}")
+        queue = await client.get(f"/execution-queue?closure_id={item['closure_id']}")
+        closure = await client.get(f"/task-closures/{item['closure_id']}")
+
+    assert approved.json()["status"] == "executed"
+    assert handoffs.json()[0]["status"] == "completed"
+    assert handoffs.json()[0]["permission_status"] == "executed"
+    assert queue.json()[0]["status"] == "completed"
+    assert handoffs.json()[0]["command"] in closure.json()["commands"]
+
+
+@pytest.mark.anyio
+async def test_reject_permission_ingests_rejected_result(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+        requested = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+        rejected = await client.post(f"/permissions/{requested.json()['permission_request_id']}/reject")
+        handoffs = await client.get(f"/execution-handoffs?closure_id={item['closure_id']}")
+        queue = await client.get(f"/execution-queue?closure_id={item['closure_id']}")
+        closure = await client.get(f"/task-closures/{item['closure_id']}")
+
+    assert rejected.json()["status"] == "rejected"
+    assert handoffs.json()[0]["status"] == "failed"
+    assert handoffs.json()[0]["permission_status"] == "rejected"
+    assert queue.json()[0]["status"] == "failed"
+    assert handoffs.json()[0]["command"] not in closure.json()["commands"]
 
 
 async def _pending_item(client: AsyncClient) -> dict:

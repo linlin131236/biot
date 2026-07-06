@@ -9,11 +9,13 @@ from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_permission_bridge import ExecutionPermissionBridgeService
 from bolt_core.execution_queue import ExecutionQueueService
 from bolt_core.execution_queue_api import create_execution_queue_router
+from bolt_core.execution_result_ingestion import ExecutionResultIngestionService
 from bolt_core.harness import Harness
 from bolt_core.review_gate import ReviewChecklist, ReviewGate
 from bolt_core.task_closure_api import create_task_closure_router
 from bolt_core.task_closure_service import TaskClosureService
-from bolt_core.tool_protocol import ToolRequest, ToolResult
+from bolt_core.tool_protocol import ToolRequest
+from bolt_core.tool_result_api import tool_result_dict
 
 
 def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
@@ -25,6 +27,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     execution_bridge_run = harness.register_internal_run("run_execution_bridge", "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, harness.workspace)
+    result_ingestion = ExecutionResultIngestionService(execution_handoff_service, execution_queue_service, task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -54,7 +57,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     def submit_tool(run_id: str, payload: dict) -> dict[str, str | None]:
         request = ToolRequest.create(payload["tool"], payload["operation"], payload.get("payload", {}))
         result = harness.submit_tool_request(run_id, request)
-        return _tool_result_dict(result)
+        return tool_result_dict(result)
 
     @app.post("/harness/runs/{run_id}/agent-steps")
     def run_agent_step(run_id: str) -> dict:
@@ -93,7 +96,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     @app.post("/maintenance/document-gardener/runs/{run_id}")
     def run_document_gardener(run_id: str) -> dict[str, str | None]:
         result = harness.run_document_gardener(run_id)
-        return _tool_result_dict(result)
+        return tool_result_dict(result)
 
     @app.get("/memory/p0")
     def memory_p0() -> dict[str, list]:
@@ -114,12 +117,14 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     @app.post("/permissions/{request_id}/approve")
     def approve_permission(request_id: str) -> dict[str, str | None]:
         result = harness.approve_permission(request_id)
-        return _tool_result_dict(result)
+        result_ingestion.ingest(result)
+        return tool_result_dict(result)
 
     @app.post("/permissions/{request_id}/reject")
     def reject_permission(request_id: str) -> dict[str, str | None]:
         result = harness.reject_permission(request_id)
-        return _tool_result_dict(result)
+        result_ingestion.ingest(result)
+        return tool_result_dict(result)
 
     @app.get("/terminal")
     def terminal_list() -> list[dict]:
@@ -260,7 +265,7 @@ def _agent_step_dict(result) -> dict:
     return {
         "status": result.status,
         "model_output": result.model_output,
-        "tool_result": None if result.tool_result is None else _tool_result_dict(result.tool_result),
+        "tool_result": None if result.tool_result is None else tool_result_dict(result.tool_result),
         "error": result.error,
     }
 
@@ -273,15 +278,6 @@ def _agent_loop_dict(result) -> dict:
         "error": result.error,
     }
 
-
-def _tool_result_dict(result: ToolResult) -> dict[str, str | None]:
-    return {
-        "request_id": result.request_id,
-        "status": result.status,
-        "reason": result.reason,
-        "output": result.output,
-        "error": result.error,
-    }
 
 
 def _string_list(value) -> list[str]:

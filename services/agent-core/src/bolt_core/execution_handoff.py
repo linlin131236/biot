@@ -119,6 +119,24 @@ class ExecutionHandoffService:
         self._save()
         return record
 
+    def complete_with_permission(self, record_id: str, permission_status: str, result: str) -> ExecutionHandoffRecord:
+        record = self.complete(record_id, result)
+        record.permission_status = permission_status
+        self._save()
+        return record
+
+    def fail_with_permission(self, record_id: str, permission_status: str, result: str) -> ExecutionHandoffRecord:
+        record = self.fail(record_id, result)
+        record.permission_status = permission_status
+        self._save()
+        return record
+
+    def find_by_permission_request(self, request_id: str) -> ExecutionHandoffRecord | None:
+        for record in self._records.values():
+            if record.permission_request_id == request_id:
+                return record
+        return None
+
     def _find_by_item(self, item_id: str) -> ExecutionHandoffRecord | None:
         for record in self._records.values():
             if record.queue_item_id == item_id:
