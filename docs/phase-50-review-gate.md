@@ -62,4 +62,6 @@
 - 已检查：executor patch 只在测试内用于确定性输出。
 
 ## 是否 push
-- 未 push。
+- 已 push。
+- `main` 与 `origin/main` 已同步到 `303af5a docs: update M50 review fix state`。
+- M50 P1 fix `a4e14ef fix(M50): bind permission requests to run workspace` 已复审通过且已 push。
