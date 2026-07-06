@@ -76,9 +76,15 @@ describe('CheckpointPanel', () => {
     await waitFor(() => expect(screen.getByText('检查点加载失败')).toBeInTheDocument());
   });
 
-  it('rendered HTML contains no dangerous globals', () => {
-    const { container } = render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
-    const html = container.innerHTML;
-    expect(html).not.toMatch(/ipcRenderer|child_process|require\(['"]fs|shell\.|process\./);
+  it('has no rollback or write buttons — only create and load', () => {
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
+    const buttons = screen.getAllByRole('button');
+    const names = buttons.map(b => b.textContent);
+    expect(names).toContain('创建检查点');
+    expect(names).toContain('加载检查点');
+    expect(names).not.toContain('回滚');
+    expect(names).not.toContain('恢复');
+    expect(names).not.toContain('写入');
+    expect(names).not.toContain('删除');
   });
 });

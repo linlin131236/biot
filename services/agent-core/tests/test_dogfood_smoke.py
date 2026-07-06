@@ -172,3 +172,76 @@ async def test_dogfood_smoke_unwired_surface_returns_404(tmp_path, monkeypatch):
 def _client() -> AsyncClient:
     transport = ASGITransport(app=create_app())
     return AsyncClient(transport=transport, base_url="http://test")
+
+
+@pytest.mark.anyio
+async def test_steering_does_not_execute_tools(tmp_path, monkeypatch):
+    """Steering endpoint only injects conversation message, never executes tools."""
+    monkeypatch.chdir(tmp_path)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    async with _client() as client:
+        run = (await client.post("/harness/runs", json={"goal": "steer test", "workspace": str(workspace)})).json()
+        steer_resp = await client.post(f"/runs/{run['id']}/steering", json={"content": "修改 README"})
+        assert steer_resp.status_code == 200
+        assert steer_resp.json()["status"] == "injected"
+        # Verify no tool was executed — timeline has no tool events
+        timeline = (await client.get(f"/runs/{run['id']}/timeline")).json()
+        tool_events = [e for e in timeline if e["type"].startswith("tool.")]
+        assert len(tool_events) == 0
+
+
+@pytest.mark.anyio
+async def test_steering_rejects_unknown_run(tmp_path, monkeypatch):
+    """Steering must fail closed for stale or unknown run ids."""
+    monkeypatch.chdir(tmp_path)
+
+    async with _client() as client:
+        steer_resp = await client.post("/runs/run_missing/steering", json={"content": "hello"})
+
+    assert steer_resp.status_code == 404
+    assert steer_resp.json()["detail"] == "run not found"
+
+
+@pytest.mark.anyio
+async def test_checkpoint_load_is_read_only_no_side_effects(tmp_path, monkeypatch):
+    """Loading a checkpoint must not modify any file in workspace."""
+    monkeypatch.chdir(tmp_path)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    target = workspace / "readonly.txt"
+    target.write_text("before\n", encoding="utf-8")
+
+    async with _client() as client:
+        run = (await client.post("/harness/runs", json={"goal": "cp read test", "workspace": str(workspace)})).json()
+        goal = (await client.post("/goals", json={"objective": "cp read test", "criteria": [], "max_steps": 5, "workspace": str(workspace)})).json()
+        cp = (await client.post("/checkpoints", json={"run_id": run["id"], "goal_id": goal["id"], "changed_files": ["readonly.txt"]})).json()
+        loaded = (await client.get(f"/checkpoints/{cp['id']}")).json()
+        assert loaded["id"] == cp["id"]
+        # File content unchanged — load is read-only
+        assert target.read_text(encoding="utf-8") == "before\n"
+
+
+@pytest.mark.anyio
+async def test_pending_permission_blocks_until_approved(tmp_path, monkeypatch):
+    """When tool returns pending_permission, file stays unchanged until user approves."""
+    monkeypatch.chdir(tmp_path)
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    target = workspace / "guarded.txt"
+    target.write_text("safe\n", encoding="utf-8")
+
+    async with _client() as client:
+        run = (await client.post("/harness/runs", json={"goal": "permission block", "workspace": str(workspace)})).json()
+        patch = (await client.post(f"/harness/runs/{run['id']}/tool-requests", json={
+            "tool": "file.patch", "operation": "patch",
+            "payload": {"path": str(target), "old_string": "safe", "new_string": "unsafe"},
+        })).json()
+        assert patch["status"] == "pending_permission"
+        # File must still be "safe" — pending means NOT executed
+        assert target.read_text(encoding="utf-8") == "safe\n"
+        # Approve → file changes
+        approved = (await client.post(f"/permissions/{patch['request_id']}/approve")).json()
+        assert approved["status"] == "executed"
+        assert target.read_text(encoding="utf-8") == "unsafe\n"

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.harness import Harness
@@ -179,6 +179,8 @@ def create_app() -> FastAPI:
     @app.post("/runs/{run_id}/steering")
     def steer_run(run_id: str, payload: dict) -> dict:
         from bolt_core.conversation import ConversationMessage
+        if run_id not in harness.runs:
+            raise HTTPException(status_code=404, detail="run not found")
         cid = f"run_{run_id}"
         msg = ConversationMessage(
             role="user",

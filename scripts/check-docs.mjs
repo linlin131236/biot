@@ -64,6 +64,8 @@ const required = [
   'docs/decisions/039-side-chat-steering.md',
   'docs/exec-plans/active/040-safe-checkpoints.md',
   'docs/decisions/040-safe-checkpoints.md',
+  'docs/exec-plans/active/041-end-to-end-dogfood-reliability.md',
+  'docs/decisions/041-end-to-end-dogfood-reliability.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

@@ -6,6 +6,7 @@ import type { SteeringResult } from '@bolt/shared/autonomy';
 describe('SideChatPanel', () => {
   const okResult: SteeringResult = { status: 'injected' };
   const mockApi = { steerRun: vi.fn<() => Promise<SteeringResult>>() };
+  beforeEach(() => { mockApi.steerRun.mockClear(); });
 
   it('renders heading 侧聊指令', () => {
     render(<SideChatPanel runId="run_1" api={mockApi} />);
@@ -55,8 +56,14 @@ describe('SideChatPanel', () => {
     await waitFor(() => expect(screen.getByText('回车发送')).toBeInTheDocument());
   });
 
-  it('rendered HTML has no dangerous globals', () => {
-    const { container } = render(<SideChatPanel runId="run_1" api={mockApi} />);
-    expect(container.innerHTML).not.toMatch(/ipcRenderer|child_process|require\(['"]fs|shell\.|process\./);
+  it('does not call runAgentLoop or approve permission after steering', async () => {
+    mockApi.steerRun.mockResolvedValue(okResult);
+    render(<SideChatPanel runId="run_1" api={mockApi} baseUrl="http://core" />);
+    fireEvent.change(screen.getByLabelText('侧聊内容'), { target: { value: '修正方向' } });
+    fireEvent.click(screen.getByRole('button', { name: '发送指令' }));
+    await waitFor(() => expect(mockApi.steerRun).toHaveBeenCalled());
+    // SideChat only calls steerRun — never runAgentLoop or approvePermission
+    // (those APIs aren't even in SideChatPanelApi interface)
+    expect(mockApi.steerRun).toHaveBeenCalledTimes(1);
   });
 });

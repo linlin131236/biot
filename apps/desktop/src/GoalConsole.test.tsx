@@ -243,3 +243,17 @@ describe('M38 Goal Resume & Diagnostics', () => {
     await waitFor(() => expect(screen.getByText('8 条记录')).toBeInTheDocument());
   });
 });
+
+describe('M41 End-to-End Dogfood', () => {
+  it('does not show 运行中 when max_steps reached', async () => {
+    const loopResult: AgentLoopResult = { status: 'executed', steps: 10 };
+    const api = { ...noopApi, createGoal: vi.fn().mockResolvedValue({ ...baseGoal, status: 'pending' }), startRun: vi.fn().mockResolvedValue({ id: 'run_maxed' }), runAgentLoop: vi.fn().mockResolvedValue(loopResult) };
+    render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={api} maxSteps={10} />);
+    fireEvent.change(screen.getByLabelText('长任务目标'), { target: { value: '修复拼写错误' } });
+    fireEvent.click(screen.getByRole('button', { name: '开始长任务' }));
+    await vi.waitFor(() => expect(api.runAgentLoop).toHaveBeenCalled());
+    expect(screen.getByText('已停止')).toBeInTheDocument();
+    expect(screen.getByText('已达到最大步数')).toBeInTheDocument();
+    expect(screen.queryByText('运行中')).not.toBeInTheDocument();
+  });
+});
