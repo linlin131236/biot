@@ -58,6 +58,8 @@ const required = [
   'docs/decisions/036-native-workspace-picker.md',
   'docs/exec-plans/active/037-desktop-goal-console.md',
   'docs/decisions/037-desktop-goal-console.md',
+  'docs/exec-plans/active/038-goal-timeline-resume.md',
+  'docs/decisions/038-goal-timeline-resume.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'
