@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint } from './harnessClientAutonomy';
+import { createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget } from './harnessClientAutonomy';
+import { runAgentLoop } from './harnessClient';
+import type { AgentLoopResult } from '@bolt/shared';
 
 describe('harness autonomy client', () => {
   it('calls checkpoint endpoints', async () => {
@@ -55,5 +57,41 @@ describe('harness autonomy client', () => {
 
     await expect(fetchSkills('http://core', fetcher)).rejects.toThrow('/skills endpoint not registered');
     expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('calls clearGoal endpoint', async () => {
+    const stopped = { id: 'goal_1', status: 'stopped' };
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(stopped)));
+    const result = await clearGoal('http://core', 'goal_1', fetcher);
+    expect(result.status).toBe('stopped');
+    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/clear', expect.objectContaining({ method: 'POST' }));
+  });
+
+  it('calls fetchGoalEvidence endpoint', async () => {
+    const evidence = [{ phase: 'test', result: 'pass' }];
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(evidence)));
+    const result = await fetchGoalEvidence('http://core', 'goal_1', fetcher);
+    expect(result).toHaveLength(1);
+    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/evidence');
+  });
+
+  it('calls fetchGoalBudget endpoint', async () => {
+    const budget = { spent: 0.5, limit: 5.0 };
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(budget)));
+    const result = await fetchGoalBudget('http://core', 'goal_1', fetcher);
+    expect(result.spent).toBe(0.5);
+    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/budget');
+  });
+
+  it('calls runAgentLoop endpoint with typed result', async () => {
+    const loopResult: AgentLoopResult = { status: 'executed', steps: 3 };
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(loopResult)));
+    const result = await runAgentLoop('http://core', 'run_1', 10, fetcher);
+    expect(result.status).toBe('executed');
+    expect(result.steps).toBe(3);
+    expect(fetcher).toHaveBeenCalledWith(
+      'http://core/harness/runs/run_1/agent-loops',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ max_steps: 10 }) }),
+    );
   });
 });

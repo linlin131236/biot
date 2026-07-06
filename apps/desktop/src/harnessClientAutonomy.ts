@@ -29,6 +29,21 @@ export async function fetchUnfinishedGoals(baseUrl: string, fetcher: Fetcher = f
   return readJson(await fetcher(`${baseUrl}/goals/unfinished`));
 }
 
+export async function clearGoal(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<Goal> {
+  return readJson(await fetcher(`${baseUrl}/goals/${goalId}/clear`, { method: 'POST' }));
+}
+
+export async function fetchGoalEvidence(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<unknown[]> {
+  return readJson(await fetcher(`${baseUrl}/goals/${goalId}/evidence`));
+}
+
+export async function fetchGoalBudget(baseUrl: string, goalId: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/goals/${goalId}/budget`));
+}
+
+// Re-export the typed runAgentLoop from harnessClient (uses jsonPost with content-type header).
+export { runAgentLoop } from './harnessClient';
+
 // === Conversation API ===
 export async function createConversation(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<{ id: string }> {
   return readJson(await fetcher(`${baseUrl}/conversations`, jsonPost(payload)));

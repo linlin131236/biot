@@ -4,7 +4,7 @@
  */
 
 // === Goal Mode ===
-export type GoalStatus = 'pending' | 'running' | 'paused' | 'stopped' | 'completed' | 'failed';
+export type GoalStatus = 'pending' | 'running' | 'paused' | 'stopped' | 'completed' | 'failed' | 'rejected';
 
 export interface Goal {
   id: string;

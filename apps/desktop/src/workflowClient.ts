@@ -1,4 +1,5 @@
 import type { AgentStepResult, HarnessRun, MemoryConsolidationResult, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolResult, TraceEvent } from '@bolt/shared';
+import type { Goal, Checkpoint } from '@bolt/shared/autonomy';
 import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
 import { createGoal, createCheckpoint, loadCheckpoint, evaluateReview, fetchRunTimeline, createConversation, addMessage } from './harnessClientAutonomy';
 
@@ -50,7 +51,7 @@ export async function consolidateWorkflowMemory(baseUrl: string, fetcher: Fetche
 
 // === Dogfood path helpers ===
 
-export async function createWorkflowGoal(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Record<string, unknown>> {
+export async function createWorkflowGoal(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Goal> {
   return createGoal(baseUrl, payload, fetcher);
 }
 
@@ -66,11 +67,11 @@ export async function submitWorkflowTool(baseUrl: string, runId: string, request
   return submitToolRequest(baseUrl, runId, request, fetcher);
 }
 
-export async function createWorkflowCheckpoint(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Record<string, unknown>> {
+export async function createWorkflowCheckpoint(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Checkpoint> {
   return createCheckpoint(baseUrl, payload, fetcher);
 }
 
-export async function loadWorkflowCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher): Promise<Record<string, unknown> | null> {
+export async function loadWorkflowCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher): Promise<Checkpoint | null> {
   return loadCheckpoint(baseUrl, cpId, fetcher);
 }
 

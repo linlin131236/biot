@@ -1,11 +1,14 @@
 import { useEffect, useReducer, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { MemorySnapshot, ModelSettings, PendingPermission, ToolResult } from '@bolt/shared';
+import type { Goal } from '@bolt/shared/autonomy';
 import { fetchHarnessTrace, fetchMemorySnapshot, fetchPendingPermissions, submitToolRequest } from './harnessClient';
 import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
 import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline } from './workflowClient';
+import { GoalConsole } from './GoalConsole';
+import { createGoal as createAutonomyGoal, pauseGoal, resumeGoal, clearGoal as clearGoalApi, fetchGoalEvidence, runAgentLoop } from './harnessClientAutonomy';
 import './styles.css';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -32,7 +35,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
   const [model, setModel] = useState<ModelSettings>({ provider: 'openai-compatible', base_url: 'http://localhost:11434/v1', model: 'fake-model', temperature: 0.2 });
   const [apiKey, setApiKey] = useState('');
   const [state, dispatch] = useReducer(reduceBoltState, createInitialState(session, initialMemorySnapshot, initialPendingPermissions));
-  const [goalInfo, setGoalInfo] = useState<Record<string, unknown> | null>(null);
+  const [goalInfo, setGoalInfo] = useState<Goal | null>(null);
   const [reviewResult, setReviewResult] = useState<{ passed: boolean; failures: string[] } | null>(null);
   const [timeline, setTimeline] = useState<unknown[]>([]);
   const [filePath, setFilePath] = useState('');
@@ -113,7 +116,7 @@ export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPerm
 
   if (!session.completed) return <FirstRunWizard session={session} onComplete={completeFirstRun} />;
 
-  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core 状态" value={state.coreStatus} /><div className="statusRow"><span>工作区</span><strong>{hasWorkspace ? (state.workspacePath || session.workspacePath) : '工作区未选择'}</strong></div><button type="button" className="link" onClick={changeWorkspace}>{hasWorkspace ? '更换工作区' : '选择工作区'}</button><StatusRow label="核心服务地址" value={session.coreUrl} /><StatusRow label="当前运行" value={runId || '无'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} hasWorkspace={hasWorkspace} startRun={startRun} createGoal={createGoal} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} fetchTimeline={fetchTimelineAction} runReview={runReview} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} /><ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
+  return <main className="shell"><aside className="sidebar"><div className="brand"><ShieldCheck size={22} /><h1>Bolt</h1></div><StatusRow label="Agent Core 状态" value={state.coreStatus} /><div className="statusRow"><span>工作区</span><strong>{hasWorkspace ? (state.workspacePath || session.workspacePath) : '工作区未选择'}</strong></div><button type="button" className="link" onClick={changeWorkspace}>{hasWorkspace ? '更换工作区' : '选择工作区'}</button><StatusRow label="核心服务地址" value={session.coreUrl} /><StatusRow label="当前运行" value={runId || '无'} /></aside><section className="workbench"><Toolbar goal={goal} setGoal={setGoal} runId={runId} hasWorkspace={hasWorkspace} startRun={startRun} createGoal={createGoal} runStep={runStep} refreshTrace={refreshTraceOnly} refreshMemory={refreshMemory} refreshPermissions={refreshPermissions} runGardener={runGardener} fetchTimeline={fetchTimelineAction} runReview={runReview} />{error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} /><ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} /><section className="panels"><GoalConsole workspacePath={session.workspacePath} goal={goalInfo as any} api={{ createGoal: (url: string, p: Record<string, unknown>) => createAutonomyGoal(url, p, fetcher), startRun: (url: string, g: string, ws: string) => startWorkflowRun(url, g, ws, fetcher), runAgentLoop: (url: string, runId: string, steps: number) => runAgentLoop(url, runId, steps, fetcher), pauseGoal: (url: string, id: string) => pauseGoal(url, id, fetcher), resumeGoal: (url: string, id: string) => resumeGoal(url, id, fetcher), clearGoal: (url: string, id: string) => clearGoalApi(url, id, fetcher), getGoal: (_url: string, _id: string) => Promise.resolve(goalInfo as any), fetchGoalEvidence: (url: string, id: string) => fetchGoalEvidence(url, id, fetcher) }} baseUrl={session.coreUrl} /><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></section></section></main>;
 }
 
 function Toolbar(props: { goal: string; setGoal: (v: string) => void; runId: string | null; hasWorkspace: boolean; startRun: () => void; createGoal: () => void; runStep: () => void; refreshTrace: () => void; refreshMemory: () => void; refreshPermissions: () => void; runGardener: () => void; fetchTimeline: () => void; runReview: () => void }) {
@@ -151,7 +154,7 @@ function TracePanel({ state }: { state: BoltState }) {
   return <aside className="panel"><h2>执行轨迹</h2>{state.traceEvents.length ? state.traceEvents.map((e) => <p key={`${e.sequence}-${e.type}`}>{e.type}</p>) : <p>暂无轨迹事件</p>}</aside>;
 }
 
-function DogfoodPanel({ goalInfo, reviewResult, timeline }: { goalInfo: Record<string, unknown> | null; reviewResult: { passed: boolean; failures: string[] } | null; timeline: unknown[] }) {
+function DogfoodPanel({ goalInfo, reviewResult, timeline }: { goalInfo: Goal | null; reviewResult: { passed: boolean; failures: string[] } | null; timeline: unknown[] }) {
   return <aside className="panel"><h2>自测工作流</h2>{goalInfo ? <div className="stack"><strong>目标</strong><span>{String(goalInfo.id)}</span><span>{String(goalInfo.status)}</span></div> : <p>暂无目标</p>}{reviewResult ? <div className="stack"><strong>审查</strong><span>{reviewResult.passed ? <CheckCircle2 size={14} /> : '审查失败'}</span>{reviewResult.failures.length ? <span>{reviewResult.failures.join(', ')}</span> : null}</div> : null}{timeline.length ? <div className="stack"><strong>时间线</strong><span>{timeline.length} 事件</span></div> : null}</aside>;
 }
 

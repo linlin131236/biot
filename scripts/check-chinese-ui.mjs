@@ -10,7 +10,7 @@
  * and old_string / new_string, not old_text / new_text.
  */
 
-import { readFileSync, readdirSync } from 'fs';
+import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
 const MOJIBAKE_CHARS = new Set([
@@ -28,15 +28,27 @@ const BARE_FILE_TOOL_RE = /tool:\s*['"]file['"]/;
 const OLD_TEXT_RE = /old_text/;
 const NEW_TEXT_RE = /new_text/;
 
-const scanFiles = [
-  'apps/desktop/src/App.tsx',
-  'apps/desktop/src/App.test.tsx',
-  'apps/desktop/src/uiWorkflowDogfood.test.tsx',
-  'apps/desktop/src/dogfoodSmoke.test.ts',
-  'apps/desktop/src/workflowClient.ts',
-];
+/** Recursively collect .ts/.tsx files under a directory. */
+function listSourceFiles(dir) {
+  const results = [];
+  try {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      const stat = statSync(full);
+      if (stat.isDirectory()) {
+        // Skip node_modules, dist, dist-electron, .venv
+        if (entry === 'node_modules' || entry === 'dist' || entry === 'dist-electron' || entry === '.venv') continue;
+        results.push(...listSourceFiles(full));
+      } else if (entry.endsWith('.ts') || entry.endsWith('.tsx')) {
+        results.push(full);
+      }
+    }
+  } catch { /* dir may not exist */ }
+  return results;
+}
 
 const scanDirs = [
+  'apps/desktop/src',
   'docs/exec-plans/active',
   'docs/decisions',
 ];
@@ -49,7 +61,9 @@ function listMdFiles(dir) {
   }
 }
 
-const allFiles = [...scanFiles, ...scanDirs.flatMap(listMdFiles)];
+const sourceFiles = listSourceFiles('apps/desktop/src');
+const mdFiles = scanDirs.slice(1).flatMap(listMdFiles);
+const allFiles = [...sourceFiles, ...mdFiles];
 let errors = 0;
 
 for (const filePath of allFiles) {
