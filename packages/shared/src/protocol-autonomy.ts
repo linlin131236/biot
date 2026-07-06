@@ -218,6 +218,7 @@ export interface ExecutionHandoffRecord {
   permission_request_id?: string | null;
   permission_status: ExecutionHandoffPermissionStatus;
   bridge_error: string;
+  permission_workspace?: string;
   created_at?: number;
   updated_at?: number;
   result: string;

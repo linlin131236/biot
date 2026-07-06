@@ -39,6 +39,13 @@ class PermissionQueue:
     def pending(self) -> list[PendingPermission]:
         return [item for item in self._items.values() if item.status == "pending_permission"]
 
+    def get(self, request_id: str) -> PendingPermission | None:
+        return self._items.get(request_id)
+
+    def has_pending(self, request_id: str) -> bool:
+        item = self.get(request_id)
+        return item is not None and item.status == "pending_permission"
+
     def approve(self, request_id: str) -> PendingPermission:
         return self._set_status(request_id, "approved")
 

@@ -25,15 +25,16 @@ class ExecutionPermissionBridgeService:
 
     def request_permission(self, handoff_id: str, run_id: str | None = None) -> ExecutionHandoffRecord:
         record = self._handoffs.get_record(handoff_id)
-        if record.permission_request_id:
-            return record
         if record.status in ("completed", "failed"):
             raise ExecutionPermissionBridgeInvalidRequest(f"cannot request permission for handoff in status {record.status}")
+        if record.permission_request_id and self._permissions.has_pending(record.permission_request_id):
+            return record
         if record.handoff_type != "manual_verification":
             raise ExecutionPermissionBridgeInvalidRequest("只支持人工验证交接申请执行权限")
         if not record.command:
             raise ExecutionPermissionBridgeInvalidRequest("缺少验证命令")
 
+        stale_request_id = record.permission_request_id
         permission_run_id, workspace = self._permission_target(record, run_id)
         request = ToolRequest.create("shell.execute", "command", {"command": record.command, "workdir": workspace})
         decision = PermissionGate(workspace).evaluate(request)
@@ -42,12 +43,17 @@ class ExecutionPermissionBridgeService:
             return self._handoffs.get_record(record.id)
 
         pending = self._permissions.add(permission_run_id, request, decision)
-        self._handoffs.mark_permission_requested(record.id, pending.request_id, pending.status)
-        updated = self._handoffs.get_record(record.id)
-        updated.updated_at = time.time()
+        record.run_id = permission_run_id
+        updated = self._handoffs.mark_permission_requested(record.id, pending.request_id, pending.status, workspace)
+        if stale_request_id:
+            updated = self._handoffs.mark_bridge_note(record.id, f"旧权限请求已过期，已重新申请：{stale_request_id}")
+        else:
+            updated.updated_at = time.time()
         return updated
 
     def _permission_target(self, record: ExecutionHandoffRecord, fallback_run_id: str | None) -> tuple[str, str]:
+        if record.run_id and record.permission_workspace:
+            return record.run_id, record.permission_workspace
         if callable(self._workspace):
             return self._workspace(record)
         return fallback_run_id or "execution_bridge", self._workspace

@@ -36,6 +36,7 @@ class ExecutionHandoffRecord:
     permission_request_id: str | None = None
     permission_status: str = "not_requested"
     bridge_error: str = ""
+    permission_workspace: str = ""
 
     def to_dict(self) -> dict:
         return self.__dict__
@@ -98,12 +99,22 @@ class ExecutionHandoffService:
         self._save()
         return record
 
-    def mark_permission_requested(self, record_id: str, permission_request_id: str, permission_status: str) -> ExecutionHandoffRecord:
+    def mark_permission_requested(self, record_id: str, permission_request_id: str, permission_status: str, permission_workspace: str = "") -> ExecutionHandoffRecord:
         record = self.get_record(record_id)
         self._require_open(record)
         record.permission_request_id = permission_request_id
         record.permission_status = permission_status
+        if permission_workspace:
+            record.permission_workspace = permission_workspace
         record.status = "waiting_permission"
+        record.updated_at = time.time()
+        self._save()
+        return record
+
+    def mark_bridge_note(self, record_id: str, bridge_error: str) -> ExecutionHandoffRecord:
+        record = self.get_record(record_id)
+        self._require_open(record)
+        record.bridge_error = bridge_error
         record.updated_at = time.time()
         self._save()
         return record
@@ -152,6 +163,7 @@ class ExecutionHandoffService:
             data.setdefault("permission_request_id", None)
             data.setdefault("permission_status", "not_requested")
             data.setdefault("bridge_error", "")
+            data.setdefault("permission_workspace", "")
             record = ExecutionHandoffRecord(**data)
             self._records[record.id] = record
             self._counter = max(self._counter, _next_counter(record.id, "eh_"))
