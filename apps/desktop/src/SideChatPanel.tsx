@@ -1,10 +1,9 @@
 /**
  * SideChatPanel — 长任务侧聊/指令补充面板。
  * M39: 用户可在当前 run 上追加中文指令，不自动执行 agent loop。
- * 不直接访问 fs/shell/process/ipcRenderer。
- * 所有文案中文。
+ * 不直接访问 fs/shell/process/ipcRenderer
+ * 所有文案中文
  */
-
 import { useState } from 'react';
 import type { SteeringResult } from '@bolt/shared/autonomy';
 
@@ -21,7 +20,6 @@ interface SideChatPanelProps {
 export function SideChatPanel({ runId, api, baseUrl = 'http://core' }: SideChatPanelProps) {
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'ok' | 'fail'>('idle');
-
   const canSend = !!runId && input.trim().length > 0;
 
   async function handleSend() {

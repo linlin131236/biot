@@ -1,4 +1,4 @@
-/** Autonomy API client methods: Goal, Conversation, VectorMemory, Skill, Delegation, Checkpoint.
+/** Autonomy API client methods: Goal, Conversation, Vector Memory, Skill, Delegation, Checkpoint.
  *  Split from harnessClient.ts to respect the 300-line size gate.
  */
 import type {
