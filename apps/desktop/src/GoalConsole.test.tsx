@@ -291,6 +291,26 @@ describe('M38 Goal Resume & Diagnostics', () => {
     expect(screen.getByText('2 条记录')).toBeInTheDocument();
   });
 
+  it('shows at most 5 recent timeline events', () => {
+    const unfinished = [{ ...baseGoal, status: 'paused' as const, step_count: 3 }];
+    const timeline = Array.from({ length: 8 }, (_, i) => ({ type: `event.${i}`, sequence: i + 1, payload: {} }));
+    render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={noopApi} unfinishedGoals={unfinished} timeline={timeline} />);
+    expect(screen.getByText('8 条记录')).toBeInTheDocument();
+    // Should show only 5 events (indices 3-7)
+    expect(screen.getByText('event.3')).toBeInTheDocument();
+    expect(screen.getByText('event.7')).toBeInTheDocument();
+    expect(screen.queryByText('event.0')).not.toBeInTheDocument();
+    expect(screen.queryByText('event.2')).not.toBeInTheDocument();
+  });
+
+  it('shows event type and sequence for each timeline event', () => {
+    const unfinished = [{ ...baseGoal, status: 'paused' as const, step_count: 3 }];
+    const timeline = [{ type: 'run.created', sequence: 1, payload: {} }];
+    render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={noopApi} unfinishedGoals={unfinished} timeline={timeline} />);
+    expect(screen.getByText('run.created')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
   it('shows 暂无证据 when evidence is empty', () => {
     const unfinished = [{ ...baseGoal, status: 'paused' as const, step_count: 3 }];
     render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={noopApi} unfinishedGoals={unfinished} evidence={[]} />);

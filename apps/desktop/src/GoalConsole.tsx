@@ -173,10 +173,21 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     </div>}
     <div className="goalDetails">
       {timeline !== undefined ? <div className="timeline">
-        {timeline.length === 0 ? <span>暂无长任务记录</span> : <span>{timeline.length} 条记录</span>}
+        {timeline.length === 0 ? <span>暂无长任务记录</span> : <>
+          <span>{timeline.length} 条记录</span>
+          <div className="timelineRecent">
+            {timeline.slice(-5).map((e, i) => <div key={i} className="timelineEvent">
+              <span>{e.type}</span>
+              <span>{e.sequence}</span>
+            </div>)}
+          </div>
+        </>}
       </div> : null}
       {evidence !== undefined ? <div className="evidence">
-        {evidence.length === 0 ? <span>暂无证据</span> : <span>{evidence.length} 条证据</span>}
+        {evidence.length === 0 ? <span>暂无证据</span> : <>
+          <span>{evidence.length} 条证据</span>
+          {evidence[0]?.summary ? <span>{evidence[0].summary}</span> : null}
+        </>}
       </div> : null}
     </div>
   </section>;
