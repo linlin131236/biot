@@ -119,6 +119,19 @@ describe('M37 Goal Console', () => {
     expect(html).not.toContain('process.');
     expect(html).not.toContain('shell');
   });
+
+  it('does not call runAgentLoop when resumeGoal returns paused (normal resume blocked)', async () => {
+    const api = {
+      ...noopApi,
+      resumeGoal: vi.fn().mockResolvedValue({ ...baseGoal, status: 'paused' }),
+      runAgentLoop: vi.fn().mockResolvedValue({ status: 'executed', steps: 3 }),
+    };
+    render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={{ ...baseGoal, status: 'paused' }} api={api} />);
+    fireEvent.click(screen.getByRole('button', { name: '恢复任务' }));
+    await vi.waitFor(() => expect(api.resumeGoal).toHaveBeenCalled());
+    expect(api.runAgentLoop).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('恢复被阻止，请检查工作区冲突')).toBeInTheDocument());
+  });
 });
 
 describe('M38 Goal Resume & Diagnostics', () => {
@@ -146,6 +159,22 @@ describe('M38 Goal Resume & Diagnostics', () => {
     await vi.waitFor(() => expect(api.resumeGoal).toHaveBeenCalled());
     await vi.waitFor(() => expect(api.startRun).toHaveBeenCalled());
     await vi.waitFor(() => expect(api.runAgentLoop).toHaveBeenCalledWith('http://core', 'run_resume38', 10));
+  });
+
+  it('does not call startRun/runAgentLoop when resumeGoal returns paused (blocked)', async () => {
+    const api = {
+      ...noopApi,
+      resumeGoal: vi.fn().mockResolvedValue({ ...baseGoal, status: 'paused' }),
+      startRun: vi.fn().mockResolvedValue({ id: 'run_blocked' }),
+      runAgentLoop: vi.fn().mockResolvedValue({ status: 'executed', steps: 4 }),
+    };
+    const unfinished = [{ ...baseGoal, status: 'paused', step_count: 3 }];
+    render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={api} unfinishedGoals={unfinished} />);
+    fireEvent.click(screen.getByRole('button', { name: '恢复任务' }));
+    await vi.waitFor(() => expect(api.resumeGoal).toHaveBeenCalled());
+    expect(api.startRun).not.toHaveBeenCalled();
+    expect(api.runAgentLoop).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByText('恢复被阻止，请检查工作区冲突')).toBeInTheDocument());
   });
 
   it('shows 等待人工批准 for paused unfinished goal', () => {

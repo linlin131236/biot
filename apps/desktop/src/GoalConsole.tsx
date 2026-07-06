@@ -111,6 +111,10 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     try {
       const g = await api.resumeGoal(baseUrl, target.id);
       setCurrentGoal(g);
+      if (g.status !== 'running') {
+        setError('恢复被阻止，请检查工作区冲突');
+        return;
+      }
       // Cold-start: no currentRunId → start a new run to get one
       let runId = currentRunId;
       if (!runId) {
@@ -131,6 +135,10 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     try {
       const g = await api.resumeGoal(baseUrl, currentGoal.id);
       setCurrentGoal(g);
+      if (g.status !== 'running') {
+        setError('恢复被阻止，请检查工作区冲突');
+        return;
+      }
       if (currentRunId) {
         const loopResult = await api.runAgentLoop(baseUrl, currentRunId, maxSteps);
         setLoopStepCount(loopResult.steps);
