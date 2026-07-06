@@ -1,5 +1,6 @@
 """TaskClosureService: conservative evidence recorder, no tool execution."""
 import time
+import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -25,20 +26,18 @@ class TaskClosureService:
 
     def __init__(self) -> None:
         self._store: dict[str, TaskClosureRecord] = {}
-        self._counter: int = 0
 
     def start(self, objective: str, template_id: TaskTemplateId,
               run_id: Optional[str] = None, goal_id: Optional[str] = None) -> TaskClosure:
         """Create a new task closure record."""
         closure = TaskClosure(
-            id=f"cl_{self._counter}",
+            id=f"cl_{uuid.uuid4().hex[:12]}",
             objective=objective,
             template_id=template_id,
             run_id=run_id,
             goal_id=goal_id,
             created_at=time.time(),
         )
-        self._counter += 1
         self._store[closure.id] = TaskClosureRecord(closure=closure)
         return closure
 

@@ -14,6 +14,7 @@
 - 已验证：同一个 queue item 恢复后不能重复创建 handoff。
 - 已验证：completed / failed handoff 是终态，不能互相改写。
 - 已验证：handoff complete / fail 不改 queue item 状态。
+- 已修复：TaskClosureService 不再跨重启复用 `cl_0` 这类顺序 closure id，避免默认审计恢复后旧 queue/handoff 记录混入新任务。
 
 ## API / Desktop
 - 已实现：App 创建同一个 ExecutionAuditStore，queue service 和 handoff service 共享审计状态。
@@ -46,6 +47,8 @@
 - `pytest services/agent-core/tests/test_execution_audit_store.py services/agent-core/tests/test_execution_queue.py services/agent-core/tests/test_execution_handoff.py services/agent-core/tests/test_execution_queue_api.py services/agent-core/tests/test_execution_handoff_api.py -q`：失败，当前 shell 混用 Hermes Python 与全局 pytest，导入 FastAPI 时缺少 `pydantic_core._pydantic_core`。
 - `uv run pytest tests/test_execution_audit_store.py tests/test_execution_queue.py tests/test_execution_handoff.py tests/test_execution_queue_api.py tests/test_execution_handoff_api.py -q`：58 passed。
 - `uv run pytest -q`：444 passed。
+- P1 fix 后 `uv run pytest tests/test_execution_queue_integration.py tests/test_execution_audit_store.py tests/test_execution_queue.py tests/test_execution_handoff.py tests/test_execution_queue_api.py tests/test_execution_handoff_api.py -q`：60 passed。
+- P1 fix 后 `uv run pytest -q`：445 passed。
 - `pnpm --filter @bolt/shared test`：25 passed。
 - `pnpm --filter @bolt/desktop test`：通过。
 - `pnpm --filter @bolt/desktop exec vitest run --reporter=json --outputFile=C:/Users/bi240/AppData/Local/Temp/bolt-desktop-vitest.json`：51 suites passed，189 tests passed。
@@ -62,6 +65,7 @@
 - 已检查：handoff 仍不等于执行，也不调用 shell / Harness / PermissionGate / Agent Loop。
 - 已检查：损坏 JSON 不会被静默覆盖。
 - 已检查：恢复后 queue/handoff 状态机保持不变。
+- 已检查：新 task closure 使用随机 id，旧 `cl_0` 审计记录不会错误绑定到新 closure 查询结果。
 - 已检查：M47 未改 shared protocol，未改 Desktop UI。
 - 已检查：无 `as any` / `unknown as`。
 - 已检查：未 push，未 release，未 tag，未 delete。
