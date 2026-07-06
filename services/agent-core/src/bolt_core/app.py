@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Query
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.harness import Harness
 from bolt_core.review_gate import ReviewChecklist, ReviewGate
+from bolt_core.task_closure_api import router as task_closure_router
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 
 
@@ -14,6 +15,7 @@ def create_app() -> FastAPI:
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
+    app.include_router(task_closure_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

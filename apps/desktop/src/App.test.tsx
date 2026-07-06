@@ -173,6 +173,14 @@ describe('App', () => {
     expect(await screen.findByText('workspace write')).toBeInTheDocument();
   });
 
+  it('does not nest panels grids inside panels grids', () => {
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+
+    const { container } = render(<App />);
+
+    expect(container.querySelector('.panels .panels')).toBeNull();
+  });
+
   it('does not re-dispatch for same runId from GoalConsole', async () => {
     const fetcher = vi.fn().mockImplementation((u: string, init?: RequestInit) => {
       if (u.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));

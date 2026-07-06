@@ -5,6 +5,7 @@ import type {
   Goal, ConversationMessage, SkillManifest, DelegationTask,
   Checkpoint, ReviewChecklist, ReviewResult,
   TimelineEvent, GoalEvidence, SteeringResult,
+  TaskTemplate, TaskClosureEvidence,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -84,6 +85,27 @@ export async function createCheckpoint(baseUrl: string, payload: Record<string, 
 
 export async function loadCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher = fetch): Promise<Checkpoint | null> {
   return readJson(await fetcher(`${baseUrl}/checkpoints/${cpId}`));
+}
+
+// === Task Closure API ===
+export async function fetchTaskTemplates(baseUrl: string, fetcher: Fetcher = fetch): Promise<TaskTemplate[]> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/templates`));
+}
+
+export async function createTaskClosure(baseUrl: string, payload: { objective: string; template_id: string; run_id?: string; goal_id?: string }, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures`, jsonPost(payload)));
+}
+
+export async function getTaskClosure(baseUrl: string, closureId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}`));
+}
+
+export async function addClosureEvent(baseUrl: string, closureId: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/events`, jsonPost(payload)));
+}
+
+export async function addClosureReview(baseUrl: string, closureId: string, payload: { summary: string; passed: boolean }, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/review`, jsonPost(payload)));
 }
 
 // === Review Gate ===

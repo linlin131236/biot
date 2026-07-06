@@ -66,6 +66,8 @@ const required = [
   'docs/decisions/040-safe-checkpoints.md',
   'docs/exec-plans/active/041-end-to-end-dogfood-reliability.md',
   'docs/decisions/041-end-to-end-dogfood-reliability.md',
+  'docs/exec-plans/active/042-real-agent-task-closure.md',
+  'docs/decisions/042-real-agent-task-closure.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

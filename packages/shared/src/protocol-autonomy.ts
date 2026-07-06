@@ -121,3 +121,53 @@ export interface GoalEvidence {
   summary?: string;
   timestamp?: string;
 }
+
+// === Task Closure ===
+export type TaskTemplateId = 'bugfix' | 'docs' | 'test' | 'quality' | 'review';
+
+export interface TaskTemplate {
+  id: TaskTemplateId;
+  label: string;
+  description: string;
+  default_checks: string[];
+}
+
+export type TaskClosureStatus =
+  | 'pending' | 'planning' | 'executing' | 'waiting_permission'
+  | 'verifying' | 'repairing' | 'reviewing'
+  | 'completed' | 'failed' | 'stopped';
+
+export interface TaskClosureEvidence {
+  objective: string;
+  template_id: TaskTemplateId;
+  plan_summary: string;
+  changed_files: string[];
+  commands: string[];
+  command_results: string[];
+  permission_request_ids: string[];
+  retry_count: number;
+  final_status: TaskClosureStatus;
+  review_summary: string;
+  next_action: string;
+}
+
+export const TASK_TEMPLATES: TaskTemplate[] = [
+  { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
+  { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },
+  { id: 'test', label: '增加测试', description: '为现有代码补充测试', default_checks: ['test', 'coverage'] },
+  { id: 'quality', label: '跑质量门', description: '运行 lint/build/test 验证', default_checks: ['quality'] },
+  { id: 'review', label: '生成审查摘要', description: '汇总变更和验证结果', default_checks: ['review'] },
+];
+
+export const TASK_CLOSURE_LABELS: Record<TaskClosureStatus, string> = {
+  pending: '待开始',
+  planning: '规划中',
+  executing: '执行中',
+  waiting_permission: '等待人工批准',
+  verifying: '验证中',
+  repairing: '修复中',
+  reviewing: '审查中',
+  completed: '已完成',
+  failed: '已失败',
+  stopped: '已停止',
+};

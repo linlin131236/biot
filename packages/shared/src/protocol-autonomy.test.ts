@@ -58,4 +58,45 @@ describe('shared autonomy protocol', () => {
     const s: SteeringResult = { status: 'injected' };
     expect(s.status).toBe('injected');
   });
+
+  it('supports TaskTemplate and TASK_TEMPLATES', async () => {
+    const { TASK_TEMPLATES, TASK_CLOSURE_LABELS } = await import('./protocol-autonomy');
+    expect(TASK_TEMPLATES).toHaveLength(5);
+    expect(TASK_TEMPLATES[0].id).toBe('bugfix');
+    expect(TASK_TEMPLATES[0].label).toBe('修复小问题');
+    expect(TASK_TEMPLATES[1].id).toBe('docs');
+    expect(TASK_TEMPLATES[2].id).toBe('test');
+    expect(TASK_TEMPLATES[3].id).toBe('quality');
+    expect(TASK_TEMPLATES[4].id).toBe('review');
+  });
+
+  it('covers all TaskClosureStatus values with Chinese labels', async () => {
+    const { TASK_CLOSURE_LABELS } = await import('./protocol-autonomy');
+    const statuses = Object.keys(TASK_CLOSURE_LABELS);
+    expect(statuses).toHaveLength(10);
+    expect(TASK_CLOSURE_LABELS.pending).toBe('待开始');
+    expect(TASK_CLOSURE_LABELS.completed).toBe('已完成');
+    expect(TASK_CLOSURE_LABELS.failed).toBe('已失败');
+    expect(TASK_CLOSURE_LABELS.waiting_permission).toBe('等待人工批准');
+  });
+
+  it('supports TaskClosureEvidence shape', async () => {
+    const type = await import('./protocol-autonomy');
+    const evidence: type.TaskClosureEvidence = {
+      objective: '修复拼写错误',
+      template_id: 'bugfix',
+      plan_summary: '读取文件→修改→验证',
+      changed_files: ['README.md'],
+      commands: ['pnpm test'],
+      command_results: ['pass'],
+      permission_request_ids: [],
+      retry_count: 0,
+      final_status: 'completed',
+      review_summary: '所有测试通过',
+      next_action: '无',
+    };
+    expect(evidence.template_id).toBe('bugfix');
+    expect(evidence.retry_count).toBe(0);
+    expect(evidence.final_status).toBe('completed');
+  });
 });
