@@ -223,6 +223,19 @@ export interface ExecutionHandoffRecord {
   result: string;
 }
 
+export interface ExecutionAuditTimelineEvent {
+  id: string;
+  closure_id: string;
+  source: 'queue' | 'handoff' | 'closure' | 'permission';
+  status: string;
+  label: string;
+  summary: string;
+  occurred_at: number;
+  queue_item_id?: string | null;
+  handoff_id?: string | null;
+  permission_request_id?: string | null;
+}
+
 export const TASK_TEMPLATES: TaskTemplate[] = [
   { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
   { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },

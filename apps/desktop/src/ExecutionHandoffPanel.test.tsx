@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { ExecutionHandoffRecord } from '@bolt/shared/autonomy';
+import type { ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
 import ExecutionHandoffPanel, { type ExecutionHandoffPanelApi } from './ExecutionHandoffPanel';
 
 const baseUrl = 'http://core';
@@ -28,9 +28,26 @@ function record(overrides: Partial<ExecutionHandoffRecord> = {}): ExecutionHando
   };
 }
 
+function timelineEvent(overrides: Partial<ExecutionAuditTimelineEvent> = {}): ExecutionAuditTimelineEvent {
+  return {
+    id: 'audit_1',
+    closure_id: 'cl_1',
+    source: 'permission',
+    status: 'pending_permission',
+    label: '等待权限',
+    summary: '权限请求正在等待人工处理',
+    occurred_at: 10,
+    queue_item_id: 'eq_1',
+    handoff_id: 'eh_1',
+    permission_request_id: 'tool_1',
+    ...overrides,
+  };
+}
+
 function apiFixture(overrides: Partial<ExecutionHandoffPanelApi> = {}): ExecutionHandoffPanelApi {
   return {
     fetchExecutionHandoffs: vi.fn().mockResolvedValue([record()]),
+    fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([]),
     createExecutionHandoff: vi.fn().mockResolvedValue(record()),
     completeExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'completed' })),
     failExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'failed' })),
@@ -160,5 +177,23 @@ describe('ExecutionHandoffPanel', () => {
     expect(fs).not.toHaveBeenCalled();
     expect(process).not.toHaveBeenCalled();
     expect(ipcRenderer).not.toHaveBeenCalled();
+  });
+
+  it('只读展示执行审计时间线中文状态', async () => {
+    const api = apiFixture({
+      fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([
+        timelineEvent({ id: 'audit_1', status: 'approved', label: '已批准队列', summary: '队列项已由人工批准' }),
+        timelineEvent({ id: 'audit_2', status: 'pending_permission', label: '等待权限', summary: '权限请求正在等待人工处理' }),
+        timelineEvent({ id: 'audit_3', status: 'executed', label: '已执行', summary: '权限执行已返回结果' }),
+      ]),
+    });
+    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+
+    expect(await screen.findByText('执行审计时间线')).toBeInTheDocument();
+    expect(screen.getByText('已批准队列')).toBeInTheDocument();
+    expect(screen.getByText('等待权限')).toBeInTheDocument();
+    expect(screen.getByText('已执行')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '批准权限' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '执行命令' })).not.toBeInTheDocument();
   });
 });

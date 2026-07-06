@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus, ExecutionHandoffStatus, ExecutionHandoffType } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus, ExecutionHandoffStatus, ExecutionHandoffType, ExecutionAuditTimelineEvent } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -169,5 +169,23 @@ describe('shared autonomy protocol', () => {
     expect(handoffTypes).toHaveLength(4);
     expect(record.handoff_type).toBe('manual_verification');
     expect(record.permission_status).toBe('not_requested');
+  });
+
+  it('supports execution audit timeline event shape', () => {
+    const event: ExecutionAuditTimelineEvent = {
+      id: 'audit_1',
+      closure_id: 'cl_1',
+      source: 'permission',
+      status: 'executed',
+      label: '已执行',
+      summary: '权限执行已返回结果',
+      occurred_at: 10,
+      queue_item_id: 'eq_1',
+      handoff_id: 'eh_1',
+      permission_request_id: 'tool_1',
+    };
+
+    expect(event.label).toBe('已执行');
+    expect(event.permission_request_id).toBe('tool_1');
   });
 });

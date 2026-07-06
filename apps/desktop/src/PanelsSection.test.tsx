@@ -31,7 +31,7 @@ function apiFixture() {
     sideChat: { steerRun: vi.fn() },
     taskClosure: { fetchTaskTemplates: vi.fn(), createTaskClosure: vi.fn().mockResolvedValue(closure), getTaskClosure: vi.fn().mockResolvedValue(closure), addClosureEvent: vi.fn(), addClosureReview: vi.fn(), bindTaskClosureRun: vi.fn(), bindTaskClosureGoal: vi.fn(), fetchTaskClosureVerificationPlan: vi.fn(), fetchTaskClosureAssessment: vi.fn(), updateTaskClosureAssessment: vi.fn() },
     executionQueue: { fetchExecutionQueue: vi.fn().mockImplementation((_baseUrl: string, closureId?: string) => Promise.resolve(closureId === 'cl_a' ? [{ id: 'eq_a', closure_id: 'cl_a', kind: 'verification_command', title: '记录验证命令', description: '缺少测试', risk: 'verification_command', status: 'approved', command: 'pytest', reason: '', result: '' }] : [])), proposeExecutionQueue: vi.fn().mockResolvedValue([]), approveExecutionQueueItem: vi.fn(), rejectExecutionQueueItem: vi.fn(), completeExecutionQueueItem: vi.fn(), failExecutionQueueItem: vi.fn() },
-    executionHandoff: { fetchExecutionHandoffs: vi.fn().mockResolvedValue([]), createExecutionHandoff: vi.fn(), completeExecutionHandoff: vi.fn(), failExecutionHandoff: vi.fn() },
+    executionHandoff: { fetchExecutionHandoffs: vi.fn().mockResolvedValue([]), fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([]), createExecutionHandoff: vi.fn(), completeExecutionHandoff: vi.fn(), failExecutionHandoff: vi.fn(), requestExecutionHandoffPermission: vi.fn() },
   };
 }
 

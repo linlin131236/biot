@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M50 End-to-End Dogfood + Release Hardening（P1 修复已复审通过并已 push）
+- 已完成到：M51 Execution Audit Timeline（本地待提交）
 - 最新同步提交：`303af5a docs: update M50 review fix state`
-- 远程状态：`main` 与 `origin/main` 已同步到 `303af5a`
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening
+- 远程状态：`main` 本地领先 `origin/main`；M50.1 已本地提交，M51 待提交
+- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening -> M51 Execution Audit Timeline
 
 ## 当前进行中
-- 当前阶段：M50.1 Remote Sync State
-- 当前状态：已修复 request-permission workspace 绑定问题，P1 修复已提交、复审通过并已 push；正在同步文档远程状态
-- 当前结果：Permission bridge 根据 handoff -> closure -> run 解析真实 run.workspace，pending permission 的 run_id/workdir 绑定用户任务 workspace；不新增自动批准、不绕过 PermissionGate、不新增执行入口
-- 下一步：完成 M50.1 文档同步提交后，可按爸爸授权进入 M51
+- 当前阶段：M51 Execution Audit Timeline
+- 当前状态：只读审计时间线已实现并通过目标验证；准备提交 M51
+- 当前结果：后端 API 和桌面 UI 可按 closure 查看 queue、handoff、permission result、closure evidence 的中文只读时间线；不新增自动批准、不绕过 PermissionGate、不新增执行入口
+- 下一步：提交 M51 后按爸爸授权进入 M52
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

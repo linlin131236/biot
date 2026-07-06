@@ -4,6 +4,8 @@ from fastapi import FastAPI, HTTPException, Query
 
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.execution_audit_store import ExecutionAuditStore, execution_audit_path as resolve_execution_audit_path
+from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
+from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_permission_bridge import ExecutionPermissionBridgeService
@@ -29,6 +31,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: _permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
     result_ingestion = ExecutionResultIngestionService(execution_handoff_service, execution_queue_service, task_closure_service)
+    timeline_service = ExecutionAuditTimelineService(execution_queue_service, execution_handoff_service, task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -39,6 +42,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     ))
     app.include_router(create_execution_queue_router(execution_queue_service, task_closure_service))
     app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service, permission_bridge))
+    app.include_router(create_execution_audit_timeline_router(timeline_service, task_closure_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

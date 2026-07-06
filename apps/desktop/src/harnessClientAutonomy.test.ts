@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -199,6 +199,16 @@ describe('harness autonomy client', () => {
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/complete', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '用户已完成' }) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/fail', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '失败' }) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/request-permission', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
+  });
+
+  it('calls execution audit timeline endpoint as read-only GET', async () => {
+    const timeline = [{ id: 'audit_1', closure_id: 'cl_1', source: 'permission', status: 'executed', label: '已执行', summary: '权限执行已返回结果', occurred_at: 10 }];
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(timeline)));
+
+    const result = await fetchExecutionAuditTimeline('http://core', 'cl_1', fetcher);
+
+    expect(result[0].label).toBe('已执行');
+    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_1/execution-audit-timeline');
   });
 
   it('loadCheckpoint returns null for bad id', async () => {
