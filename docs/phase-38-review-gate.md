@@ -34,7 +34,7 @@ resumeGoal 返回后，必须检查 `g.status === 'running'` 才允许继续 sta
 
 ## failed 行为
 - loop 返回 failed → 状态显示"失败"，诊断显示"失败"+ error 信息
-- nextSuggestion: "请检查错误信息后重试"
+- nextSuggestion: "建议：检查错误日志后重新创建任务"
 
 ## 安全边界
 - renderer 不出现 ipcRenderer/fs/shell/process（测试验证）
@@ -72,3 +72,4 @@ resumeGoal 返回后，必须检查 `g.status === 'running'` 才允许继续 sta
 7. `docs: add M38 review gate`
 8. `fix: resume cold-start runs agent loop, evidence fetched by useEffect, remove as any`
 9. `fix: check resumeGoal return status before continuing agent loop`
+10. `docs: sync review gate with implementation, type fetchGoalEvidence as GoalEvidence[]`
