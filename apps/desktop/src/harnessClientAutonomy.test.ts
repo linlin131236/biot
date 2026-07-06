@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -209,6 +209,16 @@ describe('harness autonomy client', () => {
 
     expect(result[0].label).toBe('已执行');
     expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_1/execution-audit-timeline');
+  });
+
+  it('calls execution audit diagnostics endpoint as read-only GET', async () => {
+    const diagnostics = [{ id: 'diag_1', code: 'missing_pending_permission', severity: 'blocking', severity_label: '阻断', summary: '交接等待权限', suggestion: '建议人工处理' }];
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(diagnostics)));
+
+    const result = await fetchExecutionAuditDiagnostics('http://core', 'cl_1', fetcher);
+
+    expect(result[0].severity_label).toBe('阻断');
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-audit/diagnostics?closure_id=cl_1');
   });
 
   it('loadCheckpoint returns null for bad id', async () => {

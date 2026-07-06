@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
-import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionHandoffs, requestExecutionHandoffPermission } from './harnessClientAutonomy';
+import type { ExecutionAuditDiagnostic, ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
+import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditDiagnostics, fetchExecutionAuditTimeline, fetchExecutionHandoffs, requestExecutionHandoffPermission } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface ExecutionHandoffPanelApi {
   fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>;
   fetchExecutionAuditTimeline: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>;
+  fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>;
   createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
@@ -15,22 +16,25 @@ export interface ExecutionHandoffPanelApi {
 
 interface Props { baseUrl: string; closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
 
-const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
+const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
 const terminal = new Set(['completed', 'failed']);
 
 export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueueItemId, fetcher, api }: Props) {
   const [records, setRecords] = useState<ExecutionHandoffRecord[]>([]);
   const [timeline, setTimeline] = useState<ExecutionAuditTimelineEvent[]>([]);
+  const [diagnostics, setDiagnostics] = useState<ExecutionAuditDiagnostic[]>([]);
   const [error, setError] = useState('');
   const call = api ?? defaultApi;
   const refresh = useCallback(async () => {
     if (!closureId) return;
-    const [nextRecords, nextTimeline] = await Promise.all([
+    const [nextRecords, nextTimeline, nextDiagnostics] = await Promise.all([
       call.fetchExecutionHandoffs(baseUrl, closureId, fetcher),
       call.fetchExecutionAuditTimeline(baseUrl, closureId, fetcher),
+      call.fetchExecutionAuditDiagnostics(baseUrl, closureId, fetcher),
     ]);
     setRecords(nextRecords);
     setTimeline(nextTimeline);
+    setDiagnostics(nextDiagnostics);
   }, [baseUrl, closureId, fetcher, call]);
 
   useEffect(() => { refresh().catch(() => setError('加载失败')); }, [refresh]);
@@ -53,7 +57,7 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   }
 
   if (!closureId) return <aside className="panel"><h2>安全交接</h2><p>暂无闭环任务</p></aside>;
-  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} />{error ? <p>{error}</p> : null}</aside>;
+  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
 }
 
 function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; baseUrl: string; fetcher?: Fetcher }) {
@@ -64,6 +68,10 @@ function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: Execut
 
 function Timeline({ events }: { events: ExecutionAuditTimelineEvent[] }) {
   return <section className="stack"><h3>执行审计时间线</h3>{events.length ? events.map(event => <div key={event.id}><strong>{event.label}</strong><span>{event.summary}</span></div>) : <p>暂无审计记录</p>}</section>;
+}
+
+function Diagnostics({ items }: { items: ExecutionAuditDiagnostic[] }) {
+  return <section className="stack"><h3>审计一致性诊断</h3>{items.length ? items.map(item => <div key={item.id}><strong>{item.severity_label}</strong><span>{item.summary}</span><span>{item.suggestion}</span></div>) : <p>暂无诊断问题</p>}</section>;
 }
 
 function instruction(record: ExecutionHandoffRecord): string {

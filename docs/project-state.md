@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M52 Permission Request Recovery（本地待提交）
+- 已完成到：M53 Execution Audit Consistency Diagnostics（本地待提交）
 - 最新同步提交：`303af5a docs: update M50 review fix state`
-- 远程状态：`main` 本地领先 `origin/main`；M50.1 与 M51 已本地提交，M52 待提交
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening -> M51 Execution Audit Timeline -> M52 Permission Request Recovery
+- 远程状态：`main` 本地领先 `origin/main`；M50.1、M51、M52 已本地提交，M53 待提交
+- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening -> M51 Execution Audit Timeline -> M52 Permission Request Recovery -> M53 Execution Audit Consistency Diagnostics
 
 ## 当前进行中
-- 当前阶段：M52 Permission Request Recovery
-- 当前状态：权限请求恢复已实现并通过目标验证；准备提交 M52
-- 当前结果：重启后 pending permission 丢失时，可安全重新创建 pending permission，仍需人工批准，并保持 run/workspace 绑定；不新增自动批准、不绕过 PermissionGate、不新增执行入口
-- 下一步：提交 M52 后按爸爸授权进入 M53
+- 当前阶段：M53 Execution Audit Consistency Diagnostics
+- 当前状态：只读审计一致性诊断已实现并通过目标验证；准备提交 M53
+- 当前结果：后端 API 和桌面 UI 可只读展示 execution queue / handoff / permission / closure evidence 之间的不一致状态；不自动修复、不自动批准、不绕过 PermissionGate、不新增执行入口
+- 下一步：提交 M53 后按爸爸授权进入 M54
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

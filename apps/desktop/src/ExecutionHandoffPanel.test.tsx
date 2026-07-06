@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
+import type { ExecutionAuditDiagnostic, ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
 import ExecutionHandoffPanel, { type ExecutionHandoffPanelApi } from './ExecutionHandoffPanel';
 
 const baseUrl = 'http://core';
@@ -44,10 +44,27 @@ function timelineEvent(overrides: Partial<ExecutionAuditTimelineEvent> = {}): Ex
   };
 }
 
+function diagnostic(overrides: Partial<ExecutionAuditDiagnostic> = {}): ExecutionAuditDiagnostic {
+  return {
+    id: 'diag_1',
+    code: 'missing_pending_permission',
+    severity: 'blocking',
+    severity_label: '阻断',
+    closure_id: 'cl_1',
+    queue_item_id: 'eq_1',
+    handoff_id: 'eh_1',
+    permission_request_id: 'tool_1',
+    summary: '交接等待权限，但权限队列没有 pending 项',
+    suggestion: '建议人工处理',
+    ...overrides,
+  };
+}
+
 function apiFixture(overrides: Partial<ExecutionHandoffPanelApi> = {}): ExecutionHandoffPanelApi {
   return {
     fetchExecutionHandoffs: vi.fn().mockResolvedValue([record()]),
     fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([]),
+    fetchExecutionAuditDiagnostics: vi.fn().mockResolvedValue([]),
     createExecutionHandoff: vi.fn().mockResolvedValue(record()),
     completeExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'completed' })),
     failExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'failed' })),
@@ -193,6 +210,19 @@ describe('ExecutionHandoffPanel', () => {
     expect(screen.getByText('已批准队列')).toBeInTheDocument();
     expect(screen.getByText('等待权限')).toBeInTheDocument();
     expect(screen.getByText('已执行')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '批准权限' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '执行命令' })).not.toBeInTheDocument();
+  });
+
+  it('只读展示审计一致性诊断，不提供自动修复能力', async () => {
+    const api = apiFixture({ fetchExecutionAuditDiagnostics: vi.fn().mockResolvedValue([diagnostic()]) });
+    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+
+    expect(await screen.findByText('审计一致性诊断')).toBeInTheDocument();
+    expect(screen.getByText('阻断')).toBeInTheDocument();
+    expect(screen.getByText('交接等待权限，但权限队列没有 pending 项')).toBeInTheDocument();
+    expect(screen.getByText('建议人工处理')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '自动修复' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '批准权限' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '执行命令' })).not.toBeInTheDocument();
   });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus, ExecutionHandoffStatus, ExecutionHandoffType, ExecutionAuditTimelineEvent } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus, ExecutionHandoffStatus, ExecutionHandoffType, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -187,5 +187,23 @@ describe('shared autonomy protocol', () => {
 
     expect(event.label).toBe('已执行');
     expect(event.permission_request_id).toBe('tool_1');
+  });
+
+  it('supports execution audit diagnostic shape', () => {
+    const diagnostic: ExecutionAuditDiagnostic = {
+      id: 'diag_1',
+      code: 'missing_pending_permission',
+      severity: 'blocking',
+      severity_label: '阻断',
+      closure_id: 'cl_1',
+      queue_item_id: 'eq_1',
+      handoff_id: 'eh_1',
+      permission_request_id: 'tool_1',
+      summary: '交接等待权限，但权限队列没有 pending 项',
+      suggestion: '建议人工处理',
+    };
+
+    expect(diagnostic.severity_label).toBe('阻断');
+    expect(diagnostic.suggestion).toBe('建议人工处理');
   });
 });

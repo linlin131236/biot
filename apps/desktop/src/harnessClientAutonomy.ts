@@ -6,7 +6,7 @@ import type {
   Checkpoint, ReviewChecklist, ReviewResult,
   TimelineEvent, GoalEvidence, SteeringResult,
   TaskTemplate, TaskClosureEvidence, VerificationPlan, VerificationAssessment,
-  ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent,
+  ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -185,6 +185,11 @@ export async function requestExecutionHandoffPermission(baseUrl: string, handoff
 
 export async function fetchExecutionAuditTimeline(baseUrl: string, closureId: string, fetcher: Fetcher = fetch): Promise<ExecutionAuditTimelineEvent[]> {
   return readJson(await fetcher(`${baseUrl}/task-closures/${encodeURIComponent(closureId)}/execution-audit-timeline`));
+}
+
+export async function fetchExecutionAuditDiagnostics(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<ExecutionAuditDiagnostic[]> {
+  const query = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
+  return readJson(await fetcher(`${baseUrl}/execution-audit/diagnostics${query}`));
 }
 
 // === Review Gate ===
