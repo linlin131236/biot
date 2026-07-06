@@ -23,25 +23,23 @@ export function CheckpointPanel({ runId, goalId, api, baseUrl = 'http://core' }:
   const [cp, setCp] = useState<Checkpoint | null>(null);
   const [cpInput, setCpInput] = useState('');
   const [loadResult, setLoadResult] = useState<Checkpoint | null>(null);
+  const [loadAttempted, setLoadAttempted] = useState(false);
   const [error, setError] = useState('');
   const canCreate = !!runId && !!goalId;
 
   async function handleCreate() {
     if (!runId || !goalId) return;
-    setError('');
-    try {
+    setError(''); try {
       const result = await api.createCheckpoint(baseUrl, { run_id: runId, goal_id: goalId });
       setCp(result);
     } catch { setError('检查点创建失败'); }
   }
 
   async function handleLoad() {
-    setError('');
-    if (!cpInput.trim()) return;
-    try {
-      const result = await api.loadCheckpoint(baseUrl, cpInput.trim());
-      setLoadResult(result);
-    } catch { setError('检查点加载失败'); }
+    setError(''); if (!cpInput.trim()) return;
+    setLoadAttempted(true);
+    try { const result = await api.loadCheckpoint(baseUrl, cpInput.trim()); setLoadResult(result); }
+    catch { setError('检查点加载失败'); }
   }
 
   return <section className="checkpointPanel">
@@ -49,22 +47,10 @@ export function CheckpointPanel({ runId, goalId, api, baseUrl = 'http://core' }:
     <button type="button" disabled={!canCreate} onClick={handleCreate}>创建检查点</button>
     {!canCreate && !goalId ? <span>暂无目标，无法创建检查点</span> : null}
     {error ? <span className="error">{error}</span> : null}
-    {cp ? <div className="cpSummary">
-      <span>检查点 {cp.id}</span>
-      <span>运行 {cp.run_id}</span>
-      <span>目标 {cp.goal_id}</span>
-      <span>{cp.changed_files.length} 个变更文件</span>
-      <span>{cp.pending_permissions.length} 个待审批</span>
-    </div> : null}
-    <input aria-label="检查点 ID" value={cpInput} onChange={e => setCpInput(e.target.value)} />
+    {cp ? <div className="cpSummary"><span>检查点 {cp.id}</span><span>运行 {cp.run_id}</span><span>目标 {cp.goal_id}</span><span>{cp.changed_files.length} 个变更文件</span><span>{cp.pending_permissions.length} 个待审批</span></div> : null}
+    <input aria-label="检查点 ID" value={cpInput} onChange={e => { setCpInput(e.target.value); setLoadAttempted(false); }} />
     <button type="button" disabled={!cpInput.trim()} onClick={handleLoad}>加载检查点</button>
-    {loadResult === null && cpInput ? <span>未找到检查点</span> : null}
-    {loadResult ? <div className="cpSummary">
-      <span>检查点 {loadResult.id}</span>
-      <span>运行 {loadResult.run_id}</span>
-      <span>目标 {loadResult.goal_id}</span>
-      <span>{loadResult.changed_files.length} 个变更文件</span>
-      <span>{loadResult.pending_permissions.length} 个待审批</span>
-    </div> : null}
+    {loadAttempted && loadResult === null ? <span>未找到检查点</span> : null}
+    {loadResult ? <div className="cpSummary"><span>检查点 {loadResult.id}</span><span>运行 {loadResult.run_id}</span><span>目标 {loadResult.goal_id}</span><span>{loadResult.changed_files.length} 个变更文件</span><span>{loadResult.pending_permissions.length} 个待审批</span></div> : null}
   </section>;
 }

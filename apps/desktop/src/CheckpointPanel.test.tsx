@@ -51,7 +51,14 @@ describe('CheckpointPanel', () => {
     expect(mockApi.loadCheckpoint).toHaveBeenCalledWith('http://core', 'cp_abc12345');
   });
 
-  it('shows 未找到检查点 for null result', async () => {
+  it('does not show 未找到检查点 before clicking load', () => {
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
+    const input = screen.getByLabelText('检查点 ID');
+    fireEvent.change(input, { target: { value: 'cp_maybe' } });
+    expect(screen.queryByText('未找到检查点')).toBeNull();
+  });
+
+  it('shows 未找到检查点 for null result after clicking load', async () => {
     mockApi.loadCheckpoint.mockResolvedValue(null);
     render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
     const input = screen.getByLabelText('检查点 ID');

@@ -48,9 +48,10 @@ interface GoalConsoleProps {
   baseUrl?: string;
   maxSteps?: number;
   unfinishedGoals?: Goal[];
+  onGoalChange?: (goal: Goal | null, runId: string | null) => void;
 }
 
-export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core', maxSteps = 10, unfinishedGoals }: GoalConsoleProps) {
+export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core', maxSteps = 10, unfinishedGoals, onGoalChange }: GoalConsoleProps) {
   const [objective, setObjective] = useState('');
   const [error, setError] = useState('');
   const [currentGoal, setCurrentGoal] = useState<Goal | null>(goal);
@@ -58,6 +59,9 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
   const [loopStepCount, setLoopStepCount] = useState(0);
   const [timeline, setTimeline] = useState<TimelineEvent[] | null>(null);
   const [evidence, setEvidence] = useState<GoalEvidence[] | null>(null);
+
+  // Notify parent when goal or runId changes (P1: feeds CheckpointPanel + SideChatPanel)
+  useEffect(() => { onGoalChange?.(currentGoal, currentRunId); }, [currentGoal?.id, currentGoal?.status, currentRunId, onGoalChange]);
 
   const hasWorkspace = workspacePath.length > 0;
   const hasObjective = objective.trim().length >= 5;
