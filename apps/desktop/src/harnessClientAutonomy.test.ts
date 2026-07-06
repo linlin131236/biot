@@ -191,11 +191,14 @@ describe('harness autonomy client', () => {
     await createExecutionHandoff('http://core', 'eq_1', fetcher);
     await completeExecutionHandoff('http://core', 'eh_1', '用户已完成', fetcher);
     await failExecutionHandoff('http://core', 'eh_1', '失败', fetcher);
+    const { requestExecutionHandoffPermission } = await import('./harnessClientAutonomy');
+    await requestExecutionHandoffPermission('http://core', 'eh_1', fetcher);
 
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs?closure_id=cl_1');
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/handoff', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/complete', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '用户已完成' }) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/fail', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '失败' }) }));
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/request-permission', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
   });
 
   it('loadCheckpoint returns null for bad id', async () => {

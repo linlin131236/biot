@@ -179,6 +179,10 @@ export async function failExecutionHandoff(baseUrl: string, handoffId: string, r
   return readJson(await fetcher(`${baseUrl}/execution-handoffs/${handoffId}/fail`, jsonPost({ result })));
 }
 
+export async function requestExecutionHandoffPermission(baseUrl: string, handoffId: string, fetcher: Fetcher = fetch): Promise<ExecutionHandoffRecord> {
+  return readJson(await fetcher(`${baseUrl}/execution-handoffs/${handoffId}/request-permission`, jsonPost({})));
+}
+
 // === Review Gate ===
 export async function evaluateReview(baseUrl: string, payload: { items: string[]; results: Record<string, boolean> }, fetcher: Fetcher = fetch): Promise<ReviewResult> {
   return readJson(await fetcher(`${baseUrl}/review/evaluate`, jsonPost(payload)));

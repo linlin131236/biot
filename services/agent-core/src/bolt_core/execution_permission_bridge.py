@@ -1,0 +1,45 @@
+"""Request-only bridge from handoff records to PermissionGate pending permissions."""
+from __future__ import annotations
+
+import time
+
+from bolt_core.execution_handoff import ExecutionHandoffRecord, ExecutionHandoffService
+from bolt_core.permission_gate import PermissionGate
+from bolt_core.permission_queue import PermissionQueue
+from bolt_core.tool_protocol import ToolRequest
+
+
+class ExecutionPermissionBridgeInvalidRequest(ValueError):
+    pass
+
+
+class ExecutionPermissionBridgeService:
+    """Creates pending permissions only. Does NOT execute, approve, create goals, or run loops."""
+
+    def __init__(self, handoffs: ExecutionHandoffService, permissions: PermissionQueue, workspace: str) -> None:
+        self._handoffs = handoffs
+        self._permissions = permissions
+        self._workspace = workspace
+
+    def request_permission(self, handoff_id: str, run_id: str) -> ExecutionHandoffRecord:
+        record = self._handoffs.get_record(handoff_id)
+        if record.permission_request_id:
+            return record
+        if record.status in ("completed", "failed"):
+            raise ExecutionPermissionBridgeInvalidRequest(f"cannot request permission for handoff in status {record.status}")
+        if record.handoff_type != "manual_verification":
+            raise ExecutionPermissionBridgeInvalidRequest("只支持人工验证交接申请执行权限")
+        if not record.command:
+            raise ExecutionPermissionBridgeInvalidRequest("缺少验证命令")
+
+        request = ToolRequest.create("shell.execute", "command", {"command": record.command, "workdir": self._workspace})
+        decision = PermissionGate(self._workspace).evaluate(request)
+        if decision.status == "denied":
+            self._handoffs.mark_bridge_failed(record.id, "denied", decision.reason)
+            return self._handoffs.get_record(record.id)
+
+        pending = self._permissions.add(run_id, request, decision)
+        self._handoffs.mark_permission_requested(record.id, pending.request_id, pending.status)
+        updated = self._handoffs.get_record(record.id)
+        updated.updated_at = time.time()
+        return updated

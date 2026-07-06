@@ -20,6 +20,9 @@ function record(overrides: Partial<ExecutionHandoffRecord> = {}): ExecutionHando
     goal_objective: '',
     run_id: null,
     goal_id: null,
+    permission_request_id: null,
+    permission_status: 'not_requested',
+    bridge_error: '',
     result: '',
     ...overrides,
   };
@@ -31,6 +34,7 @@ function apiFixture(overrides: Partial<ExecutionHandoffPanelApi> = {}): Executio
     createExecutionHandoff: vi.fn().mockResolvedValue(record()),
     completeExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'completed' })),
     failExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'failed' })),
+    requestExecutionHandoffPermission: vi.fn().mockResolvedValue(record({ status: 'waiting_permission', permission_status: 'pending_permission', permission_request_id: 'tool_1' })),
     ...overrides,
   };
 }
@@ -110,6 +114,33 @@ describe('ExecutionHandoffPanel', () => {
     expect(await screen.findByText('记录验证命令')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '标记完成' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '标记失败' })).not.toBeInTheDocument();
+  });
+
+  it('点击申请人工执行权限只调用 request-permission API', async () => {
+    const runAgentLoop = vi.fn();
+    const approvePermission = vi.fn();
+    const shell = vi.fn();
+    const api = apiFixture();
+    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '申请人工执行权限' }));
+
+    await vi.waitFor(() => expect(api.requestExecutionHandoffPermission).toHaveBeenCalledWith(baseUrl, 'eh_1', fetcher));
+    expect(runAgentLoop).not.toHaveBeenCalled();
+    expect(approvePermission).not.toHaveBeenCalled();
+    expect(shell).not.toHaveBeenCalled();
+  });
+
+  it('等待权限和申请失败显示中文状态', async () => {
+    const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([
+      record({ status: 'waiting_permission', permission_status: 'pending_permission', permission_request_id: 'tool_1' }),
+      record({ id: 'eh_2', status: 'failed', permission_status: 'denied', bridge_error: '危险命令被拒绝' }),
+    ]) });
+    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+
+    expect(await screen.findByText('等待人工执行权限')).toBeInTheDocument();
+    expect(await screen.findByText('申请失败：危险命令被拒绝')).toBeInTheDocument();
+    expect(screen.queryByText('auto execute')).not.toBeInTheDocument();
   });
 
   it('不调用 runAgentLoop / approvePermission / shell / fs / process / ipcRenderer', async () => {

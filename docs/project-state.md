@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M47 Execution Audit Persistence
-- 最新本地提交：`d329117 fix(M47): prevent stale audit binding to new closures`
-- 远程状态：`main` 与 `origin/main` 已同步；M47 已 push
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence
+- 已完成到：M48 PermissionGate-Bound Execution Bridge（本地实现中）
+- 最新本地提交：M47.1 文档收口后以 `git log --oneline -1` 为准
+- 远程状态：`main` 本地领先 `origin/main`；M48 未 push
+- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge
 
 ## 当前进行中
-- 当前阶段：M47 已完成并已 push
-- 当前状态：execution queue 和 execution handoff 已接入本地审计 JSON 持久化，本地与远端 main 已同步
-- 当前结果：App 重启后可恢复 queue item、批准状态、拒绝原因、handoff 记录、完成/失败结果；不执行命令、不批准权限、不创建 goal、不启动 Agent Loop
-- 下一步：M48 PermissionGate-Bound Execution Bridge
+- 当前阶段：M48 PermissionGate-Bound Execution Bridge
+- 当前状态：request-only bridge 已实现，正在进行完整验证和 review gate 收口
+- 当前结果：approved manual_verification handoff 可生成 PermissionGate pending permission；不执行命令、不批准权限、不创建 goal、不启动 Agent Loop
+- 下一步：完成 M48 完整验证和 commit；通过后进入 M49 Execution Result Evidence Ingestion
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

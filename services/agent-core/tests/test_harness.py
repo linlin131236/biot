@@ -274,6 +274,9 @@ def test_harness_records_perception_memory_when_run_is_created(tmp_path):
     assert "workspace_profile" in records[0].tags
     assert run_records[0].metadata["intent"]["category"] == "question"
     assert "perception.snapshot.created" in _trace_types(harness, run.id)
+    internal = harness.register_internal_run("run_execution_bridge", "申请人工执行权限")
+    assert internal.id == "run_execution_bridge"
+    assert len(harness.query_memory(query="Workspace profile")) == 1
 
 
 def test_harness_prioritizes_perception_memories_for_agent_context(tmp_path):

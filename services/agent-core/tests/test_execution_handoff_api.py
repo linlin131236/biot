@@ -146,6 +146,95 @@ async def test_api_handoff_restores_after_app_rebuild(tmp_path):
     assert fail_completed.status_code == 409
 
 
+@pytest.mark.anyio
+async def test_request_permission_creates_pending_permission(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+
+        resp = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+        pending_resp = await client.get("/permissions/pending")
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "waiting_permission"
+    assert resp.json()["permission_status"] == "pending_permission"
+    assert resp.json()["permission_request_id"] == pending_resp.json()[0]["request_id"]
+    assert pending_resp.json()[0]["tool"] == "shell.execute"
+
+
+@pytest.mark.anyio
+async def test_request_permission_unknown_handoff_returns_404(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/execution-handoffs/missing/request-permission")
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.anyio
+async def test_request_permission_rejects_goal_input(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        create_resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix"})
+        closure_id = create_resp.json()["id"]
+        await client.post(f"/task-closures/{closure_id}/events", json={"type": "transition", "target": "planning"})
+        await client.post(f"/task-closures/{closure_id}/events", json={"type": "transition", "target": "executing"})
+        await client.post(f"/task-closures/{closure_id}/events", json={"type": "transition", "target": "stopped"})
+        queue_resp = await client.post(f"/task-closures/{closure_id}/execution-queue/propose")
+        goal_input = next(item for item in queue_resp.json() if item["kind"] == "replan")
+        approved = await client.post(f"/execution-queue/{goal_input['id']}/approve")
+        handoff = await client.post(f"/execution-queue/{approved.json()['id']}/handoff")
+
+        resp = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+
+    assert resp.status_code == 409
+
+
+@pytest.mark.anyio
+async def test_request_permission_does_not_duplicate_pending_permission(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+
+        first = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+        second = await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+        pending_resp = await client.get("/permissions/pending")
+
+    assert second.json()["permission_request_id"] == first.json()["permission_request_id"]
+    assert len(pending_resp.json()) == 1
+
+
+@pytest.mark.anyio
+async def test_request_permission_does_not_execute_or_approve(monkeypatch, tmp_path):
+    calls: list[str] = []
+
+    def submit_spy(self, run_id, request):
+        calls.append("submit_tool_request")
+        raise AssertionError("submit_tool_request must not be called")
+
+    def approve_spy(self, request_id):
+        calls.append("approve_permission")
+        raise AssertionError("approve_permission must not be called")
+
+    def loop_spy(self, run_id, max_steps=3):
+        calls.append("run_agent_loop")
+        raise AssertionError("run_agent_loop must not be called")
+
+    monkeypatch.setattr(Harness, "submit_tool_request", submit_spy)
+    monkeypatch.setattr(Harness, "approve_permission", approve_spy)
+    monkeypatch.setattr(Harness, "run_agent_loop", loop_spy)
+    app = create_app(tmp_path / "execution-audit.json")
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        item = await _approved_item(client)
+        handoff = await client.post(f"/execution-queue/{item['id']}/handoff")
+        await client.post(f"/execution-handoffs/{handoff.json()['id']}/request-permission")
+
+    assert calls == []
+
+
 async def _pending_item(client: AsyncClient) -> dict:
     create_resp = await client.post("/task-closures", json={"objective": "修复拼写", "template_id": "bugfix"})
     closure_id = create_resp.json()["id"]

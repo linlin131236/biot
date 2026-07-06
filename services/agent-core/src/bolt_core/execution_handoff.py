@@ -33,6 +33,9 @@ class ExecutionHandoffRecord:
     created_at: float
     updated_at: float
     result: str
+    permission_request_id: str | None = None
+    permission_status: str = "not_requested"
+    bridge_error: str = ""
 
     def to_dict(self) -> dict:
         return self.__dict__
@@ -95,6 +98,27 @@ class ExecutionHandoffService:
         self._save()
         return record
 
+    def mark_permission_requested(self, record_id: str, permission_request_id: str, permission_status: str) -> ExecutionHandoffRecord:
+        record = self.get_record(record_id)
+        self._require_open(record)
+        record.permission_request_id = permission_request_id
+        record.permission_status = permission_status
+        record.status = "waiting_permission"
+        record.updated_at = time.time()
+        self._save()
+        return record
+
+    def mark_bridge_failed(self, record_id: str, permission_status: str, bridge_error: str) -> ExecutionHandoffRecord:
+        record = self.get_record(record_id)
+        self._require_open(record)
+        record.permission_status = permission_status
+        record.bridge_error = bridge_error
+        record.status = "failed"
+        record.result = bridge_error
+        record.updated_at = time.time()
+        self._save()
+        return record
+
     def _find_by_item(self, item_id: str) -> ExecutionHandoffRecord | None:
         for record in self._records.values():
             if record.queue_item_id == item_id:
@@ -107,6 +131,9 @@ class ExecutionHandoffService:
 
     def _restore(self, records: list[dict]) -> None:
         for data in records:
+            data.setdefault("permission_request_id", None)
+            data.setdefault("permission_status", "not_requested")
+            data.setdefault("bridge_error", "")
             record = ExecutionHandoffRecord(**data)
             self._records[record.id] = record
             self._counter = max(self._counter, _next_counter(record.id, "eh_"))

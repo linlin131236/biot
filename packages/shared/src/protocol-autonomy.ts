@@ -200,6 +200,7 @@ export interface ExecutionQueueItem {
 
 export type ExecutionHandoffStatus = 'created' | 'ready_for_manual_action' | 'linked_to_goal' | 'waiting_permission' | 'completed' | 'failed';
 export type ExecutionHandoffType = 'manual_verification' | 'permission_panel' | 'goal_input' | 'manual_review';
+export type ExecutionHandoffPermissionStatus = 'not_requested' | 'pending_permission' | 'denied' | 'approved' | 'executed' | 'failed' | 'rejected';
 
 export interface ExecutionHandoffRecord {
   id: string;
@@ -214,6 +215,9 @@ export interface ExecutionHandoffRecord {
   goal_objective: string;
   run_id?: string | null;
   goal_id?: string | null;
+  permission_request_id?: string | null;
+  permission_status: ExecutionHandoffPermissionStatus;
+  bridge_error: string;
   created_at?: number;
   updated_at?: number;
   result: string;

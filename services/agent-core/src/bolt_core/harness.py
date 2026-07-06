@@ -47,17 +47,21 @@ class Harness:
         self.goal_service = GoalService(workspace)
         self.task_closure_service = task_closure_service
         self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
-        self.conversation_store = ConversationStore(
-            str(Path(workspace) / ".bolt" / "conversations.db"))
+        self.conversation_store = ConversationStore(str(Path(workspace) / ".bolt" / "conversations.db"))
         self.runs: dict[str, HarnessRun] = {}
         self.traces: dict[str, TraceLog] = {}
 
     def create_run(self, goal: str, workspace: str | None = None) -> HarnessRun:
         run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=workspace or self.workspace)
-        self.runs[run.id] = run
-        self.traces[run.id] = TraceLog(run.id)
+        self.runs[run.id], self.traces[run.id] = run, TraceLog(run.id)
         self.traces[run.id].record("run.created", {"goal": goal, "workspace": run.workspace})
         self._capture_perception(run)
+        return run
+
+    def register_internal_run(self, run_id: str, goal: str, workspace: str | None = None) -> HarnessRun:
+        run = HarnessRun(id=run_id, goal=goal, workspace=workspace or self.workspace)
+        self.runs[run.id], self.traces[run.id] = run, TraceLog(run.id)
+        self.traces[run.id].record("run.created", {"goal": goal, "workspace": run.workspace})
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:

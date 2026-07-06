@@ -159,11 +159,15 @@ describe('shared autonomy protocol', () => {
       goal_objective: '',
       run_id: null,
       goal_id: null,
+      permission_request_id: null,
+      permission_status: 'not_requested',
+      bridge_error: '',
       result: '',
     };
 
     expect(statuses).toHaveLength(6);
     expect(handoffTypes).toHaveLength(4);
     expect(record.handoff_type).toBe('manual_verification');
+    expect(record.permission_status).toBe('not_requested');
   });
 });
