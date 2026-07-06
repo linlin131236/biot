@@ -290,3 +290,18 @@ describe('M38 Goal Resume in App', () => {
     expect(await screen.findByText('等待人工批准')).toBeInTheDocument();
   });
 });
+
+// M39 SideChat dogfood
+describe('M39 SideChat dogfood', () => {
+  const f = vi.fn().mockImplementation((u: string) => {
+    if (u.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
+    if (u.endsWith('/goals/unfinished')) return Promise.resolve(json([]));
+    return Promise.resolve(json({}));
+  });
+  beforeEach(() => { localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' })); });
+  it('disables send without runId and shows hint', () => {
+    render(<App fetcher={f} />);
+    expect(screen.getByRole('button', { name: '发送指令' })).toBeDisabled();
+    expect(screen.getByText('暂无运行，无法发送')).toBeInTheDocument();
+  });
+});
