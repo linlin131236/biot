@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus, ExecutionHandoffStatus, ExecutionHandoffType } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -140,5 +140,30 @@ describe('shared autonomy protocol', () => {
     expect(risks).toHaveLength(4);
     expect(statuses).toHaveLength(5);
     expect(item.title).toBe('记录验证命令');
+  });
+
+  it('supports execution handoff record and covers enums', async () => {
+    const type = await import('./protocol-autonomy');
+    const statuses: ExecutionHandoffStatus[] = ['created', 'ready_for_manual_action', 'linked_to_goal', 'waiting_permission', 'completed', 'failed'];
+    const handoffTypes: ExecutionHandoffType[] = ['manual_verification', 'permission_panel', 'goal_input', 'manual_review'];
+    const record: type.ExecutionHandoffRecord = {
+      id: 'eh_1',
+      queue_item_id: 'eq_1',
+      closure_id: 'cl_1',
+      kind: 'verification_command',
+      status: 'ready_for_manual_action',
+      handoff_type: 'manual_verification',
+      title: '记录验证命令',
+      instruction: '请在外部终端人工运行',
+      command: 'pytest',
+      goal_objective: '',
+      run_id: null,
+      goal_id: null,
+      result: '',
+    };
+
+    expect(statuses).toHaveLength(6);
+    expect(handoffTypes).toHaveLength(4);
+    expect(record.handoff_type).toBe('manual_verification');
   });
 });

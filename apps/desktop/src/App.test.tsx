@@ -109,6 +109,7 @@ describe('App', () => {
       if (input.endsWith('/agent-steps')) return Promise.resolve(json({ status: 'executed', model_output: '{}', tool_result: { request_id: 'tool_1', status: 'executed', reason: 'ok', output: 'done' } }));
       if (input.endsWith('/trace')) return Promise.resolve(json([{ run_id: 'run_9', sequence: 1, type: 'run.created', payload: {} }]));
       if (input.endsWith('/permissions/pending')) return Promise.resolve(json([]));
+      if (input.includes('/execution-queue') || input.includes('/execution-handoffs')) return Promise.resolve(json([]));
       if (input.endsWith('/memory')) return Promise.resolve(json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } }));
       return Promise.resolve(json({}));
     });

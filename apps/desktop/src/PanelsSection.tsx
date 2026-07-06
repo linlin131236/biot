@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { CheckpointPanel } from './CheckpointPanel';
+import ExecutionHandoffPanel from './ExecutionHandoffPanel';
 import ExecutionQueuePanel from './ExecutionQueuePanel';
 import { GoalConsole } from './GoalConsole';
 import { SideChatPanel } from './SideChatPanel';
 import TaskClosurePanel from './TaskClosurePanel';
 import type { AgentLoopResult } from '@bolt/shared';
-import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem } from '@bolt/shared/autonomy';
+import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -23,18 +24,25 @@ interface PanelsProps {
     sideChat: { steerRun: (url: string, rId: string, content: string) => Promise<SteeringResult> };
     taskClosure: { fetchTaskTemplates: (b: string, f?: Fetcher) => Promise<TaskTemplate[]>; createTaskClosure: (b: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; getTaskClosure: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureEvent: (b: string, id: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureReview: (b: string, id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureRun: (b: string, id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureGoal: (b: string, id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; fetchTaskClosureVerificationPlan: (b: string, id: string, f?: Fetcher) => Promise<VerificationPlan>; fetchTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<VerificationAssessment>; updateTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence> };
     executionQueue: { fetchExecutionQueue: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; proposeExecutionQueue: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; approveExecutionQueueItem: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionQueueItem>; rejectExecutionQueueItem: (b: string, itemId: string, reason: string, f?: Fetcher) => Promise<ExecutionQueueItem>; completeExecutionQueueItem: (b: string, itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem>; failExecutionQueueItem: (b: string, itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem> };
+    executionHandoff: { fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>; createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord> };
   };
 }
 
 export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, baseUrl, fetcher, onGoalChange, api }: PanelsProps) {
   const [closureId, setClosureId] = useState<string | null>(null);
+  const [approvedQueueItemId, setApprovedQueueItemId] = useState<string | null>(null);
+  function handleClosureChange(nextClosureId: string | null) {
+    if (nextClosureId !== closureId) setApprovedQueueItemId(null);
+    setClosureId(nextClosureId);
+  }
   return (
     <>
       <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} baseUrl={baseUrl} />
       <GoalConsole workspacePath={workspace} goal={goalInfo} api={api.goal} baseUrl={baseUrl} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
       <SideChatPanel runId={runId} api={api.sideChat} baseUrl={baseUrl} />
-      <TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId={runId} goalId={goalInfo?.id ?? null} api={api.taskClosure} onClosureChange={setClosureId} />
-      <ExecutionQueuePanel baseUrl={baseUrl} closureId={closureId} fetcher={fetcher} api={api.executionQueue} />
+      <TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId={runId} goalId={goalInfo?.id ?? null} api={api.taskClosure} onClosureChange={handleClosureChange} />
+      <ExecutionQueuePanel baseUrl={baseUrl} closureId={closureId} fetcher={fetcher} api={api.executionQueue} onApprovedItemChange={setApprovedQueueItemId} />
+      <ExecutionHandoffPanel baseUrl={baseUrl} closureId={closureId} selectedQueueItemId={approvedQueueItemId} fetcher={fetcher} api={api.executionHandoff} />
     </>
   );
 }

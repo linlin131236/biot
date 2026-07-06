@@ -77,6 +77,9 @@ const required = [
   'docs/exec-plans/active/045-human-approval-execution-queue.md',
   'docs/decisions/045-human-approval-execution-queue.md',
   'docs/phase-45-review-gate.md',
+  'docs/exec-plans/active/046-controlled-execution-handoff.md',
+  'docs/decisions/046-controlled-execution-handoff.md',
+  'docs/phase-46-review-gate.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

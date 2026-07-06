@@ -3,6 +3,8 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from bolt_core.checkpoint import CheckpointService
+from bolt_core.execution_handoff import ExecutionHandoffService
+from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_queue import ExecutionQueueService
 from bolt_core.execution_queue_api import create_execution_queue_router
 from bolt_core.harness import Harness
@@ -16,6 +18,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     task_closure_service = TaskClosureService()
     execution_queue_service = ExecutionQueueService()
+    execution_handoff_service = ExecutionHandoffService()
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
@@ -26,6 +29,7 @@ def create_app() -> FastAPI:
         goal_exists=lambda goal_id: _goal_exists(harness, goal_id),
     ))
     app.include_router(create_execution_queue_router(execution_queue_service, task_closure_service))
+    app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service))
 
     @app.get("/health")
     def health() -> dict[str, str]:

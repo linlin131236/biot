@@ -6,7 +6,7 @@ import type {
   Checkpoint, ReviewChecklist, ReviewResult,
   TimelineEvent, GoalEvidence, SteeringResult,
   TaskTemplate, TaskClosureEvidence, VerificationPlan, VerificationAssessment,
-  ExecutionQueueItem,
+  ExecutionQueueItem, ExecutionHandoffRecord,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -160,6 +160,23 @@ export async function completeExecutionQueueItem(baseUrl: string, itemId: string
 
 export async function failExecutionQueueItem(baseUrl: string, itemId: string, result: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem> {
   return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/fail`, jsonPost({ result })));
+}
+
+export async function fetchExecutionHandoffs(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<ExecutionHandoffRecord[]> {
+  const query = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
+  return readJson(await fetcher(`${baseUrl}/execution-handoffs${query}`));
+}
+
+export async function createExecutionHandoff(baseUrl: string, itemId: string, fetcher: Fetcher = fetch): Promise<ExecutionHandoffRecord> {
+  return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/handoff`, jsonPost({})));
+}
+
+export async function completeExecutionHandoff(baseUrl: string, handoffId: string, result: string, fetcher: Fetcher = fetch): Promise<ExecutionHandoffRecord> {
+  return readJson(await fetcher(`${baseUrl}/execution-handoffs/${handoffId}/complete`, jsonPost({ result })));
+}
+
+export async function failExecutionHandoff(baseUrl: string, handoffId: string, result: string, fetcher: Fetcher = fetch): Promise<ExecutionHandoffRecord> {
+  return readJson(await fetcher(`${baseUrl}/execution-handoffs/${handoffId}/fail`, jsonPost({ result })));
 }
 
 // === Review Gate ===

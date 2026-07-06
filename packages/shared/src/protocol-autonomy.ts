@@ -198,6 +198,27 @@ export interface ExecutionQueueItem {
   created_at?: number;
 }
 
+export type ExecutionHandoffStatus = 'created' | 'ready_for_manual_action' | 'linked_to_goal' | 'waiting_permission' | 'completed' | 'failed';
+export type ExecutionHandoffType = 'manual_verification' | 'permission_panel' | 'goal_input' | 'manual_review';
+
+export interface ExecutionHandoffRecord {
+  id: string;
+  queue_item_id: string;
+  closure_id: string;
+  kind: ExecutionQueueKind;
+  status: ExecutionHandoffStatus;
+  handoff_type: ExecutionHandoffType;
+  title: string;
+  instruction: string;
+  command?: string | null;
+  goal_objective: string;
+  run_id?: string | null;
+  goal_id?: string | null;
+  created_at?: number;
+  updated_at?: number;
+  result: string;
+}
+
 export const TASK_TEMPLATES: TaskTemplate[] = [
   { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
   { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },

@@ -70,6 +70,18 @@ describe('ExecutionQueuePanel', () => {
     expect(await screen.findByText('已批准')).toBeInTheDocument();
   });
 
+  it('approve 后只选择交接队列项，不自动生成 handoff', async () => {
+    const api = apiFixture();
+    const onApprovedItemChange = vi.fn();
+    const createExecutionHandoff = vi.fn();
+    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} onApprovedItemChange={onApprovedItemChange} />);
+
+    fireEvent.click(await screen.findByRole('button', { name: '批准' }));
+
+    await vi.waitFor(() => expect(onApprovedItemChange).toHaveBeenCalledWith('eq_1'));
+    expect(createExecutionHandoff).not.toHaveBeenCalled();
+  });
+
   it('reject 调用 reject API', async () => {
     const api = apiFixture();
     render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);

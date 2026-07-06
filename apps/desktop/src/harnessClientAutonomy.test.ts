@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -181,6 +181,21 @@ describe('harness autonomy client', () => {
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/reject', expect.objectContaining({ method: 'POST', body: JSON.stringify({ reason: '暂不处理' }) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/complete', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '用户已完成' }) }));
     expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/fail', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '失败' }) }));
+  });
+
+  it('calls execution handoff endpoints', async () => {
+    const handoff = { id: 'eh_1', closure_id: 'cl_1', queue_item_id: 'eq_1', handoff_type: 'manual_verification', status: 'ready_for_manual_action' };
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify([handoff]))));
+
+    await fetchExecutionHandoffs('http://core', 'cl_1', fetcher);
+    await createExecutionHandoff('http://core', 'eq_1', fetcher);
+    await completeExecutionHandoff('http://core', 'eh_1', '用户已完成', fetcher);
+    await failExecutionHandoff('http://core', 'eh_1', '失败', fetcher);
+
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs?closure_id=cl_1');
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/handoff', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/complete', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '用户已完成' }) }));
+    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/fail', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '失败' }) }));
   });
 
   it('loadCheckpoint returns null for bad id', async () => {

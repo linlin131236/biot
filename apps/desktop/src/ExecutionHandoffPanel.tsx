@@ -1,0 +1,62 @@
+import { useCallback, useEffect, useState } from 'react';
+import type { ExecutionHandoffRecord } from '@bolt/shared/autonomy';
+import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionHandoffs } from './harnessClientAutonomy';
+
+type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
+
+export interface ExecutionHandoffPanelApi {
+  fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>;
+  createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+}
+
+interface Props { baseUrl: string; closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
+
+const defaultApi = { fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff };
+const terminal = new Set(['completed', 'failed']);
+
+export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueueItemId, fetcher, api }: Props) {
+  const [records, setRecords] = useState<ExecutionHandoffRecord[]>([]);
+  const [error, setError] = useState('');
+  const call = api ?? defaultApi;
+  const refresh = useCallback(async () => {
+    if (!closureId) return;
+    setRecords(await call.fetchExecutionHandoffs(baseUrl, closureId, fetcher));
+  }, [baseUrl, closureId, fetcher, call]);
+
+  useEffect(() => { refresh().catch(() => setError('加载失败')); }, [refresh]);
+
+  async function createHandoff() {
+    if (!selectedQueueItemId) { setError('请先选择已批准队列项'); return; }
+    try {
+      const next = await call.createExecutionHandoff(baseUrl, selectedQueueItemId, fetcher);
+      if (next.closure_id !== closureId) { setError('交接记录不属于当前闭环任务'); return; }
+      setRecords(current => current.some(record => record.id === next.id) ? current : [...current, next]);
+      setError('');
+    } catch { setError('生成失败'); }
+  }
+
+  async function update(action: () => Promise<ExecutionHandoffRecord>) {
+    try {
+      const next = await action();
+      setRecords(current => current.map(record => record.id === next.id ? next : record));
+    } catch { setError('操作失败'); }
+  }
+
+  if (!closureId) return <aside className="panel"><h2>安全交接</h2><p>暂无闭环任务</p></aside>;
+  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}{error ? <p>{error}</p> : null}</aside>;
+}
+
+function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; baseUrl: string; fetcher?: Fetcher }) {
+  const [note, setNote] = useState('');
+  const active = !terminal.has(record.status);
+  return <div className="stack"><strong>{record.title}</strong><span>{instruction(record)}</span>{record.command ? <code>{record.command}</code> : null}{record.goal_objective ? <span>建议目标：{record.goal_objective}</span> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已复制为目标草稿')}>复制为目标草稿</button> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已记录为待创建目标')}>记录为待创建目标</button> : null}{note ? <span>{note}</span> : null}{active ? <div className="actions"><button type="button" onClick={() => update(() => api.completeExecutionHandoff(baseUrl, record.id, '用户已完成', fetcher))}>标记完成</button><button type="button" onClick={() => update(() => api.failExecutionHandoff(baseUrl, record.id, '用户标记失败', fetcher))}>标记失败</button></div> : null}</div>;
+}
+
+function instruction(record: ExecutionHandoffRecord): string {
+  if (record.handoff_type === 'manual_verification') return '请在外部终端人工运行';
+  if (record.handoff_type === 'permission_panel') return '请到权限面板处理原始权限请求';
+  if (record.handoff_type === 'goal_input') return '建议目标文本';
+  return record.instruction || '需要人工处理';
+}
