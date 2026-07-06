@@ -88,7 +88,8 @@ describe('TaskClosurePanel', () => {
 
   it('点击创建调用 createTaskClosure', async () => {
     const api = apiFixture();
-    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId="run_42" goalId="goal_42" api={api} />);
+    const onClosureChange = vi.fn();
+    render(<TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId="run_42" goalId="goal_42" api={api} onClosureChange={onClosureChange} />);
 
     await createClosure(api);
 
@@ -98,6 +99,7 @@ describe('TaskClosurePanel', () => {
       run_id: 'run_42',
       goal_id: 'goal_42',
     }, fetcher);
+    expect(onClosureChange).toHaveBeenCalledWith('cl_42');
   });
 
   it('创建后显示中文状态标签', async () => {

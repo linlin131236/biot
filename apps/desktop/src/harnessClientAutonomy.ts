@@ -6,6 +6,7 @@ import type {
   Checkpoint, ReviewChecklist, ReviewResult,
   TimelineEvent, GoalEvidence, SteeringResult,
   TaskTemplate, TaskClosureEvidence, VerificationPlan, VerificationAssessment,
+  ExecutionQueueItem,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -134,6 +135,31 @@ export async function fetchTaskClosureAssessment(baseUrl: string, closureId: str
 
 export async function updateTaskClosureAssessment(baseUrl: string, closureId: string, fetcher: Fetcher = fetch): Promise<TaskClosureEvidence> {
   return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/assessment`, jsonPost({})));
+}
+
+export async function fetchExecutionQueue(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem[]> {
+  const query = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
+  return readJson(await fetcher(`${baseUrl}/execution-queue${query}`));
+}
+
+export async function proposeExecutionQueue(baseUrl: string, closureId: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem[]> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/execution-queue/propose`, jsonPost({})));
+}
+
+export async function approveExecutionQueueItem(baseUrl: string, itemId: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem> {
+  return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/approve`, jsonPost({})));
+}
+
+export async function rejectExecutionQueueItem(baseUrl: string, itemId: string, reason: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem> {
+  return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/reject`, jsonPost({ reason })));
+}
+
+export async function completeExecutionQueueItem(baseUrl: string, itemId: string, result: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem> {
+  return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/complete`, jsonPost({ result })));
+}
+
+export async function failExecutionQueueItem(baseUrl: string, itemId: string, result: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem> {
+  return readJson(await fetcher(`${baseUrl}/execution-queue/${itemId}/fail`, jsonPost({ result })));
 }
 
 // === Review Gate ===

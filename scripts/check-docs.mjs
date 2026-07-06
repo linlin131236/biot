@@ -74,6 +74,9 @@ const required = [
   'docs/exec-plans/active/044-evidence-based-verification.md',
   'docs/decisions/044-evidence-based-verification.md',
   'docs/phase-44-review-gate.md',
+  'docs/exec-plans/active/045-human-approval-execution-queue.md',
+  'docs/decisions/045-human-approval-execution-queue.md',
+  'docs/phase-45-review-gate.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'

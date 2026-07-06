@@ -27,6 +27,7 @@ export interface TaskClosurePanelProps {
   runId?: string | null;
   goalId?: string | null;
   api?: TaskClosurePanelApi;
+  onClosureChange?: (closureId: string | null) => void;
 }
 
 function errorMessage(value: unknown, fallback: string): string {
@@ -56,7 +57,7 @@ function assessmentLabel(assessment: VerificationAssessment): string {
 
 const defaultApi = { fetchTaskTemplates, createTaskClosure, getTaskClosure, addClosureEvent, addClosureReview, bindTaskClosureRun, bindTaskClosureGoal, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment };
 
-export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, goalId, api }: TaskClosurePanelProps) {
+export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, goalId, api, onClosureChange }: TaskClosurePanelProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplateId>('bugfix');
   const [objective, setObjective] = useState('');
   const [closure, setClosure] = useState<TaskClosureEvidence | null>(null);
@@ -81,8 +82,9 @@ export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, g
 
   const setClosureAndVerification = useCallback(async (next: TaskClosureEvidence) => {
     setClosure(next);
+    onClosureChange?.(next.id);
     await loadVerification(next.id);
-  }, [loadVerification]);
+  }, [loadVerification, onClosureChange]);
 
   const handleCreate = useCallback(async () => {
     if (!objective.trim()) { setError('请输入任务目标'); return; }
@@ -103,6 +105,7 @@ export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, g
     try {
       const updated = await call.updateTaskClosureAssessment(baseUrl, closure.id, fetcher);
       setClosure(updated);
+      onClosureChange?.(updated.id);
       await loadVerification(updated.id);
     } catch (e) { setError(errorMessage(e, '评估失败')); }
   }, [closure, baseUrl, fetcher, call, loadVerification]);

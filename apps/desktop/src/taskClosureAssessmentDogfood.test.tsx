@@ -19,6 +19,9 @@ describe('M44 task closure assessment dogfood', () => {
       if (input.endsWith('/task-closures/cl_44/verification-plan')) return Promise.resolve(json({ template_id: 'bugfix', checks: [{ id: 'quality', label: '测试或质量门证据', command: 'pytest', required: true, satisfied: false, evidence: '', missing_reason: '缺少测试证据' }] }));
       if (input.endsWith('/task-closures/cl_44/assessment') && init?.method === 'POST') return Promise.resolve(json(closure({ id: 'cl_44', run_id: 'run_44', next_action: '缺少验证证据' })));
       if (input.endsWith('/task-closures/cl_44/assessment')) return Promise.resolve(json({ status: 'missing_evidence', summary: '缺少验证证据', missing: ['缺少测试证据'], repair_suggestions: ['补充缺少的验证证据后重新评估完成度'] }));
+      if (input.endsWith('/execution-queue?closure_id=cl_44')) return Promise.resolve(json([queueItem()]));
+      if (input.endsWith('/task-closures/cl_44/execution-queue/propose') && init?.method === 'POST') return Promise.resolve(json([queueItem()]));
+      if (input.endsWith('/execution-queue/eq_44/approve') && init?.method === 'POST') return Promise.resolve(json(queueItem({ status: 'approved' })));
       return Promise.resolve(json({}));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
@@ -38,12 +41,35 @@ describe('M44 task closure assessment dogfood', () => {
     fireEvent.click(screen.getByRole('button', { name: '评估完成度' }));
     expect(await screen.findByText('缺少证据')).toBeInTheDocument();
     expect(screen.getByText(/建议修复：/)).toBeInTheDocument();
-    expect(urls.some(url => url.includes('approve'))).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: '生成待处理动作' }));
+    expect(await screen.findByText('记录验证命令')).toBeInTheDocument();
+    expect(screen.getAllByText('命令建议：pytest（不执行命令）').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '批准' }));
+    expect(await screen.findByText('已批准')).toBeInTheDocument();
     expect(urls.some(url => url.includes('agent-loops'))).toBe(false);
+    expect(urls.some(url => url.includes('/permissions/') && url.includes('/approve'))).toBe(false);
     expect(urls.some(url => url.includes('delete'))).toBe(false);
     expect(urls.some(url => url.includes('push'))).toBe(false);
   });
 });
+
+function queueItem(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'eq_44',
+    closure_id: 'cl_44',
+    kind: 'verification_command',
+    title: '记录验证命令',
+    description: '缺少测试证据',
+    risk: 'verification_command',
+    status: 'pending',
+    command: 'pytest',
+    reason: '',
+    result: '',
+    created_at: 0,
+    ...overrides,
+  };
+}
 
 function closure(overrides: Record<string, unknown> = {}) {
   return {

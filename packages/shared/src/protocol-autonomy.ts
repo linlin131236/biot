@@ -180,6 +180,24 @@ export interface VerificationAssessment {
   repair_suggestions: string[];
 }
 
+export type ExecutionQueueRisk = 'read_only' | 'verification_command' | 'workspace_write' | 'destructive';
+export type ExecutionQueueStatus = 'pending' | 'approved' | 'rejected' | 'completed' | 'failed';
+export type ExecutionQueueKind = 'verification_command' | 'repair_suggestion' | 'replan' | 'agent_loop' | 'manual_review';
+
+export interface ExecutionQueueItem {
+  id: string;
+  closure_id: string;
+  kind: ExecutionQueueKind;
+  title: string;
+  description: string;
+  risk: ExecutionQueueRisk;
+  status: ExecutionQueueStatus;
+  command?: string | null;
+  reason: string;
+  result: string;
+  created_at?: number;
+}
+
 export const TASK_TEMPLATES: TaskTemplate[] = [
   { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
   { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },

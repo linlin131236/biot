@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus } from './protocol-autonomy';
+import type { Goal, GoalStatus, TimelineEvent, GoalEvidence, ReviewResult, Checkpoint, SteeringResult, VerificationAssessmentStatus, ExecutionQueueKind, ExecutionQueueRisk, ExecutionQueueStatus } from './protocol-autonomy';
 
 describe('shared autonomy protocol', () => {
   it('supports Goal shape', () => {
@@ -116,5 +116,29 @@ describe('shared autonomy protocol', () => {
   it('covers all verification assessment statuses', () => {
     const statuses: VerificationAssessmentStatus[] = ['passed', 'failed', 'missing_evidence', 'waiting_permission', 'needs_repair', 'stopped'];
     expect(statuses).toHaveLength(6);
+  });
+
+  it('supports execution queue item and covers enums', async () => {
+    const type = await import('./protocol-autonomy');
+    const kinds: ExecutionQueueKind[] = ['verification_command', 'repair_suggestion', 'replan', 'agent_loop', 'manual_review'];
+    const risks: ExecutionQueueRisk[] = ['read_only', 'verification_command', 'workspace_write', 'destructive'];
+    const statuses: ExecutionQueueStatus[] = ['pending', 'approved', 'rejected', 'completed', 'failed'];
+    const item: type.ExecutionQueueItem = {
+      id: 'eq_1',
+      closure_id: 'cl_1',
+      kind: 'verification_command',
+      title: '记录验证命令',
+      description: '缺少测试证据',
+      risk: 'verification_command',
+      status: 'pending',
+      command: 'pytest',
+      reason: '',
+      result: '',
+    };
+
+    expect(kinds).toHaveLength(5);
+    expect(risks).toHaveLength(4);
+    expect(statuses).toHaveLength(5);
+    expect(item.title).toBe('记录验证命令');
   });
 });

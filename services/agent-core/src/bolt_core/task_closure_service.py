@@ -213,6 +213,13 @@ class TaskClosureService:
             closure.review_summary = assessment.summary
         return closure
 
+    def propose_execution_items(self, closure_id: str, queue_service) -> list[dict]:
+        """Create execution queue items from assessment only; does NOT execute."""
+        closure = self._record(closure_id).closure
+        plan = build_verification_plan(closure)
+        assessment = _assess_completion(closure)
+        return [item.to_dict() for item in queue_service.create_from_assessment(closure, plan, assessment)]
+
     def _record(self, closure_id: str) -> TaskClosureRecord:
         record = self._store.get(closure_id)
         if record is None:
