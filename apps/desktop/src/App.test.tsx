@@ -174,10 +174,10 @@ describe('App', () => {
   });
 
   it('does not re-dispatch for same runId from GoalConsole', async () => {
-    const fetcher = vi.fn().mockImplementation((u: string) => {
+    const fetcher = vi.fn().mockImplementation((u: string, init?: RequestInit) => {
       if (u.endsWith('/health')) return Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' }));
       if (u.endsWith('/goals/unfinished')) return Promise.resolve(json([]));
-      if (u.endsWith('/harness/runs') && u[1]?.method === 'POST') return Promise.resolve(json({ id: 'run_42' }));
+      if (u.endsWith('/harness/runs') && init?.method === 'POST') return Promise.resolve(json({ id: 'run_42' }));
       return Promise.resolve(json({}));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_42' }));
