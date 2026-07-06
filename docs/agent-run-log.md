@@ -218,3 +218,19 @@
 - 032 exec plan + decision docs
 
 **Verification:** 290 pytest + 55 vitest + pnpm quality + desktop build pass
+
+---
+
+## M33 UI Workflow Dogfood + Chinese Desktop Experience
+
+**Started:** 2026-07-06
+
+**Changes:**
+- App.tsx: all user-visible text changed to Chinese; added ToolFlowPanel (file path/read/patch inputs)
+- App.test.tsx: all button/label selectors updated to Chinese
+- uiWorkflowDogfood.test.tsx: 10 new tests — Chinese UI assertions + click path + tool flow
+- harnessClient import: added submitToolRequest for tool flow
+- 033 exec plan + decision docs
+- check-docs.mjs: added M33 docs to quality gate
+
+**Verification:** 290 pytest + 65 vitest + pnpm quality + desktop build pass

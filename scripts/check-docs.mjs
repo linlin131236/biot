@@ -48,6 +48,8 @@ const required = [
   'docs/decisions/031-integration-smoke.md',
   'docs/exec-plans/active/032-desktop-dogfood-smoke.md',
   'docs/decisions/032-desktop-dogfood-smoke.md',
+  'docs/exec-plans/active/033-ui-workflow-dogfood.md',
+  'docs/decisions/033-ui-workflow-dogfood.md',
   'docs/user-guide/first-run.md',
   'docs/user-guide/windows-install.md',
   'docs/release/release-checklist.md'
