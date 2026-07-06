@@ -97,14 +97,25 @@ def test_project_status_local_commits(tmp_path):
 
 
 def test_checkpoint_traversal_denied(tmp_path):
-    """P2-1: changed_files with .. must not read outside workspace."""
-    svc = CheckpointService(workspace=str(tmp_path))
-    outside = tmp_path.parent / "outside_secret.txt"
-    outside.write_text("LEAKED", encoding="utf-8")
+    """P2-1: changed_files with .. must not read outside workspace.
+    Uses sibling directory pattern: workspace=ws, evil=ws_evil, path=../ws_evil/secret.txt
+    """
+    ws = tmp_path / "ws"
+    ws_evil = tmp_path / "ws_evil"
+    ws.mkdir()
+    ws_evil.mkdir()
+    (ws_evil / "secret.txt").write_text("LEAKED", encoding="utf-8")
+    # Create a real file inside workspace to verify normal reads work
+    (ws / "safe.txt").write_text("OK", encoding="utf-8")
+
+    svc = CheckpointService(workspace=str(ws))
     cp = svc.create(run_id="run_trav", goal_id="goal_trav0000",
-                    changed_files=["../outside_secret.txt"])
-    # Should not contain the outside file
-    assert cp.file_contents is None or "outside_secret.txt" not in (cp.file_contents or {})
+                    changed_files=["../ws_evil/secret.txt", "safe.txt"])
+    # Outside file must NOT be read
+    assert "secret.txt" not in (cp.file_contents or {})
+    # Inside file must be read
+    assert "safe.txt" in (cp.file_contents or {})
+    assert cp.file_contents["safe.txt"] == "OK"
 
 
 def test_checkpoint_load_rejects_bad_id(tmp_path):

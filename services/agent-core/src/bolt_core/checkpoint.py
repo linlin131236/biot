@@ -63,7 +63,9 @@ class CheckpointService:
             ws = Path(self._workspace).resolve()
             for f in changed_files:
                 fp = (ws / f).resolve()
-                if not str(fp).lower().startswith(str(ws).lower()):
+                try:
+                    fp.relative_to(ws)
+                except ValueError:
                     continue  # skip paths outside workspace
                 if fp.is_file():
                     try:

@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-06
 **Baseline:** origin/main (0c79975)
-**Head:** 15328a6
+**Head:** latest local (see `git log --oneline -1`)
 
 ---
 
