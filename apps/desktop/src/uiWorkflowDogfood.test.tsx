@@ -217,4 +217,33 @@ describe('M35 Workspace binding', () => {
     expect(await screen.findByText('D:/Projects/RealBolt')).toBeInTheDocument();
     expect(localStorage.getItem('bolt.desktop.session')).toContain('D:/Projects/RealBolt');
   });
+
+  it('does not change workspace when picker returns null (cancel)', async () => {
+    const selectWorkspace = vi.fn().mockResolvedValue(null);
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing', coreUrl: 'http://core' }));
+
+    render(<App selectWorkspace={selectWorkspace} />);
+    fireEvent.click(screen.getByRole('button', { name: '更换工作区' }));
+
+    await vi.waitFor(() => expect(selectWorkspace).toHaveBeenCalled());
+    expect(screen.getByText('C:/Existing')).toBeInTheDocument();
+    expect(localStorage.getItem('bolt.desktop.session')).toContain('C:/Existing');
+  });
+
+  it('uses window.bolt selectWorkspace by default when available', async () => {
+    const originalBolt = window.bolt;
+    window.bolt = { selectWorkspace: vi.fn().mockResolvedValue('E:/Native/Bolt') };
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing', coreUrl: 'http://core' }));
+
+    try {
+      render(<App />);
+      fireEvent.click(screen.getByRole('button', { name: '更换工作区' }));
+
+      expect(await screen.findByText('E:/Native/Bolt')).toBeInTheDocument();
+      expect(window.bolt?.selectWorkspace).toHaveBeenCalled();
+      expect(localStorage.getItem('bolt.desktop.session')).toContain('E:/Native/Bolt');
+    } finally {
+      window.bolt = originalBolt;
+    }
+  });
 });

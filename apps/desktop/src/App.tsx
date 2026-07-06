@@ -11,8 +11,8 @@ import './styles.css';
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
 async function defaultSelectWorkspace(): Promise<string | null> {
-  if (typeof window !== 'undefined' && typeof (window as unknown as Record<string, unknown>).selectWorkspace === 'function') {
-    return (window as unknown as Record<string, () => Promise<string | null>>).selectWorkspace();
+  if (typeof window !== 'undefined' && window.bolt?.selectWorkspace) {
+    return window.bolt.selectWorkspace();
   }
   const path = prompt('请输入工作区路径：');
   return path || null;

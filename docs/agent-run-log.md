@@ -267,3 +267,24 @@
 - check-docs.mjs: added M35 docs
 
 **Verification:** 299 pytest + 25 vitest + pnpm quality + desktop build pass
+
+---
+
+## M36 Native Workspace Picker + Electron Security Bridge
+
+**Started:** 2026-07-06
+
+**Changes:**
+- electron/workspacePicker.ts: extracted handler + registerWorkspacePickerIpc (bolt:select-workspace, openDirectory only)
+- electron/preload.ts: contextBridge.exposeInMainWorld('bolt', { selectWorkspace }) — no raw ipcRenderer
+- electron/main.ts: registerWorkspacePickerIpc(ipcMain, dialog) on app.whenReady
+- src/App.tsx: defaultSelectWorkspace uses window.bolt?.selectWorkspace, fallback Chinese prompt
+- src/global.d.ts: Window.bolt type declaration
+- workspacePicker.test.ts: 5 tests (success, cancel, openDirectory, empty paths, channel name)
+- preloadBridge.test.ts: 4 tests (invoke, cancel, no ipcRenderer, no generic invoke)
+- mainSecurity.test.ts: 7 tests (contextIsolation, nodeIntegration, preload.js, no remote, registerWorkspacePickerIpc, channel, openDirectory)
+- uiWorkflowDogfood.test.tsx: +3 tests (cancel preserves workspace, window.bolt reference, workspace button)
+- 036 exec plan + decision docs
+- check-docs.mjs: added M36 docs
+
+**Verification:** 299 pytest + 88 vitest + pnpm quality + desktop build pass

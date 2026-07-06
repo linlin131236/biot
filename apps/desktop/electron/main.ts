@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { AgentCoreSupervisor, resolveAgentCoreRuntime } from './agentCoreRuntime.js';
+import { registerWorkspacePickerIpc } from './workspacePicker.js';
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 let agentCore: AgentCoreSupervisor | null = null;
@@ -40,6 +41,7 @@ async function startAgentCore() {
 }
 
 app.whenReady().then(async () => {
+  registerWorkspacePickerIpc(ipcMain, dialog);
   await startAgentCore();
   await createWindow();
 });
