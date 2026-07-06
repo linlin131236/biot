@@ -5,7 +5,7 @@
  * 所有文案中文。
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalStatus, TimelineEvent, GoalEvidence } from '@bolt/shared/autonomy';
 
@@ -16,19 +16,14 @@ interface GoalConsoleApi {
   pauseGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
   resumeGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
   clearGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
-  getGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
+  getGoal: (baseUrl: string, goalId: string) => Promise<Goal | null>;
   fetchGoalEvidence: (baseUrl: string, goalId: string) => Promise<GoalEvidence[]>;
   fetchRunTimeline: (baseUrl: string, runId: string) => Promise<TimelineEvent[]>;
 }
 
 const STATUS_LABEL: Record<GoalStatus | 'rejected', string> = {
-  pending: '未开始',
-  running: '运行中',
-  paused: '已暂停',
-  stopped: '已停止',
-  completed: '已完成',
-  failed: '失败',
-  rejected: '已拒绝',
+  pending: '未开始', running: '运行中', paused: '已暂停',
+  stopped: '已停止', completed: '已完成', failed: '失败', rejected: '已拒绝',
 };
 
 function loopStatusToGoalStatus(loopStatus: AgentLoopResult['status'], steps: number, maxSteps: number): GoalStatus {
@@ -53,20 +48,38 @@ interface GoalConsoleProps {
   baseUrl?: string;
   maxSteps?: number;
   unfinishedGoals?: Goal[];
-  timeline?: TimelineEvent[];
-  evidence?: GoalEvidence[];
 }
 
-export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core', maxSteps = 10, unfinishedGoals, timeline, evidence }: GoalConsoleProps) {
+export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core', maxSteps = 10, unfinishedGoals }: GoalConsoleProps) {
   const [objective, setObjective] = useState('');
   const [error, setError] = useState('');
   const [currentGoal, setCurrentGoal] = useState<Goal | null>(goal);
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const [loopStepCount, setLoopStepCount] = useState(0);
+  const [timeline, setTimeline] = useState<TimelineEvent[] | null>(null);
+  const [evidence, setEvidence] = useState<GoalEvidence[] | null>(null);
 
   const hasWorkspace = workspacePath.length > 0;
   const hasObjective = objective.trim().length >= 5;
   const canStart = hasWorkspace && hasObjective;
+  const displayGoal = currentGoal || goal || (unfinishedGoals && unfinishedGoals.length > 0 ? unfinishedGoals[0] : null);
+
+  // Fetch evidence when goal is active (doesn't need runId)
+  useEffect(() => {
+    const g = currentGoal || goal || (unfinishedGoals?.length ? unfinishedGoals[0] : null);
+    if (!g) { setEvidence(null); return; }
+    let active = true;
+    api.fetchGoalEvidence(baseUrl, g.id).then(e => { if (active) setEvidence(e); }).catch(() => {});
+    return () => { active = false; };
+  }, [baseUrl, currentGoal?.id, goal?.id, unfinishedGoals, api]);
+
+  // Fetch timeline only when both goal + runId exist
+  useEffect(() => {
+    if (!currentRunId) { setTimeline(null); return; }
+    let active = true;
+    api.fetchRunTimeline(baseUrl, currentRunId).then(t => { if (active) setTimeline(t); }).catch(() => {});
+    return () => { active = false; };
+  }, [baseUrl, currentRunId, api]);
 
   async function handleStart() {
     setError('');
@@ -90,6 +103,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     try { const g = await api.pauseGoal(baseUrl, currentGoal.id); setCurrentGoal(g); } catch (e) { setError(String(e)); }
   }
 
+  /** Resume from unfinished-banner: need startRun for new runId if cold-start */
   async function handleResumeFromBanner() {
     const target = displayGoal;
     if (!target) return;
@@ -97,13 +111,18 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     try {
       const g = await api.resumeGoal(baseUrl, target.id);
       setCurrentGoal(g);
-      if (currentRunId) {
-        const loopResult = await api.runAgentLoop(baseUrl, currentRunId, maxSteps);
-        setLoopStepCount(loopResult.steps);
-        const derivedStatus = loopStatusToGoalStatus(loopResult.status, loopResult.steps, maxSteps);
-        setCurrentGoal(prev => prev ? { ...prev, status: derivedStatus, step_count: loopResult.steps } : prev);
-        if (loopResult.error) { setError(loopResult.error); }
+      // Cold-start: no currentRunId → start a new run to get one
+      let runId = currentRunId;
+      if (!runId) {
+        const run = await api.startRun(baseUrl, target.objective, workspacePath);
+        runId = run.id;
+        setCurrentRunId(runId);
       }
+      const loopResult = await api.runAgentLoop(baseUrl, runId, maxSteps);
+      setLoopStepCount(loopResult.steps);
+      const derivedStatus = loopStatusToGoalStatus(loopResult.status, loopResult.steps, maxSteps);
+      setCurrentGoal(prev => prev ? { ...prev, status: derivedStatus, step_count: loopResult.steps } : prev);
+      if (loopResult.error) { setError(loopResult.error); }
     } catch (e) { setError(String(e)); }
   }
 
@@ -127,7 +146,6 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     try { const g = await api.clearGoal(baseUrl, currentGoal.id); setCurrentGoal(g); setCurrentRunId(null); } catch (e) { setError(String(e)); }
   }
 
-  const displayGoal = currentGoal || goal || (unfinishedGoals && unfinishedGoals.length > 0 ? unfinishedGoals[0] : null);
   const status = displayGoal?.status ?? null;
   const stepCount = displayGoal?.step_count ?? loopStepCount;
   const isMaxed = stepCount >= maxSteps && maxSteps > 0;
@@ -172,7 +190,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
       {error ? <span className="error">{error}</span> : null}
     </div>}
     <div className="goalDetails">
-      {timeline !== undefined ? <div className="timeline">
+      {timeline !== null ? <div className="timeline">
         {timeline.length === 0 ? <span>暂无长任务记录</span> : <>
           <span>{timeline.length} 条记录</span>
           <div className="timelineRecent">
@@ -183,7 +201,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
           </div>
         </>}
       </div> : null}
-      {evidence !== undefined ? <div className="evidence">
+      {evidence !== null ? <div className="evidence">
         {evidence.length === 0 ? <span>暂无证据</span> : <>
           <span>{evidence.length} 条证据</span>
           {evidence[0]?.summary ? <span>{evidence[0].summary}</span> : null}
