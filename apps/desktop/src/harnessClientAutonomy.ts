@@ -7,6 +7,7 @@ import type {
   TimelineEvent, GoalEvidence, SteeringResult,
   TaskTemplate, TaskClosureEvidence, VerificationPlan, VerificationAssessment,
   ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
+  ExecutionAuditIntegrity,
 } from '@bolt/shared/autonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -190,6 +191,10 @@ export async function fetchExecutionAuditTimeline(baseUrl: string, closureId: st
 export async function fetchExecutionAuditDiagnostics(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<ExecutionAuditDiagnostic[]> {
   const query = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
   return readJson(await fetcher(`${baseUrl}/execution-audit/diagnostics${query}`));
+}
+
+export async function fetchExecutionAuditIntegrity(baseUrl: string, fetcher: Fetcher = fetch): Promise<ExecutionAuditIntegrity[]> {
+  return readJson(await fetcher(`${baseUrl}/execution-audit/integrity`));
 }
 
 // === Review Gate ===

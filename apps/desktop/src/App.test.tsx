@@ -62,7 +62,7 @@ describe('App', () => {
   });
 
   it('checks agent core health when the workbench opens', async () => {
-    const fetcher = vi.fn().mockResolvedValue(json({ status: 'ok', service: 'bolt-agent-core' }));
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(json({ status: 'ok', service: 'bolt-agent-core' })));
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
 
     render(<App fetcher={fetcher} />);

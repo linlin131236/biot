@@ -17,9 +17,11 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_protocol import ToolRequest
 from bolt_core.tool_result_api import tool_result_dict
 
-from bolt_core.execution_audit_store import ExecutionAuditStore, execution_audit_path as resolve_execution_audit_path
+from bolt_core.execution_audit_store import ExecutionAuditStore, ExecutionAuditStoreError, execution_audit_path as resolve_execution_audit_path
 from bolt_core.execution_audit_diagnostics import ExecutionAuditDiagnosticsService
 from bolt_core.execution_audit_diagnostics_api import create_execution_audit_diagnostics_router
+from bolt_core.execution_audit_integrity import ExecutionAuditIntegrityService
+from bolt_core.execution_audit_integrity_api import create_execution_audit_integrity_router
 from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
 from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
 
@@ -27,9 +29,14 @@ from bolt_core.execution_audit_timeline_api import create_execution_audit_timeli
 def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
-    task_closure_service = TaskClosureService(audit_store)
-    execution_queue_service = ExecutionQueueService(audit_store)
-    execution_handoff_service = ExecutionHandoffService(audit_store)
+    try:
+        task_closure_service = TaskClosureService(audit_store)
+        execution_queue_service = ExecutionQueueService(audit_store)
+        execution_handoff_service = ExecutionHandoffService(audit_store)
+    except ExecutionAuditStoreError:
+        task_closure_service = TaskClosureService(None)
+        execution_queue_service = ExecutionQueueService(None)
+        execution_handoff_service = ExecutionHandoffService(None)
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
@@ -37,6 +44,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     result_ingestion = ExecutionResultIngestionService(execution_handoff_service, execution_queue_service, task_closure_service)
     timeline_service = ExecutionAuditTimelineService(execution_queue_service, execution_handoff_service, task_closure_service)
     diagnostics_service = ExecutionAuditDiagnosticsService(execution_queue_service, execution_handoff_service, harness.permissions, task_closure_service)
+    integrity_service = ExecutionAuditIntegrityService(audit_store)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -49,6 +57,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service, permission_bridge))
     app.include_router(create_execution_audit_timeline_router(timeline_service, task_closure_service))
     app.include_router(create_execution_audit_diagnostics_router(diagnostics_service))
+    app.include_router(create_execution_audit_integrity_router(integrity_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

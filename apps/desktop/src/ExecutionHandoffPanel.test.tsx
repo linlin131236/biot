@@ -65,6 +65,7 @@ function apiFixture(overrides: Partial<ExecutionHandoffPanelApi> = {}): Executio
     fetchExecutionHandoffs: vi.fn().mockResolvedValue([record()]),
     fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([]),
     fetchExecutionAuditDiagnostics: vi.fn().mockResolvedValue([]),
+    fetchExecutionAuditIntegrity: vi.fn().mockResolvedValue([]),
     createExecutionHandoff: vi.fn().mockResolvedValue(record()),
     completeExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'completed' })),
     failExecutionHandoff: vi.fn().mockResolvedValue(record({ status: 'failed' })),
