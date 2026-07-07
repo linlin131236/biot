@@ -1,19 +1,19 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M112 补丁应用评估（V7 进行中）
+- 已完成到：M113 测试失败诊断评估（V7 进行中）
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成并 push。
-- 远程状态：`origin/main` 在 M110 commit (66862dd)，本地领先 M111-M112。
+- 远程状态：`origin/main` 在 M110 commit (66862dd)，本地领先 M111-M113。
 - 当前本地分支：`main`。
 - 未 release / 未 tag / 未 delete / 未 push。
-- 未进入 M113。
+- 未进入 M114。
 
 ## 当前状态
-- 当前阶段：V7 智能评估 / Agent Dogfood 深水区（M111-M120），M112 已完成。
+- 当前阶段：V7 智能评估 / Agent Dogfood 深水区（M111-M120），M113 已完成。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新验证基线：
-  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1425 passed**。
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1437 passed**。
   - `pnpm --filter @bolt/shared test`：**27 passed**。
   - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
   - `pnpm --filter @bolt/desktop build`：通过 (286 KB)。
@@ -21,7 +21,7 @@
   - `git diff --check`：通过。
   - `node scripts/check-docs.mjs`：通过。
   - `node scripts/check-chinese-ui.mjs`：通过。
-- 全量测试基线：**1425 backend + 27 shared + 268 desktop = 1720 passed**。
+- 全量测试基线：**1437 backend + 27 shared + 268 desktop = 1732 passed**。
 
 ## V6 里程碑结果
 - M101：工具注册表（Tool Registry）。
@@ -51,11 +51,13 @@
 ## V7 里程碑结果
 - M111：工具调用评估基准（Tool Call Eval）。
 - M112：补丁应用评估（Patch Apply Eval）。
+- M113：测试失败诊断评估（Test Failure Diagnosis Eval）。
 
 ## V7 测试增量
 - M111: +18 tests（tool_call_eval）
 - M112: +16 tests（patch_apply_eval）
-- **V7 当前合计：+34 tests，+2 后端服务**
+- M113: +12 tests（test_failure_diagnosis_eval）
+- **V7 当前合计：+46 tests，+3 后端服务**
 
 ## 安全扫描结果
 - `as any` / `unknown as`：0 新增
