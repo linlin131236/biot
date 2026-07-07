@@ -1,23 +1,26 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M100 桌面 Beta Dogfood（V5 终点，等待爸爸复审）
-- V5 中文产品 UI/UX（M91-M100）已完成，P1 复审修复已完成。
-- 远程状态：M91-M100 + M100 P1 修复已 push 到 `origin/main`。
-- 当前本地分支：`main` 与 `origin/main` 已同步；最新提交以 `git log --oneline -1 --decorate` 为准。
+- 已完成到：M101 Tool Registry（V6 工具生态进行中）
+- V5 中文产品 UI/UX（M91-M100）已完成并 push。
+- V6 工具生态（M101-M110）进行中，M101 已完成。
+- 远程状态：M91-M100 已 push 到 `origin/main`。
+- 当前本地分支：`main`，领先 `origin/main` 1 commit（M101）。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M101。
+- 正在进行 M102。
 
 ## 当前状态
-- 当前阶段：M100 完成并已 push，等待爸爸决定是否授权进入 M101。
+- 当前阶段：V6 M101 完成，进入 M102。
 - 工作区预期：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
-- V5 最新验证基线：
-  - `uv run pytest -q --color=no`（在 `services/agent-core`）：1225 passed, 1 warning。
+- 最新验证基线：
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：1250 passed（25 新增）。
   - `pnpm --filter @bolt/shared test`：27 passed。
   - `pnpm --filter @bolt/desktop test`：34 files / 262 tests passed。
-  - `pnpm --filter @bolt/desktop build`：通过。
+  - `pnpm --filter @bolt/desktop build`：通过 (281 KB)。
   - `pnpm run quality`：通过。
-  - `git diff --check`：通过，仅 Windows LF/CRLF 提示。
+  - `git diff --check`：通过。
+  - `node scripts/check-docs.mjs`：通过。
+  - `node scripts/check-chinese-ui.mjs`：通过。
   - `node scripts/check-docs.mjs`：通过。
   - `node scripts/check-chinese-ui.mjs`：通过。
 - 当前全量测试基线：1225 backend + 27 shared + 262 desktop = 1514 passed。
