@@ -1,6 +1,7 @@
 from bolt_core.agent_loop import AgentLoop
 from bolt_core.harness import Harness
 from bolt_core.model_gateway import ModelResponse, TokenUsage, ToolCall
+from bolt_core.tool_protocol import ToolResult
 
 
 class BadGateway:
@@ -77,7 +78,7 @@ def test_agent_loop_run_loop_stops_on_pending_permission(tmp_path):
     harness.agent_loop.gateway = _fixed_gateway(str(target), tool="file.write", args={"path": str(target), "proposed_content": "new\n"})
     run = harness.create_run("write README")
 
-    result = harness.run_agent_loop(run.id, max_steps=3)
+    result = harness.run_agent_loop(run.id, max_steps=2)
 
     assert result.status == "pending_permission"
     assert result.steps == 1
@@ -113,6 +114,62 @@ def test_agent_loop_run_loop_stops_on_denied(tmp_path):
     assert result.status == "denied"
     assert result.steps == 1
     assert _has_trace(harness, run.id, "agent.loop.stopped")
+
+
+def test_agent_loop_run_loop_replans_on_unknown_tool_status(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+
+    class ReplanThenReadGateway:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, request):
+            self.calls += 1
+            if self.calls == 1:
+                return ModelResponse("completed", None, TokenUsage(1, 1, 2), [ToolCall("call_unknown", "file.read", {"path": str(workspace)})], None)
+            return ModelResponse("completed", None, TokenUsage(1, 1, 2), [ToolCall("call_read", "file.read", {"path": str(workspace / "README.md")})], None)
+
+    readme = workspace / "README.md"
+    readme.write_text("Bolt", encoding="utf-8")
+    harness = Harness(workspace=str(workspace))
+    gateway = ReplanThenReadGateway()
+    harness.agent_loop = AgentLoop(gateway=gateway)
+    original_submit = harness.submit_tool_request
+
+    def submit(run_id, request):
+        if gateway.calls == 1:
+            return ToolResult(request.id, "strange", "unexpected")
+        return original_submit(run_id, request)
+
+    harness.submit_tool_request = submit
+    run = harness.create_run("read after replan")
+
+    result = harness.run_agent_loop(run.id, max_steps=2)
+
+    assert result.status == "executed"
+    assert result.steps == 2
+    assert _has_trace(harness, run.id, "agent.loop.replan_requested")
+
+
+def test_agent_loop_run_loop_reports_needs_replan_when_budget_exhausted(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
+    harness.agent_loop.gateway = _fixed_gateway(str(workspace / "README.md"))
+    original_submit = harness.submit_tool_request
+
+    def submit(run_id, request):
+        return ToolResult(request.id, "strange", "unexpected")
+
+    harness.submit_tool_request = submit
+    run = harness.create_run("unknown status")
+
+    result = harness.run_agent_loop(run.id, max_steps=1)
+
+    assert result.status == "needs_replan"
+    assert result.error == "strange"
+    assert _has_trace(harness, run.id, "agent.loop.replan_exhausted")
 
 
 def test_agent_loop_stops_when_no_tool_call(tmp_path):

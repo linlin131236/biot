@@ -1,4 +1,5 @@
 import pytest
+import sqlite3
 
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.memory_store import MEMORY_KINDS, MemoryStore
@@ -107,6 +108,32 @@ def test_sqlite_store_persists_failure_p0_context(tmp_path):
     context = MemoryStore(db_path=str(db_path)).p0_context()
 
     assert context["unresolved_failures"][0]["tool"] == "shell.run"
+
+
+def test_sqlite_store_creates_query_indexes(tmp_path):
+    db_path = tmp_path / "memory.sqlite"
+    MemoryStore(db_path=str(db_path))
+
+    with sqlite3.connect(db_path) as conn:
+        indexes = {row[1] for row in conn.execute("pragma index_list(memory_records)").fetchall()}
+
+    assert "idx_memory_records_kind_status" in indexes
+    assert "idx_memory_records_scope_status" in indexes
+    assert "idx_memory_records_status" in indexes
+
+
+def test_sqlite_store_filters_search_in_database(tmp_path):
+    db_path = tmp_path / "memory.sqlite"
+    store = MemoryStore(db_path=str(db_path))
+    matching = store.record("project", "repo", "Biot uses pnpm")
+    store.record("project", "repo", "Other note")
+    store.record("user", "repo", "Biot uses pnpm")
+    store.resolve(matching.id)
+
+    store.record("project", "repo", "Biot uses pnpm actively")
+    results = MemoryStore(db_path=str(db_path)).search("pnpm", kind="project", scope="repo", status="active")
+
+    assert [record.content for record in results] == ["Biot uses pnpm actively"]
 
 
 def _failure() -> ToolFailure:

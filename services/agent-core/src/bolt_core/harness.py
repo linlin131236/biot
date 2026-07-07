@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
@@ -14,6 +13,7 @@ from bolt_core.model_settings import ModelSettingsStatus, ModelSettingsStore
 from bolt_core.patch_engine import build_change_set, apply_change_set
 from bolt_core.evidence import EvidenceLog
 from bolt_core.goal_service import GoalService
+from bolt_core.harness_state import HarnessRun, HarnessState
 from bolt_core.permission_gate import PermissionGate
 from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
@@ -24,14 +24,6 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
-
-
-@dataclass(frozen=True)
-class HarnessRun:
-    id: str
-    goal: str
-    workspace: str
-
 
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
@@ -48,26 +40,28 @@ class Harness:
         self.task_closure_service = task_closure_service
         self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
         self.conversation_store = ConversationStore(str(Path(workspace) / ".bolt" / "conversations.db"))
-        self.runs: dict[str, HarnessRun] = {}
-        self.traces: dict[str, TraceLog] = {}
+        self._state = HarnessState()
+        self.runs = self._state.runs
+        self.traces = self._state.traces
+        self._state_lock = self._state.lock
 
     def create_run(self, goal: str, workspace: str | None = None) -> HarnessRun:
         run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=workspace or self.workspace)
-        self.runs[run.id], self.traces[run.id] = run, TraceLog(run.id)
-        self.traces[run.id].record("run.created", {"goal": goal, "workspace": run.workspace})
+        trace = self._state.register(run)
+        trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         self._capture_perception(run)
         return run
 
     def register_internal_run(self, run_id: str, goal: str, workspace: str | None = None) -> HarnessRun:
         run = HarnessRun(id=run_id, goal=goal, workspace=workspace or self.workspace)
-        self.runs[run.id], self.traces[run.id] = run, TraceLog(run.id)
-        self.traces[run.id].record("run.created", {"goal": goal, "workspace": run.workspace})
+        trace = self._state.register(run)
+        trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:
-        self.traces[run_id].record("tool.requested", {"tool": request.tool})
+        self._trace_log(run_id).record("tool.requested", {"tool": request.tool})
         decision = PermissionGate(self._workspace(run_id)).evaluate(request)
-        self.traces[run_id].record("permission.evaluated", {"status": decision.status})
+        self._trace_log(run_id).record("permission.evaluated", {"status": decision.status})
         if decision.status == "denied":
             return self._record_task_closure_tool_result(run_id, self._deny(request, decision.reason))
         if decision.action == "allow":
@@ -77,18 +71,18 @@ class Harness:
         if request.tool == "file.patch":
             return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
         self.permissions.add(run_id, request, decision)
-        self.traces[run_id].record("permission.pending", {"request_id": request.id})
+        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
         return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
 
     def trace(self, run_id: str) -> list[TraceEvent]:
-        return self.traces[run_id].events()
+        return self._trace_log(run_id).events()
 
     def pending_permissions(self) -> list[PendingPermission]:
         return self.permissions.pending()
 
     def approve_permission(self, request_id: str) -> ToolResult:
         item = self.permissions.approve(request_id)
-        self.traces[item.run_id].record("permission.approved", {"request_id": request_id})
+        self._trace_log(item.run_id).record("permission.approved", {"request_id": request_id})
         if item.tool == "file.write":
             return self._apply_file_write(item)
         if item.tool == "file.patch":
@@ -99,9 +93,9 @@ class Harness:
 
     def reject_permission(self, request_id: str) -> ToolResult:
         item = self.permissions.reject(request_id)
-        self.traces[item.run_id].record("permission.rejected", {"request_id": request_id})
+        self._trace_log(item.run_id).record("permission.rejected", {"request_id": request_id})
         if item.tool in ("file.write", "file.patch"):
-            self.traces[item.run_id].record("change.rejected", {"request_id": request_id})
+            self._trace_log(item.run_id).record("change.rejected", {"request_id": request_id})
         return ToolResult.rejected(request_id, "rejected by user")
 
     def p0_context(self) -> dict[str, list]:
@@ -124,7 +118,7 @@ class Harness:
 
     def query_memory(self, kind=None, scope=None, status=None, query=None) -> list[MemoryRecord]:
         if query:
-            return self.memory.search(query, kind=kind)
+            return self.memory.search(query, kind=kind, scope=scope, status=status or "active")
         return self.memory.list(kind=kind, scope=scope, status=status)
 
     def resolve_memory(self, memory_id: str) -> MemoryRecord:
@@ -136,24 +130,24 @@ class Harness:
     def run_document_gardener(self, run_id: str) -> ToolResult:
         proposals = DocumentGardener(self._workspace(run_id), self.memory).proposals()
         if not proposals:
-            self.traces[run_id].record("maintenance.document_gardener.completed", {"proposals": 0})
+            self._trace_log(run_id).record("maintenance.document_gardener.completed", {"proposals": 0})
             return ToolResult.executed(f"maintenance_{uuid4().hex[:12]}", "no failure patterns to propose")
         proposal = proposals[0]
         request = ToolRequest.create("file.write", "write", {"path": proposal.path, "proposed_content": proposal.content})
         result = self.submit_tool_request(run_id, request)
-        self.traces[run_id].record("maintenance.document_gardener.proposed", {"path": proposal.path})
+        self._trace_log(run_id).record("maintenance.document_gardener.proposed", {"path": proposal.path})
         return result
 
     def run_agent_step(self, run_id: str) -> AgentStepResult:
-        run = self.runs[run_id]
-        trace = self.traces[run_id]
+        run = self._run(run_id)
+        trace = self._trace_log(run_id)
         config = self.model_settings.config()
         memories = self._agent_memories()
         return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories)
 
     def run_agent_loop(self, run_id: str, max_steps: int = 3) -> AgentLoopResult:
-        run = self.runs[run_id]
-        trace = self.traces[run_id]
+        run = self._run(run_id)
+        trace = self._trace_log(run_id)
         config = self.model_settings.config()
         closure_id = self.task_closure_recorder.start_loop(run_id)
         result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps)
@@ -190,7 +184,7 @@ class Harness:
         snapshot = PerceptionService(run.workspace).snapshot(run.goal, self.p0_context())
         self._record_workspace_profile(snapshot)
         self._record_perception_snapshot(run.id, snapshot)
-        self.traces[run.id].record("perception.snapshot.created", {"intent": snapshot.intent.category})
+        self._trace_log(run.id).record("perception.snapshot.created", {"intent": snapshot.intent.category})
 
     def _record_workspace_profile(self, snapshot: PerceptionSnapshot) -> None:
         profile = dataclass_dict(snapshot.workspace_profile)
@@ -201,7 +195,7 @@ class Harness:
         self.memory.record("session", run_id, "Perception snapshot captured", "perception", ["perception", "snapshot"], metadata)
 
     def _execute(self, run_id: str, request: ToolRequest) -> ToolExecution:
-        self.traces[run_id].record("tool.execution.started", {"request_id": request.id})
+        self._trace_log(run_id).record("tool.execution.started", {"request_id": request.id})
         if request.tool in ("terminal.spawn", "terminal.poll", "terminal.kill"):
             execution = self.terminal.execute_tool(request)
         elif request.tool in ("web.search", "web.extract"):
@@ -209,7 +203,7 @@ class Harness:
         else:
             execution = ReadOnlyToolExecutor(self._workspace(run_id)).execute(request)
         event_type = "tool.execution.completed" if execution.status == "executed" else "tool.execution.failed"
-        self.traces[run_id].record(event_type, {"request_id": request.id})
+        self._trace_log(run_id).record(event_type, {"request_id": request.id})
         return execution
 
     def _queue_file_write(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
@@ -220,8 +214,8 @@ class Harness:
             return self._deny(request, proposal.error or "change proposal failed")
         payload = {**request.payload, "change_set": proposal.change.__dict__}
         self.permissions.add(run_id, request, decision, payload)
-        self.traces[run_id].record("change.proposed", {"request_id": request.id})
-        self.traces[run_id].record("permission.pending", {"request_id": request.id})
+        self._trace_log(run_id).record("change.proposed", {"request_id": request.id})
+        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
         return ToolResult.pending(request.id, change_set_json(proposal.change))
 
     def _queue_file_patch(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
@@ -250,14 +244,14 @@ class Harness:
         change = build_change_set(path, original, patched)
         payload = {**request.payload, "change_set": change.__dict__}
         self.permissions.add(run_id, request, decision, payload)
-        self.traces[run_id].record("change.proposed", {"request_id": request.id})
-        self.traces[run_id].record("permission.pending", {"request_id": request.id})
+        self._trace_log(run_id).record("change.proposed", {"request_id": request.id})
+        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
         return ToolResult.pending(request.id, change_set_json(change))
 
     def _apply_file_write(self, item: PendingPermission) -> ToolResult:
         allowed, reason = apply_file_write(item.payload["change_set"])
         event = "change.applied" if allowed else "change.failed"
-        self.traces[item.run_id].record(event, {"request_id": item.request_id})
+        self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
         if allowed:
             return ToolResult.executed(item.request_id, reason)
         request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
@@ -270,13 +264,13 @@ class Harness:
         change = ChangeSet(**change_set)
         decision = apply_change_set(change)
         event = "change.applied" if decision.allowed else "change.failed"
-        self.traces[item.run_id].record(event, {"request_id": item.request_id})
+        self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
         if decision.allowed:
             return ToolResult.executed(item.request_id, decision.reason)
         return ToolResult.failed(item.request_id, decision.reason)
 
     def _run_immediate(self, run_id: str, request: ToolRequest) -> ToolResult:
-        self.traces[run_id].record("permission.auto_allowed", {"request_id": request.id})
+        self._trace_log(run_id).record("permission.auto_allowed", {"request_id": request.id})
         execution = self._execute(run_id, request)
         return self._result_from_execution(request, execution)
 
@@ -296,4 +290,10 @@ class Harness:
         return ToolResult.denied(request.id, reason)
 
     def _workspace(self, run_id: str) -> str:
-        return self.runs[run_id].workspace
+        return self._run(run_id).workspace
+
+    def _run(self, run_id: str) -> HarnessRun:
+        return self._state.run(run_id)
+
+    def _trace_log(self, run_id: str) -> TraceLog:
+        return self._state.trace(run_id)

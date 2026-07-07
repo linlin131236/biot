@@ -59,7 +59,13 @@ class AgentLoop:
             if verification.status == "pause_for_permission":
                 trace.record("agent.loop.paused", {"status": last_step.status})
                 return AgentLoopResult(last_step.status, index + 1, last_step)
-            if verification.status in ("terminal_failure", "recoverable_failure", "needs_replan"):
+            if verification.status == "needs_replan":
+                if index + 1 < max(1, max_steps):
+                    trace.record("agent.loop.replan_requested", {"status": last_step.status, "reason": verification.reason})
+                    continue
+                trace.record("agent.loop.replan_exhausted", {"status": last_step.status, "reason": verification.reason})
+                return AgentLoopResult("needs_replan", index + 1, last_step, verification.reason)
+            if verification.status in ("terminal_failure", "recoverable_failure"):
                 trace.record("agent.loop.stopped", {"status": last_step.status, "reason": verification.status})
                 return AgentLoopResult(last_step.status, index + 1, last_step, last_step.error)
         trace.record("agent.loop.max_steps_reached", {"steps": max(1, max_steps)})

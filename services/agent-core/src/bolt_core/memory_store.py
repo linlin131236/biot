@@ -72,7 +72,9 @@ class MemoryStore:
         return memory
 
     def list(self, kind: str | None = None, scope: str | None = None, status: str | None = None) -> list[MemoryRecord]:
-        records = self._load_records() if self.db_path is not None else self._records
+        if self.db_path is not None:
+            return self._query_records(kind=kind, scope=scope, status=status)
+        records = self._records
         if kind is not None:
             records = [record for record in records if record.kind == kind]
         if scope is not None:
@@ -81,9 +83,11 @@ class MemoryStore:
             records = [record for record in records if record.status == status]
         return list(records)
 
-    def search(self, query: str, kind: str | None = None, limit: int = 20) -> list[MemoryRecord]:
+    def search(self, query: str, kind: str | None = None, limit: int = 20, scope: str | None = None, status: str = "active") -> list[MemoryRecord]:
+        if self.db_path is not None:
+            return self._query_records(kind=kind, scope=scope, status=status, query=query, limit=limit)
         needle = query.lower()
-        records = self.list(kind=kind, status="active")
+        records = self.list(kind=kind, scope=scope, status=status)
         found = [record for record in records if needle in record.content.lower()]
         return found[:limit]
 
@@ -126,6 +130,9 @@ class MemoryStore:
             self._ensure_column(conn, "memory_records", "metadata_json", "text", "'{}'")
             self._ensure_column(conn, "memory_records", "created_at", "text", "''")
             self._ensure_column(conn, "memory_records", "updated_at", "text", "''")
+            conn.execute("create index if not exists idx_memory_records_kind_status on memory_records(kind, status)")
+            conn.execute("create index if not exists idx_memory_records_scope_status on memory_records(scope, status)")
+            conn.execute("create index if not exists idx_memory_records_status on memory_records(status)")
 
     def _ensure_column(self, conn, table: str, name: str, kind: str, default: str) -> None:
         columns = [row[1] for row in conn.execute(f"pragma table_info({table})").fetchall()]
@@ -145,8 +152,34 @@ class MemoryStore:
             conn.execute("insert into tool_failures values (?, ?, ?, ?, ?, ?, ?)", (memory_id, failure.tool, failure.operation, failure.failure_class, failure.observable_result, failure.root_cause, failure.repair_result))
 
     def _load_records(self) -> list[MemoryRecord]:
+        return self._query_records()
+
+    def _query_records(self, kind: str | None = None, scope: str | None = None, status: str | None = None, query: str | None = None, limit: int | None = None) -> list[MemoryRecord]:
+        clauses: list[str] = []
+        params: list[str | int] = []
+        if kind is not None:
+            clauses.append("kind = ?")
+            params.append(kind)
+        if scope is not None:
+            clauses.append("scope = ?")
+            params.append(scope)
+        if status is not None:
+            clauses.append("status = ?")
+            params.append(status)
+        if query is not None:
+            clauses.append("instr(lower(content), ?) > 0")
+            params.append(query.lower())
+        where = f" where {' and '.join(clauses)}" if clauses else ""
+        limit_sql = " limit ?" if limit is not None else ""
+        if limit is not None:
+            params.append(limit)
         with self._connect() as conn:
-            rows = conn.execute("select id, kind, scope, content, status, source, tags_json, metadata_json, created_at, updated_at from memory_records").fetchall()
+            rows = conn.execute(
+                "select id, kind, scope, content, status, source, tags_json, metadata_json, created_at, updated_at from memory_records"
+                + where
+                + limit_sql,
+                params,
+            ).fetchall()
         return [MemoryRecord(row[0], row[1], row[2], row[3], row[4], row[5], json.loads(row[6]), json.loads(row[7] or "{}"), row[8], row[9]) for row in rows]
 
     def _load_failures(self) -> list[ToolFailure]:

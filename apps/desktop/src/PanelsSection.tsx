@@ -24,7 +24,7 @@ import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraph
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-interface PanelsProps {
+export interface PanelsProps {
   runId: string | null;
   goalInfo: Goal | null;
   unfinishedGoals: Goal[];
@@ -41,6 +41,8 @@ interface PanelsProps {
     executionHandoff: { fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>; fetchExecutionAuditTimeline: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>; fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>; fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>; fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>; fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>; fetchRecoveryPolicy: (b: string, f?: Fetcher) => Promise<RecoveryPolicy>; fetchPlannerGraphs: (b: string, f?: Fetcher) => Promise<TaskGraphSummary[]>; createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; requestExecutionHandoffPermission: (b: string, handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord> };
   };
 }
+
+export type PanelsApi = PanelsProps['api'];
 
 export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, baseUrl, fetcher, onGoalChange, api }: PanelsProps) {
   const [closureId, setClosureId] = useState<string | null>(null);

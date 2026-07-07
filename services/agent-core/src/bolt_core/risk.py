@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
+import re
 
 
 @dataclass(frozen=True)
@@ -11,6 +12,13 @@ class RiskDecision:
 
 DANGEROUS_COMMANDS = ("rm -rf /", "del /s /q c:\\", "format ", "git push --force")
 BLOCKED_COMMAND_FRAGMENTS = ("| sh", "| bash", "curl ", "Invoke-WebRequest")
+DANGEROUS_COMMAND_PATTERNS = (
+    re.compile(r"\brm\s+[^;&|]*-[^\n;&|]*r[^\n;&|]*\s+/\*?(?:\s|$|['\"])", re.IGNORECASE),
+    re.compile(r"\bshutil\.rmtree\(\s*['\"](?:/|[a-z]:\\)['\"]", re.IGNORECASE),
+    re.compile(r"\bremove-item\b(?=[^\n;&|]*-recurse\b)(?=[^\n;&|]*-force\b)[^\n;&|]*(?:[a-z]:|/)", re.IGNORECASE),
+    re.compile(r"\bformat\s+(?:[a-z]:|/)", re.IGNORECASE),
+    re.compile(r"\|\s*(?:sh|bash|zsh|fish|perl|python|python3|ruby|node|powershell|pwsh|cmd)(?:\s|$)", re.IGNORECASE),
+)
 SAFE_COMMANDS = ("git", "npm", "pnpm", "pytest", "node", "python", "ls", "cat", "terminal")
 SECRET_NAMES = (".env", ".env.local", "id_rsa", "credentials", "secret")
 
@@ -66,6 +74,8 @@ def classify_path(path: str, workspace: str, operation: str) -> RiskDecision:
 
 def _is_destructive_command(command: str) -> bool:
     if any(command.startswith(pattern) for pattern in DANGEROUS_COMMANDS):
+        return True
+    if any(pattern.search(command) for pattern in DANGEROUS_COMMAND_PATTERNS):
         return True
     return any(fragment.lower() in command for fragment in BLOCKED_COMMAND_FRAGMENTS)
 
