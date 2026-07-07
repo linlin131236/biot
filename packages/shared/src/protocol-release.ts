@@ -118,3 +118,36 @@ export interface TransitionResult {
   reason: string;
   valid: boolean;
 }
+
+// === Tool Selection Policy (M63) ===
+
+export interface ToolClassSummary {
+  classes: Record<string, string>;
+  counts: Record<string, number>;
+  total: number;
+}
+
+export interface ToolInfo {
+  name: string;
+  class: string;
+  label: string;
+  description: string;
+}
+
+export interface ToolSelectionResultItem {
+  tool: string;
+  class: string;
+  label: string;
+  allowed: boolean;
+  requires_permission: boolean;
+  warnings: string[];
+  suggestion: string;
+}
+
+export interface ToolSelectionResult {
+  results: ToolSelectionResultItem[];
+  all_allowed: boolean;
+  any_requires_permission: boolean;
+  reason: string;
+  disclaimer: string;
+}
