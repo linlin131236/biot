@@ -1,8 +1,8 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M82 Planner/Builder/Reviewer Split（V4 进行中）
-- V3 项目理解与长期记忆（M71-M80）全部完成；V4 多 Agent 团队（M81-M90）进行中
+- 已完成到：M90 Team Dogfood（V4 终点，等待爸爸复审）
+- V3 项目理解与长期记忆（M71-M80）全部完成；V4 多 Agent 团队（M81-M90）全部完成
 - 远程状态：M67-M80 已 push，`main` 与 `origin/main` 已同步到 `db8194a`
 - 远程状态：M67-M80 已 push，`main` 与 `origin/main` 已同步到 `db8194a`
 - 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74 → M75 → M76 → M77 → M78 → M79 → M80（大复盘✅）→ M81
