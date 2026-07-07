@@ -49,6 +49,7 @@ from bolt_core.memory_permission_boundary_api import create_memory_permission_bo
 from bolt_core.memory_dogfood_api import create_memory_dogfood_router
 from bolt_core.role_protocol_api import create_role_protocol_router
 from bolt_core.multi_agent_workflow_api import create_multi_agent_workflow_router
+from bolt_core.researcher_integration_api import create_researcher_integration_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 
@@ -112,6 +113,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_memory_dogfood_router())
     app.include_router(create_role_protocol_router())
     app.include_router(create_multi_agent_workflow_router())
+    app.include_router(create_researcher_integration_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
