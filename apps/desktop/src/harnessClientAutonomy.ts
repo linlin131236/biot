@@ -281,6 +281,11 @@ export async function fetchTaskHome(baseUrl: string, fetcher: Fetcher = fetch): 
   return readJson(await fetcher(`${baseUrl}/task-home`));
 }
 
+// === Permission Center (M92) ===
+export async function fetchPermissionCenter(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/permission-center`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

@@ -1,0 +1,118 @@
+/**
+ * PermissionCenterPanel tests (M92).
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { PermissionCenterPanel } from './PermissionCenterPanel';
+
+function fakeApi(data: Record<string, unknown>) {
+  return { fetchPermissionCenter: vi.fn().mockResolvedValue(data) };
+}
+
+function fakeApiRejects(msg: string) {
+  return { fetchPermissionCenter: vi.fn().mockRejectedValue(new Error(msg)) };
+}
+
+const emptyData = {
+  items: [],
+  total_pending: 0,
+  high_risk_count: 0,
+  medium_risk_count: 0,
+  low_risk_count: 0,
+  updated_at: '2026-07-08T00:00:00Z',
+};
+
+const pendingData = {
+  items: [
+    {
+      id: 'p1', run_id: 'r1', tool: 'shell_executor', tool_cn: '命令行执行',
+      operation: 'execute', operation_cn: '执行', payload_summary: '{"cmd":"npm test"}',
+      reason: '需要运行测试', status: 'pending_permission', status_cn: '等待批准',
+      risk_level: 'high', risk_label_cn: '高风险',
+      risk_explanation_cn: '此操作可能修改文件系统或执行系统命令。',
+      impact_cn: '批准后将对项目文件或系统环境产生实际变更。',
+      action_cn: '请前往权限审批面板处理此请求。',
+    },
+    {
+      id: 'p2', run_id: 'r1', tool: 'web_search', tool_cn: '网络搜索',
+      operation: 'search', operation_cn: '搜索', payload_summary: '{"q":"test"}',
+      reason: '需要搜索文档', status: 'pending_permission', status_cn: '等待批准',
+      risk_level: 'low', risk_label_cn: '低风险',
+      risk_explanation_cn: '此操作仅读取或查询信息。',
+      impact_cn: '批准后仅执行信息查询操作。',
+      action_cn: '请前往权限审批面板处理此请求。',
+    },
+  ],
+  total_pending: 2,
+  high_risk_count: 1,
+  medium_risk_count: 0,
+  low_risk_count: 1,
+  updated_at: '2026-07-08T00:00:00Z',
+};
+
+describe('PermissionCenterPanel', () => {
+  it('renders loading state', () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    expect(screen.getByText('加载中…')).toBeTruthy();
+  });
+
+  it('renders empty state', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    await waitFor(() => {
+      expect(screen.getByText(/没有待处理的权限请求/)).toBeTruthy();
+    });
+  });
+
+  it('renders pending permissions', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    await waitFor(() => {
+      expect(screen.getByText('命令行执行')).toBeTruthy();
+      expect(screen.getByText('网络搜索')).toBeTruthy();
+    });
+  });
+
+  it('shows high risk badge', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    await waitFor(() => {
+      const badges = screen.getAllByText('高风险');
+      expect(badges.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it('shows risk explanation', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    await waitFor(() => {
+      expect(screen.getByText(/修改文件系统/)).toBeTruthy();
+    });
+  });
+
+  it('shows impact description', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    await waitFor(() => {
+      expect(screen.getByText(/实际变更/)).toBeTruthy();
+    });
+  });
+
+  it('shows error state', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApiRejects('网络错误')} />);
+    await waitFor(() => {
+      expect(screen.getByText(/加载失败/)).toBeTruthy();
+    });
+  });
+
+  it('has Chinese read-only note', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    await waitFor(() => {
+      expect(screen.getByText(/只读/)).toBeTruthy();
+    });
+  });
+
+  it('has no approve button', async () => {
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    await waitFor(() => {
+      expect(screen.getByText('命令行执行')).toBeTruthy();
+    });
+    const buttons = document.querySelectorAll('button');
+    expect(buttons.length).toBe(0);
+  });
+});

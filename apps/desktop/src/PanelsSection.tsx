@@ -8,7 +8,8 @@ import TaskClosurePanel from './TaskClosurePanel';
 import { MemorySearchPanel } from './MemorySearchPanel';
 import { MultiAgentStatusPanel } from './MultiAgentStatusPanel';
 import { TaskHomePanel } from './TaskHomePanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome } from './harnessClientAutonomy';
+import { PermissionCenterPanel } from './PermissionCenterPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -43,6 +44,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
   return (
     <>
       <TaskHomePanel baseUrl={baseUrl} api={{ fetchTaskHome }} />
+      <PermissionCenterPanel baseUrl={baseUrl} api={{ fetchPermissionCenter }} />
       <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} baseUrl={baseUrl} />
       <GoalConsole workspacePath={workspace} goal={goalInfo} api={api.goal} baseUrl={baseUrl} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
       <SideChatPanel runId={runId} api={api.sideChat} baseUrl={baseUrl} />
