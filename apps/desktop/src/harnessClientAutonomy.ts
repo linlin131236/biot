@@ -245,6 +245,23 @@ export async function evaluateReview(baseUrl: string, payload: { items: string[]
   return readJson(await fetcher(`${baseUrl}/review/evaluate`, jsonPost(payload)));
 }
 
+// === Memory Search (M79) ===
+export async function fetchMemoryDecisions(baseUrl: string, keyword: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>[]> {
+  return readJson(await fetcher(`${baseUrl}/decisions/query/by-keyword?keyword=${encodeURIComponent(keyword)}`));
+}
+export async function fetchMemoryFailures(baseUrl: string, keyword: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>[]> {
+  return readJson(await fetcher(`${baseUrl}/failures/query/by-keyword?keyword=${encodeURIComponent(keyword)}`));
+}
+export async function fetchMemoryPreferences(baseUrl: string, keyword: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>[]> {
+  return readJson(await fetcher(`${baseUrl}/preferences/query/by-keyword?keyword=${encodeURIComponent(keyword)}`));
+}
+export async function fetchProjectProfile(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/project/profile`));
+}
+export async function fetchCodeMapEntries(baseUrl: string, keyword: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>[]> {
+  return readJson(await fetcher(`${baseUrl}/code-map/query?keyword=${encodeURIComponent(keyword)}`));
+}
+
 // === Multi-Agent Status (M87) ===
 export async function fetchMultiAgentRoles(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>[]> {
   return readJson(await fetcher(`${baseUrl}/roles`));

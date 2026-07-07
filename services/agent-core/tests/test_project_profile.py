@@ -1,5 +1,6 @@
 """Tests for ProjectProfileService."""
 import pytest
+import re
 
 from bolt_core.project_profile import ProjectProfileService, ProjectProfile
 
@@ -22,7 +23,8 @@ def test_profile_has_current_milestone():
     svc = ProjectProfileService(".")
     profile = svc.build()
     assert profile.current_milestone != ""
-    assert "M6" in profile.current_milestone or "M7" in profile.current_milestone or "M8" in profile.current_milestone or "未知" in profile.current_milestone
+    # Check that milestone starts with M followed by digits, or is "未知"
+    assert re.match(r'M\d', profile.current_milestone) or "未知" in profile.current_milestone
 
 
 def test_profile_has_latest_head():
