@@ -5,12 +5,12 @@
 - V3 项目理解与长期记忆（M71-M80）全部完成
 - V4 多 Agent 团队（M81-M90）全部完成
 - 全量测试：1184 backend + 27 shared + 212 desktop = **1423 passed**
-- 远程状态：M67-M80 已 push 到 `origin/main`（`db8194a`）；M81-M90 本地已 commit 到 `0154abb`，当前 `main` 相对 `origin/main` **ahead 10**，**未 push**
+- 远程状态：M81-M90 及 P1 修复已 push；`main` 与 `origin/main` 已同步（以 `git status` / `git log` 为准）
 - 最近稳定链路：M61→M70（大复盘✅）→M71→M80（大复盘✅）→M81→M82→M83→M84→M85→M86→M87→M88→M89→M90（大复盘✅）
 
 ## 当前进行中
 - 当前阶段：**M90 已完成，按文档规则停止，未进入 M91**
-- 当前状态：本地已 commit 到 `0154abb`，本轮 P1 修复已验证通过但尚未提交 / 未 push / 未 release / 未 tag / 未 delete
+- 当前状态：M81-M90 及 P1 修复已 push / 未 release / 未 tag / 未 delete / 未进入 M91
 - V4 各 milestone 结果：
   - M81：角色协议（58 tests）
   - M82：Planner/Builder/Reviewer 工作流（39 tests）
