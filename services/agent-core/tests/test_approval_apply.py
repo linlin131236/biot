@@ -214,3 +214,98 @@ class TestApprovalApply:
         result = engine.apply(prop.proposal_id, {"actor": "human", "scope": prop.proposal_id})
         assert result.success is False
         assert "不存在" in result.reason
+
+    # ── Anti-corruption: multi-file diff safety ──
+
+    def test_multi_target_mismatched_diff_fails(self, tmp_path):
+        """A diff for src/a.py must not be applied to src/b.py when target_files has both."""
+        (tmp_path / "src").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "src" / "a.py").write_text("print('a')\n", encoding="utf-8")
+        (tmp_path / "src" / "b.py").write_text("print('b')\n", encoding="utf-8")
+
+        # diff only modifies a.py
+        diff_for_a = (
+            "--- a/src/a.py\n"
+            "+++ b/src/a.py\n"
+            "@@ -1 +1 @@\n"
+            "-print('a')\n"
+            "+print('a_modified')\n"
+        )
+        store, prop = make_store_with_approved(
+            tmp_path,
+            target_files=["src/a.py", "src/b.py"],
+            diff_preview=diff_for_a,
+        )
+        engine = ApprovalApplyEngine(store=store, project_dir=str(tmp_path))
+        result = engine.apply(prop.proposal_id, {"actor": "human", "scope": prop.proposal_id})
+
+        # Must FAIL: diff has only a.py, but target_files includes b.py
+        assert result.success is False
+        assert "缺少对应 diff" in result.reason or "b.py" in result.reason
+
+        # b.py must NOT be corrupted
+        b_content = (tmp_path / "src" / "b.py").read_text(encoding="utf-8")
+        assert "print('b')" in b_content, f"b.py was corrupted: {b_content}"
+
+    def test_diff_extra_file_not_in_targets_fails(self, tmp_path):
+        """Diff containing a file not in target_files must be rejected."""
+        (tmp_path / "src").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "src" / "a.py").write_text("print('a')\n", encoding="utf-8")
+
+        diff_with_extra = (
+            "--- a/src/a.py\n"
+            "+++ b/src/a.py\n"
+            "@@ -1 +1 @@\n"
+            "-print('a')\n"
+            "+print('a_new')\n"
+            "--- a/src/secret.py\n"
+            "+++ b/src/secret.py\n"
+            "@@ -0,0 +1 @@\n"
+            "+evil code\n"
+        )
+        store, prop = make_store_with_approved(
+            tmp_path,
+            target_files=["src/a.py"],
+            diff_preview=diff_with_extra,
+        )
+        engine = ApprovalApplyEngine(store=store, project_dir=str(tmp_path))
+        result = engine.apply(prop.proposal_id, {"actor": "human", "scope": prop.proposal_id})
+
+        # Must FAIL: diff references secret.py which is not in target_files
+        assert result.success is False
+        assert "非目标" in result.reason or "secret.py" in result.reason
+
+    def test_two_file_diff_applies_correctly(self, tmp_path):
+        """A proper two-file diff should apply to each file independently."""
+        (tmp_path / "src").mkdir(parents=True, exist_ok=True)
+        (tmp_path / "src" / "a.py").write_text("print('a')\n", encoding="utf-8")
+        (tmp_path / "src" / "b.py").write_text("print('b')\n", encoding="utf-8")
+
+        diff_two_files = (
+            "--- a/src/a.py\n"
+            "+++ b/src/a.py\n"
+            "@@ -1 +1 @@\n"
+            "-print('a')\n"
+            "+print('a_new')\n"
+            "--- a/src/b.py\n"
+            "+++ b/src/b.py\n"
+            "@@ -1 +1 @@\n"
+            "-print('b')\n"
+            "+print('b_new')\n"
+        )
+        store, prop = make_store_with_approved(
+            tmp_path,
+            target_files=["src/a.py", "src/b.py"],
+            diff_preview=diff_two_files,
+        )
+        engine = ApprovalApplyEngine(store=store, project_dir=str(tmp_path))
+        result = engine.apply(prop.proposal_id, {"actor": "human", "scope": prop.proposal_id})
+
+        assert result.success is True
+        a_content = (tmp_path / "src" / "a.py").read_text(encoding="utf-8")
+        b_content = (tmp_path / "src" / "b.py").read_text(encoding="utf-8")
+        assert "print('a_new')" in a_content
+        assert "print('b_new')" in b_content
+        # Ensure no cross-contamination
+        assert "print('a')" not in a_content
+        assert "print('b')" not in b_content

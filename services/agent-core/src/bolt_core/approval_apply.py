@@ -134,20 +134,42 @@ class ApprovalApplyEngine:
                 reason="删除操作不在本 milestone 自动执行范围内。请爸爸手动审查后执行。",
             )
 
-        # ── 11. Apply the patch to real files ──
+        # ── 11. Split diff by file, then apply each to its target ──
+        file_diffs = self._split_diff_by_file(proposal.diff_preview)
+        if not file_diffs:
+            return ApplyResult(
+                success=False, proposal_id=proposal_id,
+                reason="无法从 diff_preview 中解析出文件差异",
+            )
+
+        # Verify every diff target matches a proposal target_file, and vice versa
+        diff_paths = set(file_diffs.keys())
+        target_set = set(proposal.target_files)
+        extra_in_diff = diff_paths - target_set
+        missing_in_diff = target_set - diff_paths
+        if extra_in_diff:
+            return ApplyResult(
+                success=False, proposal_id=proposal_id,
+                reason=f"diff 中包含非目标文件: {', '.join(sorted(extra_in_diff))}",
+            )
+        if missing_in_diff:
+            return ApplyResult(
+                success=False, proposal_id=proposal_id,
+                reason=f"目标文件缺少对应 diff: {', '.join(sorted(missing_in_diff))}",
+            )
+
         files_changed: list[str] = []
         for tf in proposal.target_files:
             target_path = self._project_dir / tf
+            per_file_diff = file_diffs.get(tf, "")
             try:
                 if proposal.operation_type == "create":
-                    # Extract new content from diff: all '+' lines after the hunk header
-                    new_content = self._extract_new_content(proposal.diff_preview, tf)
+                    new_content = self._extract_new_content(per_file_diff, tf)
                     target_path.parent.mkdir(parents=True, exist_ok=True)
                     target_path.write_text(new_content, encoding="utf-8")
                 elif proposal.operation_type == "modify":
-                    # Apply unified diff to existing file
                     old_content = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
-                    new_content = self._apply_unified_diff(old_content, proposal.diff_preview)
+                    new_content = self._apply_unified_diff(old_content, per_file_diff)
                     target_path.write_text(new_content, encoding="utf-8")
                 else:
                     return ApplyResult(
@@ -201,6 +223,53 @@ class ApprovalApplyEngine:
         return list(self._audit_log)
 
     # ── Patch application helpers ──
+
+    @staticmethod
+    def _split_diff_by_file(diff_text: str) -> dict[str, str]:
+        """Split a multi-file unified diff into per-file diffs.
+
+        Returns dict mapping file_path → per_file_diff_text.
+        File paths are extracted from '--- a/path' and '+++ b/path' headers.
+        """
+        if not diff_text:
+            return {}
+        lines = diff_text.split("\n")
+        result: dict[str, str] = {}
+        current_file: str | None = None
+        current_lines: list[str] = []
+
+        for line in lines:
+            # Detect file header: "--- a/path" or "--- /dev/null"
+            if line.startswith("--- "):
+                # Save previous file's diff
+                if current_file is not None and current_lines:
+                    result[current_file] = "\n".join(current_lines)
+                current_lines = [line]
+                # Extract path from "--- a/path"
+                path_part = line[4:]  # strip "--- "
+                if path_part.startswith("a/"):
+                    current_file = path_part[2:]
+                elif path_part == "/dev/null":
+                    current_file = None  # new file, path comes from +++
+                else:
+                    current_file = path_part
+            elif line.startswith("+++ "):
+                current_lines.append(line)
+                # If current_file wasn't set by --- (e.g., /dev/null), extract from +++
+                if current_file is None:
+                    path_part = line[4:]  # strip "+++ "
+                    if path_part.startswith("b/"):
+                        current_file = path_part[2:]
+                    else:
+                        current_file = path_part
+            elif current_file is not None:
+                current_lines.append(line)
+
+        # Save last file's diff
+        if current_file is not None and current_lines:
+            result[current_file] = "\n".join(current_lines)
+
+        return result
 
     @staticmethod
     def _apply_unified_diff(original: str, diff_text: str) -> str:
