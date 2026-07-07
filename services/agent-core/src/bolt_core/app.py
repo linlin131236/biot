@@ -56,6 +56,7 @@ from bolt_core.conflict_resolution_api import create_conflict_resolution_router
 from bolt_core.skilllearner_review_loop_api import create_skilllearner_review_loop_router
 from bolt_core.multi_agent_recovery_api import create_multi_agent_recovery_router
 from bolt_core.team_dogfood import create_team_dogfood_router
+from bolt_core.task_home_api import create_task_home_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
@@ -126,6 +127,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_skilllearner_review_loop_router())
     app.include_router(create_multi_agent_recovery_router())
     app.include_router(create_team_dogfood_router())
+    app.include_router(create_task_home_router(harness, diagnostics_service, planner_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

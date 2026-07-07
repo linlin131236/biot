@@ -276,6 +276,11 @@ export async function fetchSubtasks(baseUrl: string, role?: string, status?: str
   return readJson(await fetcher(`${baseUrl}/subtasks?${params.toString()}`));
 }
 
+// === Task Home (M91) ===
+export async function fetchTaskHome(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/task-home`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

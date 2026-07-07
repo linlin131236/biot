@@ -1,32 +1,22 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M90 Team Dogfood（V4 终点，等待爸爸复审）
+- 已完成到：**M91 中文任务首页**（V5 进行中）
 - V3 项目理解与长期记忆（M71-M80）全部完成
 - V4 多 Agent 团队（M81-M90）全部完成
-- 全量测试：1184 backend + 27 shared + 212 desktop = **1423 passed**
+- V5 中文产品 UI/UX（M91-M100）开始
+- 全量测试：1197 backend + 27 shared + 222 desktop = **1446 passed**
 - 远程状态：M81-M90 及 P1 修复已 push；`main` 与 `origin/main` 已同步（以 `git status` / `git log` 为准）
-- 最近稳定链路：M61→M70（大复盘✅）→M71→M80（大复盘✅）→M81→M82→M83→M84→M85→M86→M87→M88→M89→M90（大复盘✅）
+- 最近稳定链路：M61→M70（大复盘✅）→M71→M80（大复盘✅）→M81→M82→M83→M84→M85→M86→M87→M88→M89→M90（大复盘✅）→M91
 
 ## 当前进行中
-- 当前阶段：**M90 已完成，按文档规则停止，未进入 M91**
-- 当前状态：M81-M90 及 P1 修复已 push / 未 release / 未 tag / 未 delete / 未进入 M91
-- V4 各 milestone 结果：
-  - M81：角色协议（58 tests）
-  - M82：Planner/Builder/Reviewer 工作流（39 tests）
-  - M83：研究员集成（28 tests）
-  - M84：子任务分派（16 tests）
-  - M85：审查独立门（8 tests）
-  - M86：冲突解决（6 tests）
-  - M87：多 Agent 状态面板（6 tests）
-  - M88：技能学习闭环（7 tests）
-  - M89：多 Agent 恢复（8 tests）
-  - M90：团队大复盘（3 tests）
-- V4 合计：**+179 tests**，9 个新服务，1 个桌面面板
+- 当前阶段：**V5 M91-M100 中文产品 UI/UX**，正在执行 M91→M92
+- 当前状态：未 push / 未 release / 未 tag / 未 delete / 未进入 M101
+- V5 进度：
+  - M91：中文任务首页（+23 tests，+1 后端服务，+1 桌面面板，+1 exec plan，+1 decision，+1 review gate）
 - Desktop build：通过
 - 安全扫描：全部干净
-- M90 结论：**V4 多 Agent 团队达标，建议爸爸复审后授权进入 M91**
-- 下一步：等待爸爸确认是否进入 M91（中文产品 UI/UX）
+- 下一步：自动进入 M92 权限中心
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型，服务重启后数据丢失。M62+ 引入状态机和持久化前需评估。

@@ -292,3 +292,7 @@ export type SubtaskStatus = 'pending' | 'ready' | 'in_progress' | 'blocked' | 'a
 export interface MultiAgentRoleStatus { role_id: AgentRole; name_cn: string; task_count: number; blocked_count: number; }
 export interface MultiAgentSubtask { task_id: string; title_cn: string; assigned_role: AgentRole; status: SubtaskStatus; status_label_cn: string; risk_level: string; risk_label_cn: string; source_refs: string[]; }
 export interface MultiAgentBoardSummary { total_tasks: number; by_role: Record<string, number>; by_status: Record<string, number>; blocked_tasks: MultiAgentSubtask[]; roles: MultiAgentRoleStatus[]; }
+
+// === Task Home (M91) ===
+export interface TaskHomeEvent { code: string; severity: string; severity_label: string; summary: string; suggestion: string; }
+export interface TaskHomeSummary { current_goal: Record<string, unknown> | null; unfinished_goal_count: number; pending_permission_count: number; blocker_count: number; warning_count: number; active_task_count: number; recent_events: TaskHomeEvent[]; next_suggestions: string[]; updated_at: string; }
