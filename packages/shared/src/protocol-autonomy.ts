@@ -259,6 +259,22 @@ export interface ExecutionAuditIntegrity {
   suggestion: string;
 }
 
+export interface ReleaseReadinessCheck {
+  code: string;
+  label: string;
+  passed: boolean;
+  severity: 'blocking' | 'warning' | 'info';
+  severity_label: '阻断' | '警告' | '提示';
+  detail: string;
+}
+
+export interface ReleaseReadiness {
+  ready: boolean;
+  checks: ReleaseReadinessCheck[];
+  blockers: string[];
+  warnings: string[];
+}
+
 export const TASK_TEMPLATES: TaskTemplate[] = [
   { id: 'bugfix', label: '修复小问题', description: '定位并修复代码缺陷', default_checks: ['lint', 'test'] },
   { id: 'docs', label: '更新文档', description: '添加或修正文档内容', default_checks: ['lint:docs'] },

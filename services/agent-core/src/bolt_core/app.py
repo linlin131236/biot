@@ -24,9 +24,11 @@ from bolt_core.execution_audit_integrity import ExecutionAuditIntegrityService
 from bolt_core.execution_audit_integrity_api import create_execution_audit_integrity_router
 from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
 from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
+from bolt_core.release_readiness import ReleaseReadinessService
+from bolt_core.release_readiness_api import create_release_readiness_router
 
 
-def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
+def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
     try:
@@ -45,6 +47,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     timeline_service = ExecutionAuditTimelineService(execution_queue_service, execution_handoff_service, task_closure_service)
     diagnostics_service = ExecutionAuditDiagnosticsService(execution_queue_service, execution_handoff_service, harness.permissions, task_closure_service)
     integrity_service = ExecutionAuditIntegrityService(audit_store)
+    readiness_service = ReleaseReadinessService(str(project_dir or Path.cwd()), audit_store)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -58,6 +61,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app.include_router(create_execution_audit_timeline_router(timeline_service, task_closure_service))
     app.include_router(create_execution_audit_diagnostics_router(diagnostics_service))
     app.include_router(create_execution_audit_integrity_router(integrity_service))
+    app.include_router(create_release_readiness_router(readiness_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

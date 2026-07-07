@@ -26,6 +26,8 @@ describe('M43 task closure dogfood', () => {
       if (input.endsWith('/task-closures/cl_43/assessment') && init?.method === 'POST') return Promise.resolve(json(closure({ run_id: 'run_43', status: 'waiting_permission', final_status: 'waiting_permission', next_action: '等待人工批准' })));
       if (input.endsWith('/task-closures/cl_43/assessment')) return Promise.resolve(json({ status: 'waiting_permission', summary: '等待人工批准', missing: [], repair_suggestions: ['等待人工批准后再继续验证'] }));
       if (input.endsWith('/task-closures/cl_43')) return Promise.resolve(json(closure({ run_id: 'run_43', status: 'waiting_permission', final_status: 'waiting_permission', permission_request_ids: ['tool_43'] })));
+      if (input.endsWith('/execution-audit/integrity')) return Promise.resolve(json([]));
+      if (input.endsWith('/release-readiness')) return Promise.resolve(json({ ready: true, checks: [], blockers: [], warnings: [] }));
       return Promise.resolve(json({}));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));

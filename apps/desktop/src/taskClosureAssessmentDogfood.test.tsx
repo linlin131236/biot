@@ -22,6 +22,8 @@ describe('M44 task closure assessment dogfood', () => {
       if (input.endsWith('/execution-queue?closure_id=cl_44')) return Promise.resolve(json([queueItem()]));
       if (input.endsWith('/task-closures/cl_44/execution-queue/propose') && init?.method === 'POST') return Promise.resolve(json([queueItem()]));
       if (input.endsWith('/execution-queue/eq_44/approve') && init?.method === 'POST') return Promise.resolve(json(queueItem({ status: 'approved' })));
+      if (input.endsWith('/execution-audit/integrity')) return Promise.resolve(json([]));
+      if (input.endsWith('/release-readiness')) return Promise.resolve(json({ ready: true, checks: [], blockers: [], warnings: [] }));
       return Promise.resolve(json({}));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));

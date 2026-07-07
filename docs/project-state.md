@@ -1,16 +1,20 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M56 Execution Evidence Redaction
-- 最新同步提交：`dfe4d15 feat(M55): add execution audit integrity guard`
-- 远程状态：`main` 领先 `origin/main`（M55/M56 本地完成，未 push）
-- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction
+- 已完成到：M57 Release Readiness Review Gate（等待爸爸审核）
+- 最新同步提交：`673925f feat(M56): redact execution evidence secrets`
+- 远程状态：`main` 领先 `origin/main`（M55/M56/M57 本地完成，未 push）
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate
 
 ## 当前进行中
-- 当前阶段：M57 Release Readiness Review Gate
-- 当前状态：M56 已完成并本地验证通过；按爸爸授权进入 M57，不进入 M58
-- 当前结果：evidence redactor 已实现，覆盖 9 种高风险模式；集成到 closure/handoff/timeline 三个写入路径；后端 529 passed，前端 195 passed，shared 27 passed
-- 下一步：按爸爸授权进入 M57 Release Readiness Review Gate
+- 当前阶段：M57 已完成，等待爸爸审核
+- 当前状态：M55-M57 全部实现并本地验证通过；未 push / 未 release / 未 tag / 未 delete / 未进入 M58
+- 当前结果：
+  - M55：audit 文件完整性检查，GET /execution-audit/integrity，前端展示
+  - M56：evidence redactor 覆盖 9 种高风险模式，集成到 closure/handoff/timeline
+  - M57：发布准备度检查，GET /release-readiness，6 项检查 + 中文 UI
+  - 后端 539 passed，前端 195 passed，shared 27 passed
+- 下一步：等待爸爸审核确认；不进入 M58
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
