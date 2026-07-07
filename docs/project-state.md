@@ -1,22 +1,22 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M59 Rollback and Recovery Policy
+- 已完成到：M60 Safety Baseline Dogfood
 - 最新提交：（待提交）
-- 远程状态：`main` 待 push（M58/M59 本地完成，未 push）
-- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy
+- 远程状态：`main` 待 push（M58/M59/M60 本地完成，未 push）
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood
 
 ## 当前进行中
-- 当前阶段：M59 已完成，进入 M60 Safety Baseline Dogfood
-- 当前状态：M55-M59 全部实现并验证通过；M58/M59 未 push
+- 当前阶段：M60 安全底座复盘完成，V1 安全底座验收通过，进入 M61 Planner Task Graph
+- 当前状态：M55-M60 全部实现并验证通过；M58/M59/M60 未 push
 - 当前结果：
-  - M55：audit 文件完整性检查，GET /execution-audit/integrity，前端展示
-  - M56：evidence redactor 覆盖 9 种高风险模式，集成到 closure/handoff/timeline
-  - M57：发布准备度检查，GET /release-readiness，6 项检查 + 中文 UI；P1/P2 复审问题已修复
-  - M58：本地发布检查清单，GET /local-release-checklist，8 项结构化检查 + 中文表格 UI
-  - M59：故障恢复策略，GET /recovery-policy，10 个场景/5 分类 + 中文可折叠 UI
-  - 后端 569 passed，前端 195 passed，shared 27 passed，desktop build 通过
-- 下一步：实现 M60 Safety Baseline Dogfood；不进入 M62
+  - V1 安全与发布底座（M55-M60）验收通过 ✅
+  - 569 backend + 195 frontend + 27 shared passed
+  - 安全红线全部重新扫描通过
+  - P1/P2 全部修复
+  - PermissionGate 边界完整
+  - 可安全进入 V2 Agent 工作流（M61+）
+- 下一步：实现 M61 Planner Task Graph；不进入 M62
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
