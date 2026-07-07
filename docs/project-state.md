@@ -5,7 +5,7 @@
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成，未 push。
 - 远程状态：`origin/main` 在 `abaee62`（M100 推送点）。
-- 当前本地分支：`main`，领先 `origin/main` 13 commits（M101-M110 + P1 修复×3）。
+- 当前本地分支：`main`，领先 `origin/main` 15 commits（M101-M110 + P1 修复）。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M111。
 
@@ -13,7 +13,7 @@
 - 当前阶段：M110 完成，等待爸爸复审后决定是否 push 和/或进入 M111。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新验证基线：
-  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1385 passed**（1130 unit + 255 API）。
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1391 passed**。
   - `pnpm --filter @bolt/shared test`：**27 passed**。
   - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
   - `pnpm --filter @bolt/desktop build`：通过 (286 KB)。
@@ -21,7 +21,7 @@
   - `git diff --check`：通过。
   - `node scripts/check-docs.mjs`：通过。
   - `node scripts/check-chinese-ui.mjs`：通过。
-- 全量测试基线：**1385 backend + 27 shared + 268 desktop = 1680 passed**。
+- 全量测试基线：**1391 backend + 27 shared + 268 desktop = 1686 passed**。
 
 ## V6 里程碑结果
 - M101：工具注册表（Tool Registry）。
@@ -43,10 +43,10 @@
 - M105: +21 tests（write_tool_proposal）
 - M106: +20 tests（patch_proposal）
 - M107: +6 tests（PatchPreviewPanel.tsx）
-- M108: +10 tests（approval_apply）
+- M108: +13 tests（approval_apply）
 - M109: +7 tests（test_runner_integration）
 - M110: +5 tests（tool_ecosystem_dogfood）
-- **V6 合计：+166 tests，+9 后端服务，+1 桌面面板**
+- **V6 合计：+169 tests，+9 后端服务，+1 桌面面板**
 
 ## 安全扫描结果
 - `as any` / `unknown as`：0 新增
