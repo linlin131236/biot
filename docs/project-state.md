@@ -3,14 +3,14 @@
 ## 当前稳定基线
 - 已完成到：M110 工具生态大复盘（V6 终点，等待爸爸复审）
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
-- V6 工具生态（M101-M110）已完成，未 push。
-- 远程状态：`origin/main` 在 `abaee62`（M100 推送点）。
-- 当前本地分支：`main`，领先 `origin/main` 15 commits（M101-M110 + P1 修复）。
+- V6 工具生态（M101-M110）已完成并 push。
+- 远程状态：`origin/main` 与本地 `HEAD` 同步在 `78c1383`。
+- 当前本地分支：`main` 与 `origin/main` 已同步。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M111。
 
 ## 当前状态
-- 当前阶段：M110 完成，等待爸爸复审后决定是否 push 和/或进入 M111。
+- 当前阶段：M110 完成并已 push，等待爸爸授权后再进入 M111。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新验证基线：
   - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1391 passed**。
