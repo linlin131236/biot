@@ -9,7 +9,7 @@ import type {
   ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
   ExecutionAuditIntegrity,
 } from '@bolt/shared/autonomy';
-import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness } from '@bolt/shared/release';
+import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraph, TaskGraphSummary, TaskNode } from '@bolt/shared/release';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -208,6 +208,27 @@ export async function fetchLocalReleaseChecklist(baseUrl: string, fetcher: Fetch
 
 export async function fetchRecoveryPolicy(baseUrl: string, fetcher: Fetcher = fetch): Promise<RecoveryPolicy> {
   return readJson(await fetcher(`${baseUrl}/recovery-policy`));
+}
+
+// === Planner Task Graph API (M61) ===
+export async function fetchPlannerGraphs(baseUrl: string, fetcher: Fetcher = fetch): Promise<TaskGraphSummary[]> {
+  return readJson(await fetcher(`${baseUrl}/planner/graphs`));
+}
+
+export async function createPlannerGraph(baseUrl: string, payload: { title: string; objective: string }, fetcher: Fetcher = fetch): Promise<TaskGraph> {
+  return readJson(await fetcher(`${baseUrl}/planner/graphs`, jsonPost(payload)));
+}
+
+export async function fetchPlannerGraph(baseUrl: string, graphId: string, fetcher: Fetcher = fetch): Promise<TaskGraph> {
+  return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}`));
+}
+
+export async function addPlannerNode(baseUrl: string, graphId: string, payload: { title: string; dependencies?: string[]; risk?: string; owner_role?: string; evidence_refs?: string[] }, fetcher: Fetcher = fetch): Promise<TaskNode> {
+  return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}/nodes`, jsonPost(payload)));
+}
+
+export async function updatePlannerNodeStatus(baseUrl: string, graphId: string, nodeId: string, status: string, fetcher: Fetcher = fetch): Promise<TaskNode> {
+  return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}/nodes/${nodeId}`, jsonPost({ status })));
 }
 
 // === Review Gate ===

@@ -1,22 +1,21 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M60 Safety Baseline Dogfood
+- 已完成到：M61 Planner Task Graph
 - 最新提交：（待提交）
-- 远程状态：`main` 待 push（M58/M59/M60 本地完成，未 push）
-- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood
+- 远程状态：`main` 待 push（M58/M59/M60/M61 本地完成，准备 push）
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood -> M61 Planner Task Graph
 
 ## 当前进行中
-- 当前阶段：M60 安全底座复盘完成，V1 安全底座验收通过，进入 M61 Planner Task Graph
-- 当前状态：M55-M60 全部实现并验证通过；M58/M59/M60 未 push
+- 当前阶段：M61 已完成，等待爸爸确认后 push
+- 当前状态：M55-M61 全部实现并验证通过；M58-M61 未 push
 - 当前结果：
   - V1 安全与发布底座（M55-M60）验收通过 ✅
-  - 569 backend + 195 frontend + 27 shared passed
+  - V2 Agent 工作流核心启动（M61 Planner Task Graph）
+  - M61：任务规划图数据模型 + 状态机 + 中文 UI；22 个 targeted tests
+  - 591 backend + 195 frontend + 27 shared passed
   - 安全红线全部重新扫描通过
-  - P1/P2 全部修复
-  - PermissionGate 边界完整
-  - 可安全进入 V2 Agent 工作流（M61+）
-- 下一步：实现 M61 Planner Task Graph；不进入 M62
+- 下一步：push 后等待爸爸指示；不进入 M62
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

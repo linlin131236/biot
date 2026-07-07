@@ -26,6 +26,8 @@ from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
 from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
 from bolt_core.local_release_checklist import LocalReleaseChecklistService
 from bolt_core.local_release_checklist_api import create_local_release_checklist_router
+from bolt_core.planner_task_graph import PlannerTaskGraphService
+from bolt_core.planner_task_graph_api import create_planner_task_graph_router
 from bolt_core.recovery_policy import RecoveryPolicyService
 from bolt_core.recovery_policy_api import create_recovery_policy_router
 from bolt_core.release_readiness import ReleaseReadinessService
@@ -54,6 +56,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     readiness_service = ReleaseReadinessService(str(project_dir or Path.cwd()), audit_store)
     local_checklist_service = LocalReleaseChecklistService(str(project_dir or Path.cwd()), audit_store)
     recovery_policy_service = RecoveryPolicyService()
+    planner_service = PlannerTaskGraphService()
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -70,6 +73,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_release_readiness_router(readiness_service))
     app.include_router(create_local_release_checklist_router(local_checklist_service))
     app.include_router(create_recovery_policy_router(recovery_policy_service))
+    app.include_router(create_planner_task_graph_router(planner_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

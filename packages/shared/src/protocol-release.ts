@@ -54,3 +54,39 @@ export interface RecoveryPolicy {
   total: number;
   disclaimer: string;
 }
+
+// === Planner Task Graph (M61) ===
+
+export type TaskNodeStatus = 'pending' | 'in_progress' | 'blocked' | 'completed' | 'failed';
+export type TaskNodeRisk = 'low' | 'medium' | 'high' | 'critical';
+export type TaskNodeRole = 'planner' | 'builder' | 'reviewer' | 'researcher';
+
+export interface TaskNode {
+  id: string;
+  title: string;
+  status: TaskNodeStatus;
+  dependencies: string[];
+  risk: TaskNodeRisk;
+  owner_role: TaskNodeRole;
+  evidence_refs: string[];
+  created_at: number;
+  updated_at: number;
+}
+
+export interface TaskGraph {
+  id: string;
+  title: string;
+  objective: string;
+  nodes: TaskNode[];
+  created_at: number;
+  updated_at: number;
+}
+
+export interface TaskGraphSummary {
+  id: string;
+  title: string;
+  objective: string;
+  node_count: number;
+  created_at: number;
+  updated_at: number;
+}
