@@ -42,6 +42,7 @@ from bolt_core.approval_apply_api import create_approval_apply_router
 from bolt_core.test_runner_integration_api import create_test_runner_integration_router
 from bolt_core.tool_ecosystem_dogfood_api import create_tool_ecosystem_dogfood_router
 from bolt_core.tool_call_eval_api import create_tool_call_eval_router
+from bolt_core.patch_apply_eval_api import create_patch_apply_eval_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
 from bolt_core.code_map_index_api import create_code_map_index_router
@@ -131,6 +132,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_test_runner_integration_router())
     app.include_router(create_tool_ecosystem_dogfood_router())
     app.include_router(create_tool_call_eval_router())
+    app.include_router(create_patch_apply_eval_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
     app.include_router(create_code_map_index_router())
