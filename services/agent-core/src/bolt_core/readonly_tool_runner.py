@@ -5,24 +5,12 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from bolt_core.tool_registry import CATEGORY_READ_ONLY, ToolRegistry
 from bolt_core.path_guard import PathGuard, PathCheck
 
-# ── Blocked paths beyond what PathGuard covers ──
 _BLOCKED_DIRS = {".claude", ".bolt", "__pycache__", ".git", "node_modules", "venv", ".venv"}
 _BLOCKED_NAMES = {"uv.lock", "package-lock.json", "yarn.lock", "pnpm-lock.yaml"}
-
-# ── Sensitive patterns for redaction ──
-_SENSITIVE_KEY_PATTERNS = [
-    "api_key", "apikey", "secret", "password", "token", "credential",
-    "private_key", "privatekey", "access_key", "accesskey",
-]
-_SENSITIVE_VALUE_PATTERNS = [
-    "Bearer ", "sk-", "pk-", "ghp_", "gho_", "github_pat_",
-    "AKIA", "eyJ",  # AWS key prefix, JWT prefix
-]
 
 
 @dataclass(frozen=True)
@@ -114,26 +102,26 @@ class ReadOnlyToolRunner:
     def _read_file(self, params: dict) -> ReadOnlyToolResult:
         path = str(params.get("path", "")).strip()
         if not path:
-            return self._blocked("read_file", "缺少 path 参数")
+            return self._blk("read_file", "缺少 path 参数")
 
         # Path validation
         check = self._check_path(path)
         if not check.allowed:
-            return self._blocked("read_file", check.reason)
+            return self._blk("read_file", check.reason)
 
         # Read
         try:
             data = check.path.read_bytes()
             if len(data) > 256 * 1024:
-                return self._blocked("read_file", f"文件过大: {len(data)} 字节，超过 256KB 限制")
+                return self._blk("read_file", f"文件过大: {len(data)} 字节，超过 256KB 限制")
             try:
                 text = data.decode("utf-8")
             except UnicodeDecodeError:
-                return self._blocked("read_file", "二进制文件不可读")
+                return self._blk("read_file", "二进制文件不可读")
         except FileNotFoundError:
-            return self._blocked("read_file", f"文件不存在: {check.path}")
+            return self._blk("read_file", f"文件不存在: {check.path}")
         except OSError as e:
-            return self._error("read_file", f"读取错误: {e}")
+            return self._err("read_file", f"读取错误: {e}")
 
         # Redact
         safe_text = self._redact(text)
@@ -149,10 +137,10 @@ class ReadOnlyToolRunner:
         path = str(params.get("path", ".")).strip()
         check = self._check_path(path)
         if not check.allowed:
-            return self._blocked("list_dir", check.reason)
+            return self._blk("list_dir", check.reason)
 
         if not check.path.is_dir():
-            return self._blocked("list_dir", f"不是目录: {check.path}")
+            return self._blk("list_dir", f"不是目录: {check.path}")
 
         try:
             entries = []
@@ -164,10 +152,10 @@ class ReadOnlyToolRunner:
                     entries.append(f"[目录] {name}/")
                 else:
                     size = p.stat().st_size if p.is_file() else 0
-                    entries.append(f"[文件] {name} ({self._format_size(size)})")
+                    entries.append(f"[文件] {name} ({self._fmt_size(size)})")
             output = "\n".join(entries) if entries else "(空目录)"
         except OSError as e:
-            return self._error("list_dir", f"列出目录错误: {e}")
+            return self._err("list_dir", f"列出目录错误: {e}")
 
         return ReadOnlyToolResult(
             tool_id="list_dir", operation="list_dir", status="executed",
@@ -189,7 +177,7 @@ class ReadOnlyToolRunner:
     def _query_docs(self) -> ReadOnlyToolResult:
         docs_dir = self._project_dir / "docs"
         if not docs_dir.is_dir():
-            return self._error("query_docs", "docs 目录不存在")
+            return self._err("query_docs", "docs 目录不存在")
 
         try:
             md_files = sorted(docs_dir.rglob("*.md"))
@@ -202,7 +190,7 @@ class ReadOnlyToolRunner:
                 if len(visible) > 100:
                     output += f"\n... 还有 {len(visible) - 100} 个文件"
         except OSError as e:
-            return self._error("query_docs", f"查询 docs 错误: {e}")
+            return self._err("query_docs", f"查询 docs 错误: {e}")
 
         return ReadOnlyToolResult(
             tool_id="query_docs", operation="query_docs", status="executed",
@@ -222,7 +210,7 @@ class ReadOnlyToolRunner:
                 if len(visible) > 100:
                     output += f"\n... 还有 {len(visible) - 100} 个文件"
         except OSError as e:
-            return self._error("query_tests", f"查询测试错误: {e}")
+            return self._err("query_tests", f"查询测试错误: {e}")
 
         return ReadOnlyToolResult(
             tool_id="query_tests", operation="query_tests", status="executed",
@@ -231,87 +219,65 @@ class ReadOnlyToolRunner:
         )
 
     # ── Helpers ──
-
     def _check_path(self, target: str) -> PathCheck:
-        """Validate a path with extended blocking rules."""
-        # Base PathGuard check
         check = self._path_guard.check(target)
         if not check.allowed:
             return check
-
-        # Extra: block .claude/ and other forbidden dirs
         resolved = check.path
         parts = [p.lower() for p in resolved.parts]
         for blocked in _BLOCKED_DIRS:
             if blocked in parts:
                 return PathCheck(False, resolved, f"禁止访问目录: {blocked}/")
-
         if resolved.name in _BLOCKED_NAMES:
             return PathCheck(False, resolved, f"禁止访问文件: {resolved.name}")
-
         return check
 
     def _run_git(self, args: list[str]) -> ReadOnlyToolResult:
-        """Run a read-only git command."""
         cmd = ["git"] + args
         try:
-            result = subprocess.run(
-                cmd, cwd=str(self._project_dir), capture_output=True,
-                text=True, timeout=15,
-            )
+            result = subprocess.run(cmd, cwd=str(self._project_dir), capture_output=True, text=True, timeout=15)
             output = result.stdout.strip() or "(无输出)"
             if result.returncode != 0:
-                err = result.stderr.strip()
-                return self._error("git", f"git {' '.join(args)} 失败: {err}")
+                return self._err("git", f"git {' '.join(args)} 失败: {result.stderr.strip()}")
         except subprocess.TimeoutExpired:
-            return self._error("git", "git 命令超时 (15s)")
+            return self._err("git", "git 命令超时 (15s)")
         except FileNotFoundError:
-            return self._error("git", "git 命令不可用")
+            return self._err("git", "git 命令不可用")
         except Exception as e:
-            return self._error("git", f"git 异常: {e}")
-
-        return ReadOnlyToolResult(
-            tool_id="git", operation="git", status="executed",
-            output=output,
-            audit={"step": "git", "result": "executed", "command": " ".join(cmd)},
-        )
+            return self._err("git", f"git 异常: {e}")
+        return ReadOnlyToolResult(tool_id="git", operation="git", status="executed", output=output,
+                                  audit={"step": "git", "result": "executed", "command": " ".join(cmd)})
 
     def _redact(self, text: str) -> str:
-        """Redact sensitive content from output text."""
-        lines = text.split("\n")
-        redacted = []
-        for line in lines:
+        patterns = ["api_key", "apikey", "secret", "password", "token", "credential",
+                    "private_key", "access_key"]
+        value_patterns = ["Bearer ", "sk-", "pk-", "ghp_", "gho_", "github_pat_", "AKIA", "eyJ"]
+        lines = []
+        for line in text.split("\n"):
             lower = line.lower()
-            if any(pattern in lower for pattern in _SENSITIVE_KEY_PATTERNS):
-                redacted.append("[已脱敏] 包含敏感键名的行")
-                continue
-            if any(pattern in line for pattern in _SENSITIVE_VALUE_PATTERNS):
-                redacted.append("[已脱敏] 包含疑似凭证/token 的行")
-                continue
-            redacted.append(line)
-        return "\n".join(redacted)
+            if any(p in lower for p in patterns):
+                lines.append("[已脱敏] 包含敏感键名的行")
+            elif any(p in line for p in value_patterns):
+                lines.append("[已脱敏] 包含疑似凭证/token 的行")
+            else:
+                lines.append(line)
+        return "\n".join(lines)
 
     @staticmethod
-    def _format_size(size_bytes: int) -> str:
+    def _blk(operation: str, reason: str) -> ReadOnlyToolResult:
+        return ReadOnlyToolResult(tool_id=operation, operation=operation, status="blocked",
+                                  error=reason, audit={"step": operation, "result": "blocked", "reason": reason})
+
+    @staticmethod
+    def _err(operation: str, reason: str) -> ReadOnlyToolResult:
+        return ReadOnlyToolResult(tool_id=operation, operation=operation, status="error",
+                                  error=reason, audit={"step": operation, "result": "error", "reason": reason})
+
+    @staticmethod
+    def _fmt_size(size_bytes: int) -> str:
         if size_bytes < 1024:
             return f"{size_bytes}B"
         elif size_bytes < 1024 * 1024:
             return f"{size_bytes / 1024:.1f}KB"
         else:
             return f"{size_bytes / (1024 * 1024):.1f}MB"
-
-    @staticmethod
-    def _blocked(operation: str, reason: str) -> ReadOnlyToolResult:
-        return ReadOnlyToolResult(
-            tool_id=operation, operation=operation, status="blocked",
-            error=reason,
-            audit={"step": operation, "result": "blocked", "reason": reason},
-        )
-
-    @staticmethod
-    def _error(operation: str, reason: str) -> ReadOnlyToolResult:
-        return ReadOnlyToolResult(
-            tool_id=operation, operation=operation, status="error",
-            error=reason,
-            audit={"step": operation, "result": "error", "reason": reason},
-        )
