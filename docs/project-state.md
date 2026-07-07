@@ -1,15 +1,18 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M61 Planner Task Graph
-- 最新提交：`00fea91 fix(P1): add missing M60 decision doc; update project-state to reflect pushed state`
-- 远程状态：`main` 已同步到 `origin/main`（M58/M59/M60/M61 已 push）
-- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood -> M61 Planner Task Graph
+- 已完成到：M62 Execution State Machine
+- 最新提交：（待提交）
+- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62 本地完成待 push
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood -> M61 Planner Task Graph -> M62 Execution State Machine
 
 ## 当前进行中
-- 当前阶段：M61 已完成，等待爸爸审核
-- 当前状态：M55-M61 全部实现并验证通过；已 push / 未 release / 未 tag / 未 delete / 未进入 M62
+- 当前阶段：M62 已完成，进入 M63 Tool Selection Policy
+- 当前状态：M62 本地完成；继续 M63-M66
 - 当前结果：
+  - M62：执行状态机，8 状态 + 18 转换 + 中文标签；25 个 targeted tests
+  - 616 backend + 195 frontend + 27 shared passed，desktop build 通过
+- 下一步：实现 M63 Tool Selection Policy；不进入 M67
   - V1 安全与发布底座（M55-M60）验收通过 ✅
   - V2 Agent 工作流核心启动（M61 Planner Task Graph）
   - M58：本地发布检查清单，GET /local-release-checklist，8 项结构化检查 + 中文表格 UI

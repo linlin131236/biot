@@ -9,7 +9,7 @@ import type {
   ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
   ExecutionAuditIntegrity,
 } from '@bolt/shared/autonomy';
-import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraph, TaskGraphSummary, TaskNode } from '@bolt/shared/release';
+import type { AllowedTransitions, LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, StateMachineSummary, TaskGraph, TaskGraphSummary, TaskNode, TransitionResult } from '@bolt/shared/release';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -229,6 +229,15 @@ export async function addPlannerNode(baseUrl: string, graphId: string, payload: 
 
 export async function updatePlannerNodeStatus(baseUrl: string, graphId: string, nodeId: string, status: string, fetcher: Fetcher = fetch): Promise<TaskNode> {
   return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}/nodes/${nodeId}`, jsonPost({ status })));
+}
+
+// === Execution State Machine API (M62) ===
+export async function fetchStateMachineSummary(baseUrl: string, fetcher: Fetcher = fetch): Promise<StateMachineSummary> {
+  return readJson(await fetcher(`${baseUrl}/execution/state-machine/summary`));
+}
+
+export async function validateTransition(baseUrl: string, payload: { from_state: string; to_state: string; node_id?: string; reason?: string }, fetcher: Fetcher = fetch): Promise<TransitionResult> {
+  return readJson(await fetcher(`${baseUrl}/execution/state-machine/validate`, jsonPost(payload)));
 }
 
 // === Review Gate ===

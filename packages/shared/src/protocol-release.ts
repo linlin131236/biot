@@ -90,3 +90,31 @@ export interface TaskGraphSummary {
   created_at: number;
   updated_at: number;
 }
+
+// === Execution State Machine (M62) ===
+
+export type ExecState = 'pending' | 'ready' | 'running' | 'waiting_permission' | 'paused' | 'completed' | 'failed' | 'blocked';
+
+export interface StateMachineSummary {
+  states: Record<string, string>;
+  terminal: string[];
+  transitions: Record<string, string[]>;
+}
+
+export interface AllowedTransitions {
+  from_state: string;
+  from_label: string;
+  allowed: string[];
+  allowed_labels: string[];
+  is_terminal: boolean;
+}
+
+export interface TransitionResult {
+  node_id: string;
+  from_state: string;
+  to_state: string;
+  from_label: string;
+  to_label: string;
+  reason: string;
+  valid: boolean;
+}

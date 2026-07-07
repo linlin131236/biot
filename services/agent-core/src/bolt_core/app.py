@@ -24,6 +24,7 @@ from bolt_core.execution_audit_integrity import ExecutionAuditIntegrityService
 from bolt_core.execution_audit_integrity_api import create_execution_audit_integrity_router
 from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
 from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
+from bolt_core.execution_state_machine_api import create_execution_state_machine_router
 from bolt_core.local_release_checklist import LocalReleaseChecklistService
 from bolt_core.local_release_checklist_api import create_local_release_checklist_router
 from bolt_core.planner_task_graph import PlannerTaskGraphService
@@ -74,6 +75,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_local_release_checklist_router(local_checklist_service))
     app.include_router(create_recovery_policy_router(recovery_policy_service))
     app.include_router(create_planner_task_graph_router(planner_service))
+    app.include_router(create_execution_state_machine_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
