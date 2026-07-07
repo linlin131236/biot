@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M55 Execution Audit Store Integrity Guard
-- 最新同步提交：`d26d8a0 feat(M54): dogfood execution recovery flow`
-- 远程状态：`main` 与 `origin/main` 已同步
-- 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening -> M51 Execution Audit Timeline -> M52 Permission Request Recovery -> M53 Execution Audit Consistency Diagnostics -> M54 Recovery Dogfood + Release Hardening -> M55 Execution Audit Store Integrity Guard
+- 已完成到：M56 Execution Evidence Redaction
+- 最新同步提交：`dfe4d15 feat(M55): add execution audit integrity guard`
+- 远程状态：`main` 领先 `origin/main`（M55/M56 本地完成，未 push）
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction
 
 ## 当前进行中
-- 当前阶段：M56 Execution Evidence Redaction
-- 当前状态：M55 已完成并本地验证通过；按爸爸授权进入 M56，不进入 M58
-- 当前结果：audit 文件完整性检查已实现；GET /execution-audit/integrity 端点只读不写；前端展示审计文件正常/损坏/需要人工处理；后端 507 passed，前端 195 passed，shared 27 passed
-- 下一步：按爸爸授权进入 M56 Execution Evidence Redaction
+- 当前阶段：M57 Release Readiness Review Gate
+- 当前状态：M56 已完成并本地验证通过；按爸爸授权进入 M57，不进入 M58
+- 当前结果：evidence redactor 已实现，覆盖 9 种高风险模式；集成到 closure/handoff/timeline 三个写入路径；后端 529 passed，前端 195 passed，shared 27 passed
+- 下一步：按爸爸授权进入 M57 Release Readiness Review Gate
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

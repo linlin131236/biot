@@ -15,6 +15,7 @@ from bolt_core.task_verification import (
 )
 
 from bolt_core.execution_audit_store import ExecutionAuditStore
+from bolt_core.evidence_redactor import redact
 
 
 @dataclass
@@ -131,9 +132,9 @@ class TaskClosureService:
     def record_command(self, closure_id: str, command: str, result: str) -> None:
         """Record a verification command and its result."""
         record = self._record(closure_id)
-        record.closure.commands.append(command)
-        record.closure.command_results.append(result)
-        record.events.append({"type": "command", "command": command, "result": result, "ts": time.time()})
+        record.closure.commands.append(redact(command))
+        record.closure.command_results.append(redact(result))
+        record.events.append({"type": "command", "command": redact(command), "result": redact(result), "ts": time.time()})
         self._save_closures()
 
     def record_file_change(self, closure_id: str, file_path: str) -> None:

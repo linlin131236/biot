@@ -4,6 +4,7 @@ from __future__ import annotations
 from bolt_core.execution_handoff import ExecutionHandoffRecord, ExecutionHandoffService
 from bolt_core.execution_queue import ExecutionQueueItem, ExecutionQueueService
 from bolt_core.task_closure_service import TaskClosureService
+from bolt_core.evidence_redactor import redact
 
 
 class ExecutionAuditTimelineService:
@@ -41,7 +42,7 @@ class ExecutionAuditTimelineService:
             if record.permission_status == "rejected":
                 events.append(_handoff_event(record, "rejected", "已拒绝", "权限请求已被拒绝", base_time + 0.003))
             if record.status == "failed" and record.permission_status != "rejected":
-                events.append(_handoff_event(record, "failed", "已失败", record.result or record.bridge_error or "执行交接已失败", base_time + 0.003))
+                events.append(_handoff_event(record, "failed", "已失败", redact(record.result or record.bridge_error or "执行交接已失败"), base_time + 0.003))
 
         if closure is not None:
             for command, result in zip(closure.commands, closure.command_results):
@@ -49,7 +50,7 @@ class ExecutionAuditTimelineService:
                 item_id = record.queue_item_id if record is not None else None
                 handoff_id = record.id if record is not None else None
                 permission_id = record.permission_request_id if record is not None else None
-                events.append(_event("closure", "evidence_recorded", "已记录闭环证据", f"已记录验证命令：{command}；结果：{result}", _evidence_time(record, queue_items), closure_id, item_id, handoff_id, permission_id))
+                events.append(_event("closure", "evidence_recorded", "已记录闭环证据", f"已记录验证命令：{redact(command)}；结果：{redact(result)}", _evidence_time(record, queue_items), closure_id, item_id, handoff_id, permission_id))
 
         return sorted(events, key=lambda event: (event["occurred_at"], event["id"]))
 

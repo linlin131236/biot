@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.execution_queue import ExecutionQueueItem
+from bolt_core.evidence_redactor import redact
 
 
 class ExecutionHandoffNotFound(ValueError):
@@ -85,7 +86,7 @@ class ExecutionHandoffService:
         record = self.get_record(record_id)
         self._require_open(record)
         record.status = "completed"
-        record.result = result
+        record.result = redact(result)
         record.updated_at = time.time()
         self._save()
         return record
@@ -94,7 +95,7 @@ class ExecutionHandoffService:
         record = self.get_record(record_id)
         self._require_open(record)
         record.status = "failed"
-        record.result = result
+        record.result = redact(result)
         record.updated_at = time.time()
         self._save()
         return record
@@ -114,7 +115,7 @@ class ExecutionHandoffService:
     def mark_bridge_note(self, record_id: str, bridge_error: str) -> ExecutionHandoffRecord:
         record = self.get_record(record_id)
         self._require_open(record)
-        record.bridge_error = bridge_error
+        record.bridge_error = redact(bridge_error)
         record.updated_at = time.time()
         self._save()
         return record
@@ -123,9 +124,9 @@ class ExecutionHandoffService:
         record = self.get_record(record_id)
         self._require_open(record)
         record.permission_status = permission_status
-        record.bridge_error = bridge_error
+        record.bridge_error = redact(bridge_error)
         record.status = "failed"
-        record.result = bridge_error
+        record.result = redact(bridge_error)
         record.updated_at = time.time()
         self._save()
         return record
