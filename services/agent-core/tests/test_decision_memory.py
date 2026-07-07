@@ -177,9 +177,11 @@ def test_no_secret_in_decision_output():
         # API key patterns: sk- followed by alphanum (OpenAI), AKIA (AWS)
         assert not re.search(r'sk-[a-z0-9]{20,}', text), f"API key pattern in {r.decision_id}"
         assert not re.search(r'akia[a-z0-9]{16}', text), f"AWS key pattern in {r.decision_id}"
-        assert "private key" not in text
-        # "password" may appear in security rule descriptions; check for
-        # actual password value patterns instead
+        # "private key" may appear in security rule descriptions; check for actual
+        # key material patterns (PEM headers)
+        assert not re.search(r'-----begin\s+(rsa\s+)?private\s+key', text), \
+            f"PEM private key in {r.decision_id}"
+        # password value patterns
         assert not re.search(r'password\s*[:=]\s*[^\s\[已]{3,}', text), \
             f"password value in {r.decision_id}"
 
