@@ -4,51 +4,34 @@
 - 已完成到：M80 Memory Dogfood（V3 终点，等待爸爸复审）
 - V3 项目理解与长期记忆（M71-M80）全部完成
 - 全量测试：1246 passed（1013 backend + 27 shared + 206 desktop）
-- 远程状态：M67-M72 已 push，M73-M80 本地待 commit（共 7 个新 commit）
+- 远程状态：M67-M72 已 push，M73-M80 本地已 commit 共 7 个，待 push
 - 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74 → M75 → M76 → M77 → M78 → M79 → M80（大复盘✅）
 
 ## 当前进行中
 - 当前阶段：**M80 已完成，按文档规则停止，不进入 M81**
-- 当前状态：本地 / 未 push / 未 release / 未 tag / 未 delete / 未进入 M81
+- 当前状态：本地已 commit 7 个 / 未 push / 未 release / 未 tag / 未 delete / 未进入 M81
 - 当前结果：
   - V2 Agent 工作流核心（M61-M70）beta 骨架达标
   - V3 项目理解与长期记忆（M71-M80）全部完成
-  - M71：项目画像
-  - M72：代码地图索引
-  - M73：决策记忆（60+ 条决策记录）
-  - M74：失败记忆（P1/P2 + 已知风险）
-  - M75：用户偏好记忆（12 条硬偏好）
-  - M76：上下文压缩（组合各层，安全规则不截断）
-  - M77：线程接手摘要（Markdown/JSON，可复制给新 AI）
-  - M78：记忆权限边界（7 层权限分类 + secret 阻断）
-  - M79：记忆搜索 UI（中文只读面板，206 desktop tests）
-  - M80：记忆层大复盘（12 项检查全部通过）
+  - M71：项目画像（10 tests）
+  - M72：代码地图索引（19 tests）
+  - M73：决策记忆（39 tests，60+ 条决策记录）
+  - M74：失败记忆（29 tests，P1/P2 + 已知风险）
+  - M75：用户偏好记忆（42 tests，12 条硬偏好）
+  - M76：上下文压缩（17 tests，组合各层，安全规则不截断）
+  - M77：线程接手摘要（13 tests，Markdown/JSON，可复制给新 AI）
+  - M78：记忆权限边界（29 tests，7 层权限分类 + secret 阻断）
+  - M79：记忆搜索 UI（11 tests，中文只读面板）
+  - M80：记忆层大复盘（11 tests，12 项检查全部通过）
   - 全量后端 1013 passed，前端 206 passed，desktop build 通过
   - 安全扫描全部干净
   - M80 结论：**V3 记忆层达标，允许进入 M81**
-- 下一步：等待爸爸复审；M80 通过后可授权进入 M81 多 Agent 团队；未授权前不进入 M81
-- 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70 → M71 → M72 → M73 → M74 → M75 → M76 → M77
-
-## 当前进行中
-- 当前阶段：**M77 已完成，按文档规则自动继续 M78**
-- 当前状态：本地 / 未 push / 未 release / 未 tag / 未 delete
-- 当前结果：
-  - V2 Agent 工作流核心（M61-M70）beta 骨架达标
-  - V3 项目理解推进中（M71-M77）
-  - M71：项目画像（10 tests）
-  - M72：代码地图索引（19 tests）
-  - M73：决策记忆（39 tests）
-  - M74：失败记忆（29 tests）
-  - M75：用户偏好记忆（42 tests）
-  - M76：上下文压缩（17 tests）
-  - M77：线程接手摘要（13 tests）
-  - 全量后端 973 passed，前端 195 passed，desktop build 通过
-  - 安全扫描全部干净
-- 下一步：进入 M78 Memory Permission Boundary
+- 下一步：等待爸爸复审。push 需爸爸明确授权。M81 需爸爸明确授权。
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
 - P3：此风险已记录，不作为 M61 阻断项。
+- size check：部分文件超过 300 行（app.py、decision_memory.py、failure_memory_index.py、long_task_recovery_dogfood.py、memory_dogfood.py、project_profile.py），已有问题和新增文件混合，建议后续专项重构。
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
@@ -61,19 +44,13 @@
 - 不使用 `as any` / `unknown as`。
 - renderer 不暴露 `ipcRenderer` / `fs` / `shell` / `process`。
 - 代码文件尽量保持在 300 行以内，接近上限时拆到聚焦组件或服务。
+- 每个 milestone 必须产出 exec plan + decision + phase review gate + project-state 更新 + commit。
 
 ## 当前风险
 - M46 已验证不新增自动执行路径；后续 M47 若引入真实执行，必须重新建立 PermissionGate 边界。
 - `queue approve` 只能代表队列项批准，不能等同于真实权限批准。
 - `handoff` 只能记录下一步人工处理意图，不能直接调用 Harness、PermissionGate、Agent Loop 或 shell。
 - 复审发现过的问题不能回退：切换闭环必须清空旧 queue item；handoff 终态不能被改写；本文件必须保持真实状态。
-
-## 每个 milestone 必须产出
-- `docs/exec-plans/active/0xx-*.md`
-- `docs/decisions/0xx-*.md`
-- `docs/phase-xx-review-gate.md`
-- 更新本文件 `docs/project-state.md`
-- 一个清晰 commit，push 只能在爸爸明确要求后执行
 
 ## 新窗口接手指令
 ```text
