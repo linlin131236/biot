@@ -5,16 +5,16 @@
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成并 push。
 - V7 智能评估 / Agent Dogfood（M111-M120）已完成并 push。
-- V8 产品级可靠性（M121-M125）本地已完成并 commit，待爸爸复审后决定是否 push。
-- 当前本地分支：`main` 领先 `origin/main` 6 个本地提交，最新提交以 `git log` 为准。
+- V8 产品级可靠性（M121-M125）已完成并 push。
+- 当前本地分支：`main` 与 `origin/main` 已同步，最新提交以 `git log` 为准。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M126。
 
 ## 当前状态
-- 当前阶段：M125 完成，等待爸爸复审；不自动 push。
-- 本地状态：M121-M125 已完成并提交，未 push。
+- 当前阶段：M125 完成并已 push，等待爸爸决定是否进入后续 M126+。
+- 本地状态：M121-M125 已完成并 push；HEAD = origin/main。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
-- 最新已知远端基线：`f2e25c5 docs: mark M111-M120 pushed`。
+- 最新已知远端基线：`674be18 docs: update M125 verification baseline after P1 fix`。
 - 最新验证基线：
   - M121-M125 targeted tests：**29 passed**。
   - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1511 passed**，2 warnings。
@@ -62,8 +62,8 @@
 
 ## 下一步建议
 - 完成 full tests / quality / docs / Chinese UI / 安全扫描。
-- 爸爸复审 M121-M125。
-- 爸爸明确授权后，才 push；未授权不 push。
+- M121-M125 已 push。
+- 后续如进入 M126+，必须由爸爸明确授权；未授权不进入下一阶段。
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
