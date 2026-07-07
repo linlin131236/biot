@@ -4,12 +4,12 @@
 - 已完成到：M80 Memory Dogfood（V3 终点，等待爸爸复审）
 - V3 项目理解与长期记忆（M71-M80）全部完成
 - 全量测试：1246 passed（1013 backend + 27 shared + 206 desktop）
-- 远程状态：M67-M72 已 push，M73-M80 本地已 commit 共 8 个，待 push
+- 远程状态：M67-M72 已 push，M73-M80 本地提交链待 push；具体 ahead 数以 `git status --short --branch` 为准
 - 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74 → M75 → M76 → M77 → M78 → M79 → M80（大复盘✅）
 
 ## 当前进行中
 - 当前阶段：**M80 已完成，按文档规则停止，不进入 M81**
-- 当前状态：本地已 commit 8 个 / 未 push / 未 release / 未 tag / 未 delete / 未进入 M81
+- 当前状态：本地提交链待 push / 未 release / 未 tag / 未 delete / 未进入 M81
 - 当前结果：
   - V2 Agent 工作流核心（M61-M70）beta 骨架达标
   - V3 项目理解与长期记忆（M71-M80）全部完成
