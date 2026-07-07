@@ -17,7 +17,7 @@
 - 最新已知远端基线：`f2e25c5 docs: mark M111-M120 pushed`。
 - 最新验证基线：
   - M121-M125 targeted tests：**29 passed**。
-  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1504 passed**，2 warnings。
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1511 passed**，2 warnings。
   - `pnpm --filter @bolt/shared test`：**27 passed**。
   - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
   - `pnpm --filter @bolt/desktop build`：通过 (286.08 KB)。
@@ -25,7 +25,7 @@
   - `git diff --check`：通过。
   - `node scripts/check-docs.mjs`：通过。
   - `node scripts/check-chinese-ui.mjs`：通过。
-  - 全量测试基线：**1504 backend + 27 shared + 268 desktop = 1799 passed**。
+  - 全量测试基线：**1511 backend + 27 shared + 268 desktop = 1806 passed**。
 
 ## V8 里程碑结果
 - M121：Crash Recovery，只读检查检查点、暂停恢复、会话恢复、审计完整性和接手摘要。
