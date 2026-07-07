@@ -81,3 +81,16 @@ async def test_resume_not_paused(client):
     """Resume non-paused node returns 400."""
     r = await client.post("/pause-resume/resume", json={"node_id": "never_paused"})
     assert r.status_code == 400
+
+
+@pytest.mark.anyio
+async def test_resume_recheck_permissions_false_blocked(client):
+    """Resume with recheck_permissions=false returns 400 — cannot skip."""
+    await client.post("/pause-resume/pause", json={
+        "node_id": "n_perm", "current_status": "running",
+    })
+    r = await client.post("/pause-resume/resume", json={
+        "node_id": "n_perm", "recheck_permissions": False,
+    })
+    assert r.status_code == 400
+    assert "权限" in r.json()["detail"] or "不可跳过" in r.json()["detail"]

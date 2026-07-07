@@ -26,13 +26,14 @@ def create_pause_resume_router() -> APIRouter:
 
     @router.post("/pause-resume/resume")
     def resume_node(payload: dict) -> dict:
-        """Resume a paused node. Re-verifies safety, returns action plan."""
+        """Resume a paused node. ALWAYS re-verifies safety and permissions."""
         node_id = str(payload.get("node_id", ""))
         if not node_id.strip():
             raise HTTPException(status_code=400, detail="node_id is required")
-        recheck = bool(payload.get("recheck_permissions", True))
+        if "recheck_permissions" in payload and not payload["recheck_permissions"]:
+            raise HTTPException(status_code=400, detail="恢复操作必须重新验证权限，不可跳过。")
         try:
-            return service.resume(node_id, recheck)
+            return service.resume(node_id)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
 

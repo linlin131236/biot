@@ -48,8 +48,8 @@ class PauseResumeService:
             "warning": "暂停期间禁止执行任何副作用操作。恢复时需重新验证权限和安全边界。",
         }
 
-    def resume(self, node_id: str, recheck_permissions: bool = True) -> dict:
-        """Resume a paused node. Validates snapshot exists and re-checks safety.
+    def resume(self, node_id: str) -> dict:
+        """Resume a paused node. ALWAYS re-verifies safety and permissions.
         Returns an action plan, does NOT auto-execute."""
         snapshot = self._snapshots.get(node_id)
         if snapshot is None:
@@ -65,15 +65,14 @@ class PauseResumeService:
             "detail": f"快照 {snapshot['snapshot_id']} 完整，暂停于 {ExecutionStateMachine.label(snapshot['status_before_pause'])} 状态。",
         })
 
-        # Check 2: permission re-verification
-        if recheck_permissions:
-            checks.append({
-                "check": "permission_verify",
-                "label": "权限重新验证",
-                "passed": None,  # requires human decision
-                "detail": "恢复后需重新通过 PermissionGate 验证。请确认权限状态后继续。",
-                "requires_human": True,
-            })
+        # Check 2: permission re-verification (MANDATORY, cannot be skipped)
+        checks.append({
+            "check": "permission_verify",
+            "label": "权限重新验证",
+            "passed": None,  # requires human decision
+            "detail": "恢复后需重新通过 PermissionGate 验证。请确认权限状态后继续。",
+            "requires_human": True,
+        })
 
         # Check 3: state machine validation
         try:

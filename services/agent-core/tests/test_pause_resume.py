@@ -53,11 +53,15 @@ def test_resume_restores_ready():
 
 
 def test_resume_requires_human_decision():
-    """Resume marks requires_human_decision when recheck_permissions=True."""
+    """Resume always requires human decision (permission re-verification mandatory)."""
     svc = PauseResumeService()
     svc.pause("node_7", "running")
-    result = svc.resume("node_7", recheck_permissions=True)
+    result = svc.resume("node_7")
     assert result["requires_human_decision"] is True
+    # Verify permission_verify check is always present
+    perm_check = next((c for c in result["checks"] if c["check"] == "permission_verify"), None)
+    assert perm_check is not None
+    assert perm_check["requires_human"] is True
 
 
 def test_resume_nonexistent_raises():

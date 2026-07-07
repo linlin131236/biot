@@ -1,32 +1,27 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M66 Pause/Resume Long Task
-- 最新提交：（待提交）
-- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62-M66 本地完成待 push
-- 最近稳定链路：... -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task
+- 已完成到：M66 Pause/Resume Long Task（P1 修复中）
+- 最新提交：`e4b0208 feat(M66): add pause/resume for long tasks, snapshot-based with safety re-verification`
+- 远程状态：`main` 已同步到 `origin/main`（M58-M66 全部已 push）
+- 最近稳定链路：... -> M61 Planner Task Graph -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task
 
 ## 当前进行中
-- 当前阶段：M66 已完成，等待爸爸审核后 push
-- 当前状态：M62-M66 全部实现并验证通过；未 push / 未 release / 未 tag / 未 delete / 未进入 M67
+- 当前阶段：M66 复审 P1 修复中
+- 当前状态：M62-M66 已 push；爸爸复审发现 2 个 P1，修复中
 - 当前结果：
   - V2 Agent 工作流核心（M61-M66）骨架搭建完成
-  - M62：执行状态机（8 状态 + 18 转换）
-  - M63：工具选择策略（26 种工具 + 4 级分类）
-  - M64：失败分类器（8 种分类 + 中文诊断）
-  - M65：安全重试循环（双重安全门 + 审计历史）
-  - M66：暂停/恢复（快照机制 + 三重安全检查）
+  - M62：执行状态机（8 状态 + 18 转换，25 tests）
+  - M63：工具选择策略（26 种工具 + 4 级分类，21 tests）
+  - M64：失败分类器（8 种分类 + 中文诊断，19 tests）
+  - M65：安全重试循环（双重安全门 + 审计历史，20 tests）
+  - M66：暂停/恢复（快照机制 + 三重安全检查，22 tests）
   - 698 backend + 195 frontend + 27 shared passed，desktop build 通过
-- 下一步：全量质量扫描 + push；不进入 M67
-- 下一步：实现 M64 Failure Classification；不进入 M67
-  - V1 安全与发布底座（M55-M60）验收通过 ✅
-  - V2 Agent 工作流核心启动（M61 Planner Task Graph）
-  - M58：本地发布检查清单，GET /local-release-checklist，8 项结构化检查 + 中文表格 UI
-  - M59：故障恢复策略，GET /recovery-policy，10 个场景/5 分类 + 中文可折叠 UI
-  - M60：安全底座大复盘，V1 安全底线验收通过
-  - M61：任务规划图数据模型 + 状态机 + 依赖检查 + 中文 UI
-  - 591 backend + 195 frontend + 27 shared passed，desktop build 通过
-- 下一步：等待爸爸复审确认；不进入 M62
+- 下一步：修复 2 个 P1 后提交 push，等待爸爸复审；不进入 M67
+
+## P1 修复清单（复审 2026-07-07）
+- [ ] M66 resume 权限复查可被 `recheck_permissions=false` 跳过 → 强制复查，传 false 返回 400
+- [ ] project-state.md 状态过期（"待提交"、"本地完成待 push"、重复旧下一步）
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
