@@ -1,20 +1,21 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M57 Release Readiness Review Gate（等待爸爸审核）
-- 最新 M57 修复提交：`e9a7480 fix(M57): exclude redacted placeholders from secret scan; dynamic milestone parsing`
-- 远程状态：`main` 已同步到 `origin/main`（M55/M56/M57 已 push）
-- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate
+- 已完成到：M58 Local Release Checklist
+- 最新提交：（待提交）
+- 远程状态：`main` 待 push（M58 本地完成，未 push）
+- 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist
 
 ## 当前进行中
-- 当前阶段：M57 已完成，等待爸爸审核
-- 当前状态：M55-M57 全部实现并验证通过；已 push / 未 release / 未 tag / 未 delete / 未进入 M58
+- 当前阶段：M58 已完成，进入 M59 Rollback and Recovery Policy
+- 当前状态：M55-M58 全部实现并验证通过；M58 未 push
 - 当前结果：
   - M55：audit 文件完整性检查，GET /execution-audit/integrity，前端展示
   - M56：evidence redactor 覆盖 9 种高风险模式，集成到 closure/handoff/timeline
   - M57：发布准备度检查，GET /release-readiness，6 项检查 + 中文 UI；P1/P2 复审问题已修复
-  - 后端 541 passed，前端 195 passed，shared 27 passed，desktop build 通过
-- 下一步：等待爸爸审核确认；不进入 M58
+  - M58：本地发布检查清单，GET /local-release-checklist，8 项结构化检查 + 中文表格 UI
+  - 后端 555 passed，前端 195 passed，shared 27 passed，desktop build 通过
+- 下一步：实现 M59 Rollback and Recovery Policy；不进入 M62
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。

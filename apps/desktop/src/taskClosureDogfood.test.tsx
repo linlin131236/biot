@@ -28,6 +28,7 @@ describe('M43 task closure dogfood', () => {
       if (input.endsWith('/task-closures/cl_43')) return Promise.resolve(json(closure({ run_id: 'run_43', status: 'waiting_permission', final_status: 'waiting_permission', permission_request_ids: ['tool_43'] })));
       if (input.endsWith('/execution-audit/integrity')) return Promise.resolve(json([]));
       if (input.endsWith('/release-readiness')) return Promise.resolve(json({ ready: true, checks: [], blockers: [], warnings: [] }));
+      if (input.endsWith('/local-release-checklist')) return Promise.resolve(json({ ready: true, items: [], blockers: [], warnings: [], next_step: '可以发布', disclaimer: '只读' }));
       return Promise.resolve(json({}));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));

@@ -7,8 +7,9 @@ import type {
   TimelineEvent, GoalEvidence, SteeringResult,
   TaskTemplate, TaskClosureEvidence, VerificationPlan, VerificationAssessment,
   ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
-  ExecutionAuditIntegrity, ReleaseReadiness,
+  ExecutionAuditIntegrity,
 } from '@bolt/shared/autonomy';
+import type { LocalReleaseChecklist, ReleaseReadiness } from '@bolt/shared/release';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -199,6 +200,10 @@ export async function fetchExecutionAuditIntegrity(baseUrl: string, fetcher: Fet
 
 export async function fetchReleaseReadiness(baseUrl: string, fetcher: Fetcher = fetch): Promise<ReleaseReadiness> {
   return readJson(await fetcher(`${baseUrl}/release-readiness`));
+}
+
+export async function fetchLocalReleaseChecklist(baseUrl: string, fetcher: Fetcher = fetch): Promise<LocalReleaseChecklist> {
+  return readJson(await fetcher(`${baseUrl}/local-release-checklist`));
 }
 
 // === Review Gate ===

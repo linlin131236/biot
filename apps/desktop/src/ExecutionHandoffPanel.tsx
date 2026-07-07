@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { ExecutionAuditDiagnostic, ExecutionAuditIntegrity, ExecutionAuditTimelineEvent, ExecutionHandoffRecord, ReleaseReadiness } from '@bolt/shared/autonomy';
-import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchExecutionAuditTimeline, fetchExecutionHandoffs, fetchReleaseReadiness, requestExecutionHandoffPermission } from './harnessClientAutonomy';
+import type { ExecutionAuditDiagnostic, ExecutionAuditIntegrity, ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
+import type { LocalReleaseChecklist, ReleaseReadiness } from '@bolt/shared/release';
+import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchExecutionAuditTimeline, fetchExecutionHandoffs, fetchLocalReleaseChecklist, fetchReleaseReadiness, requestExecutionHandoffPermission } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -10,6 +11,7 @@ export interface ExecutionHandoffPanelApi {
   fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>;
   fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>;
   fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>;
+  fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>;
   createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
@@ -18,7 +20,7 @@ export interface ExecutionHandoffPanelApi {
 
 interface Props { baseUrl: string; closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
 
-const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchReleaseReadiness, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
+const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchReleaseReadiness, fetchLocalReleaseChecklist, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
 const terminal = new Set(['completed', 'failed']);
 
 export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueueItemId, fetcher, api }: Props) {
@@ -27,6 +29,7 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   const [diagnostics, setDiagnostics] = useState<ExecutionAuditDiagnostic[]>([]);
   const [integrity, setIntegrity] = useState<ExecutionAuditIntegrity[]>([]);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
+  const [checklist, setChecklist] = useState<LocalReleaseChecklist | null>(null);
   const [error, setError] = useState('');
   const call = api ?? defaultApi;
   const refresh = useCallback(async () => {
@@ -51,6 +54,10 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
     call.fetchReleaseReadiness(baseUrl, fetcher).then(setReadiness).catch(() => { /* readiness fetch is best-effort */ });
   }, [baseUrl, fetcher, call]);
 
+  useEffect(() => {
+    call.fetchLocalReleaseChecklist(baseUrl, fetcher).then(setChecklist).catch(() => { /* checklist fetch is best-effort */ });
+  }, [baseUrl, fetcher, call]);
+
   async function createHandoff() {
     if (!selectedQueueItemId) { setError('请先选择已批准队列项'); return; }
     try {
@@ -69,7 +76,7 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   }
 
   if (!closureId) return <aside className="panel"><h2>安全交接</h2><p>暂无闭环任务</p></aside>;
-  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
+  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Checklist data={checklist} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
 }
 
 function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; baseUrl: string; fetcher?: Fetcher }) {
@@ -104,6 +111,30 @@ function Readiness({ data }: { data: ReleaseReadiness | null }) {
     {data.warnings.length > 0 && <div><strong>警告项：</strong><ul>{data.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
     <div><strong>已通过检查：</strong><ul>{data.checks.filter(c => c.passed).map(c => <li key={c.code}>{c.label}：{c.detail}</li>)}</ul></div>
     {!data.ready && <p>建议下一步：人工审核后再由爸爸确认 push/release</p>}
+  </section>;
+}
+
+function Checklist({ data }: { data: LocalReleaseChecklist | null }) {
+  if (!data) return <section className="stack"><h3>本地发布检查清单</h3><p>加载中...</p></section>;
+  return <section className="stack">
+    <h3>本地发布检查清单</h3>
+    <p><em>{data.disclaimer}</em></p>
+    <p><strong>{data.ready ? '✅ 所有阻断项通过' : '❌ 存在阻断项'}</strong></p>
+    {data.blockers.length > 0 && <div><strong>阻断项：</strong><ul>{data.blockers.map((b, i) => <li key={i}>{b}</li>)}</ul></div>}
+    {data.warnings.length > 0 && <div><strong>警告项：</strong><ul>{data.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
+    <table>
+      <thead><tr><th>分类</th><th>检查项</th><th>状态</th><th>详情</th><th>建议</th></tr></thead>
+      <tbody>
+        {data.items.map(item => <tr key={item.code}>
+          <td>{item.category}</td>
+          <td>{item.label}</td>
+          <td>{item.status_label}</td>
+          <td>{item.detail}</td>
+          <td>{item.recommendation || '—'}</td>
+        </tr>)}
+      </tbody>
+    </table>
+    <p><strong>下一步：</strong>{data.next_step}</p>
   </section>;
 }
 

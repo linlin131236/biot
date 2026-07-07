@@ -24,6 +24,8 @@ from bolt_core.execution_audit_integrity import ExecutionAuditIntegrityService
 from bolt_core.execution_audit_integrity_api import create_execution_audit_integrity_router
 from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
 from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
+from bolt_core.local_release_checklist import LocalReleaseChecklistService
+from bolt_core.local_release_checklist_api import create_local_release_checklist_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 
@@ -48,6 +50,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     diagnostics_service = ExecutionAuditDiagnosticsService(execution_queue_service, execution_handoff_service, harness.permissions, task_closure_service)
     integrity_service = ExecutionAuditIntegrityService(audit_store)
     readiness_service = ReleaseReadinessService(str(project_dir or Path.cwd()), audit_store)
+    local_checklist_service = LocalReleaseChecklistService(str(project_dir or Path.cwd()), audit_store)
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
@@ -62,6 +65,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_execution_audit_diagnostics_router(diagnostics_service))
     app.include_router(create_execution_audit_integrity_router(integrity_service))
     app.include_router(create_release_readiness_router(readiness_service))
+    app.include_router(create_local_release_checklist_router(local_checklist_service))
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
