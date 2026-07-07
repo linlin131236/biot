@@ -1,7 +1,7 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M102 Tool Manifest（V6 工具生态进行中）
+- 已完成到：M103 Tool Permission Contract（V6 工具生态进行中）
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）进行中，M101 已完成。
 - 远程状态：M91-M100 已 push 到 `origin/main`。
