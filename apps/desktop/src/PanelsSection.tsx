@@ -6,7 +6,8 @@ import { GoalConsole } from './GoalConsole';
 import { SideChatPanel } from './SideChatPanel';
 import TaskClosurePanel from './TaskClosurePanel';
 import { MemorySearchPanel } from './MemorySearchPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries } from './harnessClientAutonomy';
+import { MultiAgentStatusPanel } from './MultiAgentStatusPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -52,6 +53,11 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
         fetchPreferences: fetchMemoryPreferences,
         fetchProfile: fetchProjectProfile,
         fetchCodeMap: fetchCodeMapEntries,
+      }} />
+      <MultiAgentStatusPanel baseUrl={baseUrl} api={{
+        fetchRoles: fetchMultiAgentRoles,
+        fetchBoard: fetchSubtasksBoard,
+        fetchSubtasks: fetchSubtasks,
       }} />
     </>
   );

@@ -287,13 +287,28 @@ export const TASK_CLOSURE_LABELS: Record<TaskClosureStatus, string> = {
   stopped: '已停止',
 };
 
-// === Memory Search (M79) ===
-export type MemorySearchCategory = 'all' | 'decision' | 'failure' | 'preference' | 'project' | 'code_map';
-export interface MemorySearchResult {
-  type: MemorySearchCategory;
-  id: string;
+// === Multi-Agent Status (M87) ===
+export type AgentRole = 'planner' | 'researcher' | 'builder' | 'reviewer' | 'skill_learner';
+export type SubtaskStatus = 'pending' | 'ready' | 'in_progress' | 'blocked' | 'awaiting_review' | 'completed' | 'failed';
+export interface MultiAgentRoleStatus {
+  role_id: AgentRole;
+  name_cn: string;
+  task_count: number;
+  blocked_count: number;
+}
+export interface MultiAgentSubtask {
+  task_id: string;
   title_cn: string;
-  summary_cn: string;
+  assigned_role: AgentRole;
+  status: SubtaskStatus;
+  status_label_cn: string;
+  risk_level: string;
+  risk_label_cn: string;
   source_refs: string[];
-  risk_label?: string;
+} export interface MultiAgentBoardSummary {
+  total_tasks: number;
+  by_role: Record<string, number>;
+  by_status: Record<string, number>;
+  blocked_tasks: MultiAgentSubtask[];
+  roles: MultiAgentRoleStatus[];
 }
