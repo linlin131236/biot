@@ -5,7 +5,7 @@
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成，未 push。
 - 远程状态：`origin/main` 在 `abaee62`（M100 推送点）。
-- 当前本地分支：`main`，领先 `origin/main` 11 commits（M101-M110 + P1 修复）。
+- 当前本地分支：`main`，领先 `origin/main` 13 commits（M101-M110 + P1 修复×3）。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M111。
 
