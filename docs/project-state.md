@@ -5,19 +5,27 @@
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成并 push。
 - V7 智能评估 / Agent Dogfood（M111-M120）已完成并 push。
-- V8 产品级可靠性（M121-M125）本地已完成，待爸爸复审后决定是否 push。
-- 当前本地分支：`main` 领先 `origin/main`，最新提交以 `git log` 为准。
+- V8 产品级可靠性（M121-M125）本地已完成并 commit，待爸爸复审后决定是否 push。
+- 当前本地分支：`main` 领先 `origin/main` 6 个本地提交，最新提交以 `git log` 为准。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M126。
 
 ## 当前状态
 - 当前阶段：M125 完成，等待爸爸复审；不自动 push。
-- 本地状态：M121-M125 已完成，未 push。
-- 工作区：M121-M125 收口改动待提交；`.claude/` 未跟踪、未提交，按规则保持。
+- 本地状态：M121-M125 已完成并提交，未 push。
+- 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新已知远端基线：`f2e25c5 docs: mark M111-M120 pushed`。
-- 当前验证进度：
+- 最新验证基线：
   - M121-M125 targeted tests：**22 passed**。
-  - full backend / shared / desktop / build / quality：待最终提交前运行。
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1504 passed**，2 warnings。
+  - `pnpm --filter @bolt/shared test`：**27 passed**。
+  - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
+  - `pnpm --filter @bolt/desktop build`：通过 (286.08 KB)。
+  - `pnpm run quality`：通过。
+  - `git diff --check`：通过。
+  - `node scripts/check-docs.mjs`：通过。
+  - `node scripts/check-chinese-ui.mjs`：通过。
+  - 全量测试基线：**1504 backend + 27 shared + 268 desktop = 1799 passed**。
 
 ## V8 里程碑结果
 - M121：Crash Recovery，只读检查检查点、暂停恢复、会话恢复、审计完整性和接手摘要。
@@ -54,8 +62,8 @@
 
 ## 下一步建议
 - 完成 full tests / quality / docs / Chinese UI / 安全扫描。
-- 提交 M121-M125 每个 milestone 的 commit。
-- 爸爸复审通过后，再由爸爸明确授权是否 push。
+- 爸爸复审 M121-M125。
+- 爸爸明确授权后，才 push；未授权不 push。
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
