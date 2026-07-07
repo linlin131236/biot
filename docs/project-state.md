@@ -2,7 +2,7 @@
 
 ## 当前稳定基线
 - 已完成到：M61 Planner Task Graph
-- 最新提交：`02ebd98 feat(M61): add planner task graph, plan only no auto-execution`
+- 最新提交：`00fea91 fix(P1): add missing M60 decision doc; update project-state to reflect pushed state`
 - 远程状态：`main` 已同步到 `origin/main`（M58/M59/M60/M61 已 push）
 - 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood -> M61 Planner Task Graph
 
