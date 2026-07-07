@@ -21,10 +21,12 @@
 - 未使用 `as any` / `unknown as`。
 
 ## 已跑验证
-- `uv run pytest tests/test_release_readiness.py tests/test_release_readiness_api.py -q`：10 passed。
-- `uv run pytest -q`：539 passed。
+- `uv run pytest tests/test_release_readiness.py tests/test_release_readiness_api.py -q`：12 passed。
+- `uv run pytest -q`：541 passed。
 - `pnpm --filter @bolt/shared test`：27 passed。
 - `pnpm --filter @bolt/desktop test`：195 passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `pnpm run quality`：通过。
 
 ## 自审
 - 已检查：ReleaseReadinessService 只读，不修改文件、不执行命令。
