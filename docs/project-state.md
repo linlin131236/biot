@@ -1,10 +1,10 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M77 Thread Handoff Summary
-- M71-M77 已进入 V3 项目理解与长期记忆
-- 全量测试：1012 passed（973 backend + 27 shared + 12 desktop 未改动）
-- 远程状态：M67-M72 已 push，M73-M77 本地待 commit
+- 已完成到：M78 Memory Permission Boundary
+- M71-M78 已进入 V3 项目理解与长期记忆
+- 全量测试：1041 passed（1002 backend + 27 shared + 12 desktop 未改动）
+- 远程状态：M67-M72 已 push，M73-M78 本地待 commit
 - 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70 → M71 → M72 → M73 → M74 → M75 → M76 → M77
 
 ## 当前进行中

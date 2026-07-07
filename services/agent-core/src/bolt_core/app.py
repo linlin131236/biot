@@ -45,6 +45,7 @@ from bolt_core.failure_memory_index_api import create_failure_memory_index_route
 from bolt_core.user_preference_memory_api import create_user_preference_memory_router
 from bolt_core.context_compaction_api import create_context_compaction_router
 from bolt_core.thread_handoff_summary_api import create_thread_handoff_summary_router
+from bolt_core.memory_permission_boundary_api import create_memory_permission_boundary_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 
@@ -104,6 +105,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_user_preference_memory_router())
     app.include_router(create_context_compaction_router())
     app.include_router(create_thread_handoff_summary_router())
+    app.include_router(create_memory_permission_boundary_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
