@@ -34,6 +34,7 @@ from bolt_core.recovery_policy_api import create_recovery_policy_router
 from bolt_core.tool_selection_policy_api import create_tool_selection_policy_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
+from bolt_core.long_task_recovery_dogfood_api import create_long_task_recovery_dogfood_router
 from bolt_core.agent_budget_api import create_agent_budget_router
 from bolt_core.human_steering_api import create_human_steering_router
 from bolt_core.pause_resume_api import create_pause_resume_router
@@ -85,6 +86,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_tool_selection_policy_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
+    app.include_router(create_long_task_recovery_dogfood_router())
     app.include_router(create_agent_budget_router())
     app.include_router(create_human_steering_router())
     app.include_router(create_pause_resume_router())
