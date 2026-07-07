@@ -52,8 +52,8 @@ class ExecutionPermissionBridgeService:
         return updated
 
     def _permission_target(self, record: ExecutionHandoffRecord, fallback_run_id: str | None) -> tuple[str, str]:
-        if record.run_id and record.permission_workspace:
-            return record.run_id, record.permission_workspace
         if callable(self._workspace):
             return self._workspace(record)
+        if record.run_id and record.permission_workspace:
+            return record.run_id, record.permission_workspace
         return fallback_run_id or "execution_bridge", self._workspace

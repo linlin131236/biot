@@ -1,5 +1,6 @@
 """Tests for TaskClosureService: evidence recording, no execution."""
 import time
+from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.task_closure import (
     TaskClosure, TaskClosureStatus, TaskTemplateId, MAX_RETRIES, can_transition,
@@ -137,6 +138,22 @@ def test_service_record_command():
     result = svc.to_dict(closure.id)
     assert result["commands"] == ["pnpm quality"]
     assert result["command_results"] == ["140 passed, 0 failed"]
+
+
+def test_service_restores_closure_evidence_from_audit_store(tmp_path):
+    store = ExecutionAuditStore(tmp_path / "execution-audit.json")
+    first = TaskClosureService(store)
+    closure = first.start("修复拼写", TaskTemplateId.BUGFIX, run_id="run_1")
+    first.record_file_change(closure.id, "src/app.py")
+    first.record_command(closure.id, "pytest", "12 passed")
+
+    restored = TaskClosureService(store)
+    data = restored.to_dict(closure.id)
+
+    assert data["run_id"] == "run_1"
+    assert data["changed_files"] == ["src/app.py"]
+    assert data["commands"] == ["pytest"]
+    assert data["command_results"] == ["12 passed"]
 
 
 def test_service_record_file_change():

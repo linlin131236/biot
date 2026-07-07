@@ -14,6 +14,8 @@ from bolt_core.task_verification import (
     verification_plan_dict,
 )
 
+from bolt_core.execution_audit_store import ExecutionAuditStore
+
 
 @dataclass
 class TaskClosureRecord:
@@ -24,8 +26,11 @@ class TaskClosureRecord:
 class TaskClosureService:
     """Records task closure evidence. Does NOT execute tools, push, release, or approve permissions."""
 
-    def __init__(self) -> None:
+    def __init__(self, store: ExecutionAuditStore | None = None) -> None:
         self._store: dict[str, TaskClosureRecord] = {}
+        self._audit_store = store
+        if store is not None:
+            self._restore(store.load().closure_records)
 
     def start(self, objective: str, template_id: TaskTemplateId,
               run_id: Optional[str] = None, goal_id: Optional[str] = None) -> TaskClosure:
@@ -39,18 +44,21 @@ class TaskClosureService:
             created_at=time.time(),
         )
         self._store[closure.id] = TaskClosureRecord(closure=closure)
+        self._save_closures()
         return closure
 
     def bind_run(self, closure_id: str, run_id: str) -> TaskClosure:
         record = self._record(closure_id)
         record.closure.run_id = run_id
         record.events.append({"type": "bind_run", "run_id": run_id, "ts": time.time()})
+        self._save_closures()
         return record.closure
 
     def bind_goal(self, closure_id: str, goal_id: str) -> TaskClosure:
         record = self._record(closure_id)
         record.closure.goal_id = goal_id
         record.events.append({"type": "bind_goal", "goal_id": goal_id, "ts": time.time()})
+        self._save_closures()
         return record.closure
 
     def find_by_run(self, run_id: str) -> TaskClosure | None:
@@ -74,6 +82,7 @@ class TaskClosureService:
         previous = closure.status
         closure.status = target
         record.events.append({"type": "transition", "from": previous, "to": target, "ts": time.time()})
+        self._save_closures()
         return closure
 
     def record_loop_status(self, closure_id: str, loop_status: str, reason: str = "") -> TaskClosure:
@@ -81,6 +90,7 @@ class TaskClosureService:
         closure = self._set_status(closure_id, target, "loop_status", {"loop_status": loop_status, "reason": reason})
         if reason:
             closure.command_results.append(reason)
+            self._save_closures()
         return closure
 
     def record_tool_result(self, closure_id: str, tool_result: dict) -> TaskClosure:
@@ -97,6 +107,7 @@ class TaskClosureService:
         if status == "failed":
             self.mark_failed(closure_id, output or "工具执行失败")
         record.events.append({"type": "tool_result", "request_id": request_id, "status": status, "ts": time.time()})
+        self._save_closures()
         return record.closure
 
     def mark_waiting_permission(self, closure_id: str, permission_id: str) -> TaskClosure:
@@ -123,18 +134,21 @@ class TaskClosureService:
         record.closure.commands.append(command)
         record.closure.command_results.append(result)
         record.events.append({"type": "command", "command": command, "result": result, "ts": time.time()})
+        self._save_closures()
 
     def record_file_change(self, closure_id: str, file_path: str) -> None:
         """Record a changed file."""
         record = self._record(closure_id)
         record.closure.changed_files.append(file_path)
         record.events.append({"type": "file_change", "path": file_path, "ts": time.time()})
+        self._save_closures()
 
     def record_permission(self, closure_id: str, permission_id: str) -> None:
         """Record a permission request ID."""
         record = self._record(closure_id)
         record.closure.permission_request_ids.append(permission_id)
         record.events.append({"type": "permission", "id": permission_id, "ts": time.time()})
+        self._save_closures()
 
     def record_review(self, closure_id: str, summary: str, passed: bool) -> TaskClosure:
         """Record a review summary."""
@@ -142,6 +156,7 @@ class TaskClosureService:
         record.closure.review_summary = summary
         record.closure.next_action = "合并到 main" if passed else "需要人工处理"
         record.events.append({"type": "review", "summary": summary, "passed": passed, "ts": time.time()})
+        self._save_closures()
         return record.closure
 
     def should_stop_repairing(self, closure_id: str) -> bool:
@@ -151,6 +166,7 @@ class TaskClosureService:
     def increment_retry(self, closure_id: str) -> None:
         """Increment retry count."""
         self._record(closure_id).closure.retry_count += 1
+        self._save_closures()
 
     def to_dict(self, closure_id: str) -> dict:
         """Return closure as dict for API response."""
@@ -210,6 +226,7 @@ class TaskClosureService:
             closure.status = TaskClosureStatus.COMPLETED
             closure.next_action = "已完成"
             closure.review_summary = assessment.summary
+        self._save_closures()
         return closure
 
     def propose_execution_items(self, closure_id: str, queue_service) -> list[dict]:
@@ -230,6 +247,7 @@ class TaskClosureService:
         previous = record.closure.status
         record.closure.status = target
         record.events.append({"type": event_type, "from": previous, "to": target, **payload, "ts": time.time()})
+        self._save_closures()
         return record.closure
 
     def _loop_target(self, loop_status: str, reason: str) -> TaskClosureStatus:
@@ -244,3 +262,14 @@ class TaskClosureService:
         if loop_status in ("complete", "completed"):
             return TaskClosureStatus.COMPLETED
         return TaskClosureStatus.EXECUTING
+
+    def _restore(self, records: list[dict]) -> None:
+        for data in records:
+            data.pop("events", None)
+            closure = TaskClosure(**{k: data.get(k) for k in ["id","objective","template_id","run_id","goal_id","status","plan_summary","changed_files","commands","command_results","permission_request_ids","retry_count","review_summary","next_action","created_at"]})
+            self._store[closure.id] = TaskClosureRecord(closure=closure, events=data.get("events", []))
+
+    def _save_closures(self) -> None:
+        if self._audit_store is not None:
+            records = [{**record.closure.__dict__, "events": record.events} for record in self._store.values()]
+            self._audit_store.save_closure_records(records)

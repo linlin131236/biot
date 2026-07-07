@@ -28,6 +28,18 @@ def test_saved_queue_items_and_handoff_records_reload(tmp_path):
     assert state.handoff_records == handoff_records
 
 
+def test_saving_queue_and_handoffs_preserves_closure_records(tmp_path):
+    path = tmp_path / "execution-audit.json"
+    store = ExecutionAuditStore(path)
+    closure_records = [{"id": "cl_1", "objective": "修复拼写"}]
+
+    store.save_closure_records(closure_records)
+    store.save_queue_items([{"id": "eq_0", "status": "approved"}])
+    store.save_handoff_records([{"id": "eh_0", "status": "waiting_permission"}])
+
+    assert ExecutionAuditStore(path).load().closure_records == closure_records
+
+
 def test_save_creates_parent_directory(tmp_path):
     path = tmp_path / "nested" / "state" / "execution-audit.json"
     store = ExecutionAuditStore(path)

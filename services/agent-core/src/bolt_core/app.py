@@ -3,17 +3,13 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 
 from bolt_core.checkpoint import CheckpointService
-from bolt_core.execution_audit_store import ExecutionAuditStore, execution_audit_path as resolve_execution_audit_path
-from bolt_core.execution_audit_diagnostics import ExecutionAuditDiagnosticsService
-from bolt_core.execution_audit_diagnostics_api import create_execution_audit_diagnostics_router
-from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
-from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_permission_bridge import ExecutionPermissionBridgeService
 from bolt_core.execution_queue import ExecutionQueueService
 from bolt_core.execution_queue_api import create_execution_queue_router
 from bolt_core.execution_result_ingestion import ExecutionResultIngestionService
+from bolt_core.app_helpers import agent_loop_dict, agent_step_dict, checkpoint_workspace, goal_exists, permission_bridge_target, string_list
 from bolt_core.harness import Harness
 from bolt_core.review_gate import ReviewChecklist, ReviewGate
 from bolt_core.task_closure_api import create_task_closure_router
@@ -21,17 +17,23 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_protocol import ToolRequest
 from bolt_core.tool_result_api import tool_result_dict
 
+from bolt_core.execution_audit_store import ExecutionAuditStore, execution_audit_path as resolve_execution_audit_path
+from bolt_core.execution_audit_diagnostics import ExecutionAuditDiagnosticsService
+from bolt_core.execution_audit_diagnostics_api import create_execution_audit_diagnostics_router
+from bolt_core.execution_audit_timeline import ExecutionAuditTimelineService
+from bolt_core.execution_audit_timeline_api import create_execution_audit_timeline_router
+
 
 def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
-    task_closure_service = TaskClosureService()
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
+    task_closure_service = TaskClosureService(audit_store)
     execution_queue_service = ExecutionQueueService(audit_store)
     execution_handoff_service = ExecutionHandoffService(audit_store)
     harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
-    permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: _permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
+    permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
     result_ingestion = ExecutionResultIngestionService(execution_handoff_service, execution_queue_service, task_closure_service)
     timeline_service = ExecutionAuditTimelineService(execution_queue_service, execution_handoff_service, task_closure_service)
     diagnostics_service = ExecutionAuditDiagnosticsService(execution_queue_service, execution_handoff_service, harness.permissions, task_closure_service)
@@ -41,7 +43,7 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     app.include_router(create_task_closure_router(
         task_closure_service,
         run_exists=lambda run_id: run_id in harness.runs,
-        goal_exists=lambda goal_id: _goal_exists(harness, goal_id),
+        goal_exists=lambda goal_id: goal_exists(harness, goal_id),
     ))
     app.include_router(create_execution_queue_router(execution_queue_service, task_closure_service))
     app.include_router(create_execution_handoff_router(execution_handoff_service, execution_queue_service, permission_bridge))
@@ -69,12 +71,12 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
     @app.post("/harness/runs/{run_id}/agent-steps")
     def run_agent_step(run_id: str) -> dict:
         result = harness.run_agent_step(run_id)
-        return _agent_step_dict(result)
+        return agent_step_dict(result)
 
     @app.post("/harness/runs/{run_id}/agent-loops")
     def run_agent_loop(run_id: str, payload: dict | None = None) -> dict:
         result = harness.run_agent_loop(run_id, int((payload or {}).get("max_steps", 3)))
-        return _agent_loop_dict(result)
+        return agent_loop_dict(result)
 
     @app.get("/harness/runs/{run_id}/trace")
     def trace(run_id: str) -> list[dict]:
@@ -230,15 +232,15 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
 
     @app.post("/checkpoints")
     def create_checkpoint(payload: dict) -> dict:
-        workspace = _checkpoint_workspace(payload, harness.runs, harness.workspace)
+        workspace = checkpoint_workspace(payload, harness.runs, harness.workspace)
         service = CheckpointService(workspace) if workspace != harness.workspace else checkpoint_service
         checkpoint = service.create(
             run_id=str(payload.get("run_id", "")),
             goal_id=str(payload.get("goal_id", "")),
-            changed_files=_string_list(payload.get("changed_files")),
-            constraints=_string_list(payload.get("constraints")),
-            pending_permissions=_string_list(payload.get("pending_permissions")),
-            evidence_refs=_string_list(payload.get("evidence_refs")),
+            changed_files=string_list(payload.get("changed_files")),
+            constraints=string_list(payload.get("constraints")),
+            pending_permissions=string_list(payload.get("pending_permissions")),
+            evidence_refs=string_list(payload.get("evidence_refs")),
         )
         checkpoint_workspaces[checkpoint.id] = workspace
         return checkpoint.to_dict()
@@ -252,56 +254,11 @@ def create_app(execution_audit_path: str | Path | None = None) -> FastAPI:
 
     @app.post("/review/evaluate")
     def evaluate_review(payload: dict) -> dict:
-        checklist = ReviewChecklist(items=_string_list(payload.get("items")))
+        checklist = ReviewChecklist(items=string_list(payload.get("items")))
         results = payload.get("results")
         result = review_gate.evaluate(checklist, results if isinstance(results, dict) else {})
         return {"passed": result.passed, "failures": result.failures}
 
     return app
-
-
-def _goal_exists(harness: Harness, goal_id: str) -> bool:
-    try:
-        harness.goal_service.get_goal(goal_id)
-        return True
-    except Exception:
-        return False
-
-
-def _permission_bridge_target(record, closures: TaskClosureService, harness: Harness, fallback_run_id: str) -> tuple[str, str]:
-    closure = closures.load(record.closure_id); run_id = closure.run_id if closure is not None and closure.run_id in harness.runs else fallback_run_id
-    return run_id, harness.runs[run_id].workspace
-
-
-def _agent_step_dict(result) -> dict:
-    return {
-        "status": result.status,
-        "model_output": result.model_output,
-        "tool_result": None if result.tool_result is None else tool_result_dict(result.tool_result),
-        "error": result.error,
-    }
-
-
-def _agent_loop_dict(result) -> dict:
-    return {
-        "status": result.status,
-        "steps": result.steps,
-        "last_step": None if result.last_step is None else _agent_step_dict(result.last_step),
-        "error": result.error,
-    }
-
-
-
-def _string_list(value) -> list[str]:
-    return [str(item) for item in value] if isinstance(value, list) else []
-
-
-def _checkpoint_workspace(payload: dict, runs: dict, default_workspace: str) -> str:
-    workspace = payload.get("workspace")
-    if isinstance(workspace, str) and workspace:
-        return workspace
-    run = runs.get(str(payload.get("run_id", "")))
-    return run.workspace if run is not None else default_workspace
-
 
 app = create_app()
