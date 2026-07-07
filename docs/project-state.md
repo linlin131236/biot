@@ -2,13 +2,14 @@
 
 ## 当前稳定基线
 - 已完成到：M66 Pause/Resume Long Task（P1 已修复，等待爸爸复审放行）
-- 最新已 push 修复提交：`9857a8e fix(P1): harden M66 resume — permission re-verification now mandatory, cannot be skipped; update project-state to reflect pushed state`
-- 远程状态：`origin/main` 当前在 `9857a8e`（M58-M66 与 M66 P1 修复均已 push）；本窗口仅收口 project-state 文档，不自动 push
+- 最新已确认修复提交：`9857a8e fix(P1): harden M66 resume — permission re-verification now mandatory, cannot be skipped; update project-state to reflect pushed state`
+- project-state 收口提交：`e51ed8b docs: close M66 P1 project state`
+- 远程状态：爸爸已授权同步，本窗口已执行 project-state 收口同步；新窗口接手时以 `git status --short --branch` 与 `git log --oneline -3 --decorate` 复核 `main` / `origin/main`
 - 最近稳定链路：... -> M61 Planner Task Graph -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task
 
 ## 当前进行中
 - 当前阶段：M66 复审 P1 已修复，等待爸爸最终复审
-- 当前状态：M62-M66 与 M66 P1 修复已 push；本窗口仅收口 project-state 文档；未 release / 未 tag / 未 delete / 未进入 M67
+- 当前状态：M62-M66、M66 P1 修复与 project-state 收口均已同步；未 release / 未 tag / 未 delete / 未进入 M67
 - 当前结果：
   - V2 Agent 工作流核心（M61-M66）骨架搭建完成
   - M62：执行状态机（8 状态 + 18 转换，25 tests）
@@ -17,7 +18,7 @@
   - M65：安全重试循环（双重安全门 + 审计历史，20 tests）
   - M66：暂停/恢复（快照机制 + 三重安全检查；resume 权限复查强制执行，不可跳过）
   - M66 P1 targeted tests：23 passed；P1 修复汇报全量后端 699 passed，前端 195 passed
-- 下一步：等待爸爸复审确认；如需同步本次文档收口提交，由爸爸明确要求后再 push；确认后才可规划 M67，不自动进入 M67
+- 下一步：等待爸爸复审确认；确认后才可规划 M67，不自动进入 M67
 
 ## P1 修复清单（复审 2026-07-07）
 - [x] M66 resume 权限复查可被 `recheck_permissions=false` 跳过 → 已强制复查，API 传 false 返回 400
