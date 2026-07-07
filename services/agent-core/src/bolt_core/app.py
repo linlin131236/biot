@@ -51,6 +51,11 @@ from bolt_core.chinese_interaction_eval_api import create_chinese_interaction_ev
 from bolt_core.e2e_task_dogfood_api import create_e2e_task_dogfood_router
 from bolt_core.failure_recovery_dogfood_api import create_failure_recovery_dogfood_router
 from bolt_core.agent_intelligence_dogfood_api import create_agent_intelligence_dogfood_router
+from bolt_core.crash_recovery_api import create_crash_recovery_router
+from bolt_core.data_migration_api import create_data_migration_router
+from bolt_core.update_rollback_api import create_update_rollback_router
+from bolt_core.privacy_security_audit_api import create_privacy_security_audit_router
+from bolt_core.public_beta_readiness_api import create_public_beta_readiness_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
 from bolt_core.code_map_index_api import create_code_map_index_router
@@ -149,6 +154,11 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_e2e_task_dogfood_router())
     app.include_router(create_failure_recovery_dogfood_router())
     app.include_router(create_agent_intelligence_dogfood_router())
+    app.include_router(create_crash_recovery_router(str(project_dir or Path.cwd())))
+    app.include_router(create_data_migration_router(str(project_dir or Path.cwd())))
+    app.include_router(create_update_rollback_router(str(project_dir or Path.cwd())))
+    app.include_router(create_privacy_security_audit_router(str(project_dir or Path.cwd())))
+    app.include_router(create_public_beta_readiness_router(str(project_dir or Path.cwd())))
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
     app.include_router(create_code_map_index_router())

@@ -1,0 +1,68 @@
+"""M125 public beta readiness. Final read-only gate."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+from bolt_core.beta_reliability_common import BetaCheck, BetaReadinessBase, BetaReviewResult, check
+
+
+@dataclass
+class PublicBetaReviewResult(BetaReviewResult):
+    beta_allowed: bool = False
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.beta_allowed = self.all_passed
+
+    def to_dict(self) -> dict:
+        data = super().to_dict()
+        data["beta_allowed"] = self.beta_allowed
+        return data
+
+
+class PublicBetaReadinessService(BetaReadinessBase):
+    def review(self) -> PublicBetaReviewResult:
+        checks: list[BetaCheck] = []
+
+        required_modules = [
+            ("M121 崩溃恢复门禁存在", "crash_recovery"),
+            ("M122 数据迁移门禁存在", "data_migration"),
+            ("M123 升级回滚门禁存在", "update_rollback"),
+            ("M124 隐私安全审计存在", "privacy_security_audit"),
+        ]
+        for label, module in required_modules:
+            path = self.src(module)
+            checks.append(check(label, path.exists(), f"{path.name} {'存在' if path.exists() else '缺失'}"))
+
+        history_modules = ["desktop_beta_dogfood", "tool_ecosystem_dogfood", "agent_intelligence_dogfood"]
+        history_ok = all(self.src(module).exists() for module in history_modules)
+        checks.append(check("M100/M110/M120 历史复盘仍存在", history_ok, "桌面、工具生态、智能复盘三条基线需保留"))
+
+        v8_files = [
+            self.src("crash_recovery"),
+            self.src("data_migration"),
+            self.src("update_rollback"),
+            self.src("privacy_security_audit"),
+            self.src("public_beta_readiness"),
+        ]
+        no_auto_hits = self.scan_files(v8_files, ["sub" + "process.run", "os." + "system", "shutil." + "rmtree", "git." + "push("])
+        checks.append(check("无自动 push/release/tag/delete", not no_auto_hits, "; ".join(no_auto_hits[:5]) if no_auto_hits else "未发现自动危险操作"))
+
+        missing_docs = self.docs_missing(121, 125)
+        docs_name = "M121-M125 文档链完整" if not missing_docs else "M121-M125 文档链完整（缺失: " + ", ".join(missing_docs) + "）"
+        checks.append(check(docs_name, not missing_docs, "全部就位" if not missing_docs else "缺失: " + ", ".join(missing_docs)))
+
+        handoff = self.docs("final-handoff/m125-beta-handoff.md")
+        checks.append(check("最终接手包存在", handoff.exists(), f"{handoff.name} {'存在' if handoff.exists() else '缺失'}"))
+
+        state = self.read(self.docs("project-state.md"))
+        state_ok = "M125" in state and "未 push" in state and "未进入 M126" in state
+        checks.append(check("project-state 标记 M125 待复审", state_ok, "project-state 需写明 M125、未 push、未进入 M126"))
+
+        m126_files = list((self.project_dir / "docs/exec-plans/active").glob("126-*.md"))
+        checks.append(check("未进入 M126", not m126_files, "未发现 M126 文档" if not m126_files else f"发现 {len(m126_files)} 个 M126 文档"))
+
+        return PublicBetaReviewResult(
+            checks=checks,
+            next_step="M125 完成后停止，等待爸爸复审；不自动 push、release、tag、delete。",
+        )
