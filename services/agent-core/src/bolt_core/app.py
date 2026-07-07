@@ -42,6 +42,7 @@ from bolt_core.human_steering_api import create_human_steering_router
 from bolt_core.pause_resume_api import create_pause_resume_router
 from bolt_core.decision_memory_api import create_decision_memory_router
 from bolt_core.failure_memory_index_api import create_failure_memory_index_router
+from bolt_core.user_preference_memory_api import create_user_preference_memory_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 
@@ -98,6 +99,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_pause_resume_router())
     app.include_router(create_decision_memory_router())
     app.include_router(create_failure_memory_index_router())
+    app.include_router(create_user_preference_memory_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

@@ -1,25 +1,26 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M74 Failure Memory
-- M71-M74 已进入 V3 项目理解与长期记忆
-- 全量测试：940 passed（901 backend + 27 shared + 12 desktop 未改动）
-- 远程状态：M67-M72 已 push，M73-M74 本地待 commit
-- 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74
+- 已完成到：M75 User Preference Memory
+- M71-M75 已进入 V3 项目理解与长期记忆
+- 全量测试：982 passed（943 backend + 27 shared + 12 desktop 未改动）
+- 远程状态：M67-M72 已 push，M73-M75 本地待 commit
+- 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70 → M71 → M72 → M73 → M74 → M75
 
 ## 当前进行中
-- 当前阶段：**M74 已完成，按文档规则自动继续 M75**
+- 当前阶段：**M75 已完成，按文档规则自动继续 M76**
 - 当前状态：本地 / 未 push / 未 release / 未 tag / 未 delete
 - 当前结果：
   - V2 Agent 工作流核心（M61-M70）beta 骨架达标
-  - V3 项目理解推进中（M71-M74）
+  - V3 项目理解推进中（M71-M75）
   - M71：项目画像（10 tests）
   - M72：代码地图索引（19 tests）
-  - M73：决策记忆（39 tests，60+ 条决策记录）
-  - M74：失败记忆（29 tests，P1/P2 修复记录 + 已知风险）
-  - 全量后端 901 passed，前端 195 passed，desktop build 通过
+  - M73：决策记忆（39 tests，60+ 条）
+  - M74：失败记忆（29 tests，P1/P2 + 已知风险）
+  - M75：用户偏好记忆（42 tests，12 条硬偏好）
+  - 全量后端 943 passed，前端 195 passed，desktop build 通过
   - 安全扫描全部干净
-- 下一步：进入 M75 User Preference Memory
+- 下一步：进入 M76 Context Compaction
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
