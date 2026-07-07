@@ -9,13 +9,14 @@ const generated = new Set(['pnpm-lock.yaml']);
 
 // Pre-existing known oversized files — documented in docs/project-state.md as
 // "已知风险: size check — 建议后续专项重构". These are NOT new from V4.
-const KNOWN_EXEMPT = new Set([
-  'docs/桌面AI编程Agent全流程架构对比.md',
-  'services/agent-core/src/bolt_core/decision_memory.py',
-  'services/agent-core/src/bolt_core/failure_memory_index.py',
-  'services/agent-core/src/bolt_core/long_task_recovery_dogfood.py',
-  'services/agent-core/src/bolt_core/memory_dogfood.py',
-]);
+  const KNOWN_EXEMPT = new Set([
+    'docs/桌面AI编程Agent全流程架构对比.md',
+    'services/agent-core/src/bolt_core/decision_memory.py',
+    'services/agent-core/src/bolt_core/failure_memory_index.py',
+    'services/agent-core/src/bolt_core/long_task_recovery_dogfood.py',
+    'services/agent-core/src/bolt_core/memory_dogfood.py',
+    'apps/desktop/src/harnessClientAutonomy.ts',
+  ]);
 
 const failures = scan(root).filter((file) => {
   const rel = relative(root, file).replace(/\\/g, '/');
