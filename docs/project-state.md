@@ -2,20 +2,25 @@
 
 ## 当前稳定基线
 - 已完成到：M100 桌面 Beta Dogfood（V5 终点，等待爸爸复审）
-- V5 中文产品 UI/UX（M91-M100）已完成并进入复审修复收口。
-- 远程状态：M91-M100 本地完成，**未 push / 未 release / 未 tag / 未 delete**。
-- 当前本地分支：`main` ahead `origin/main`，以 `git status --short --branch` 为准。
-- 最近稳定链路：M61 -> M90 -> M91 -> M92 -> M93 -> M94 -> M95 -> M96 -> M97 -> M98 -> M99 -> M100。
+- V5 中文产品 UI/UX（M91-M100）已完成，P1 复审修复已完成。
+- 远程状态：M91-M100 + M100 P1 修复已 push 到 `origin/main`。
+- 当前本地分支：`main` 与 `origin/main` 已同步；最新提交以 `git log --oneline -1 --decorate` 为准。
+- 未 release / 未 tag / 未 delete。
+- 未进入 M101。
 
-## 当前进行中
-- 当前阶段：**M100 复审修复已完成并通过验证，未进入 M101**。
-- 本次修复项：
-  - 修复 `SettingsToolsPanel.test.tsx` 文本匹配导致的桌面测试失败。
-  - 将 `DesktopBetaDogfoodService` 从硬编码全通过改为真实检查文件、路由、逐 M 文档链、中文 UI、安全边界和未进入 M101。
-  - 补齐 M93-M100 独立 exec plan / decision / phase review gate 文档链。
-  - 修正 `check-size.mjs` 豁免注释，明确超限文件是已记录的临时风险。
-  - 清理本文件中过期的测试数字和重复风险段。
-- 当前状态：未 push / 未 release / 未 tag / 未 delete / 未进入 M101。
+## 当前状态
+- 当前阶段：M100 完成并已 push，等待爸爸决定是否授权进入 M101。
+- 工作区预期：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
+- V5 最新验证基线：
+  - `uv run pytest -q --color=no`（在 `services/agent-core`）：1225 passed, 1 warning。
+  - `pnpm --filter @bolt/shared test`：27 passed。
+  - `pnpm --filter @bolt/desktop test`：34 files / 262 tests passed。
+  - `pnpm --filter @bolt/desktop build`：通过。
+  - `pnpm run quality`：通过。
+  - `git diff --check`：通过，仅 Windows LF/CRLF 提示。
+  - `node scripts/check-docs.mjs`：通过。
+  - `node scripts/check-chinese-ui.mjs`：通过。
+- 当前全量测试基线：1225 backend + 27 shared + 262 desktop = 1514 passed。
 
 ## V5 里程碑结果
 - M91：中文任务首页。
@@ -29,18 +34,13 @@
 - M99：设置/模型/工具面板。
 - M100：桌面 Beta Dogfood 大复盘。
 
-## 最新验证记录
-- `pnpm --filter @bolt/desktop test -- SettingsToolsPanel.test.tsx`：实际运行 desktop 全套，**34 files / 262 tests passed**。
-- `uv run pytest -q services/agent-core/tests/test_desktop_beta_dogfood.py`：**5 passed**。
-- `pnpm --filter @bolt/desktop test`：**34 files / 262 tests passed**。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `pnpm --filter @bolt/shared test`：**27 passed**。
-- `pnpm run quality`：通过。
-- `uv run pytest -q --color=no`（在 `services/agent-core`）：**1225 passed, 1 warning**。
-- 当前全量测试基线：**1225 backend + 27 shared + 262 desktop = 1514 passed**。
-- `git diff --check`：通过，仅 Windows LF/CRLF 提示。
-- `node scripts/check-docs.mjs`：通过。
-- `node scripts/check-chinese-ui.mjs`：通过。
+## M100 P1 修复摘要
+- 修复 `SettingsToolsPanel.test.tsx` 文本匹配导致的桌面测试失败。
+- `DesktopBetaDogfoodService` 不再硬编码全通过，改为真实检查文件、路由、逐 M 文档链、中文 UI、安全边界和未进入 M101。
+- 增加 dogfood 反向测试：空项目目录必须失败。
+- 补齐 M93-M100 独立 exec plan / decision / phase review gate 文档链。
+- 修正 `check-size.mjs` 豁免注释，明确超限文件是已记录的临时风险。
+- 清理过期测试数字和重复风险段。
 
 ## 已知风险
 - 部分历史文件超过 300 行，已在 `scripts/check-size.mjs` 作为临时豁免记录；后续应专项拆分。
