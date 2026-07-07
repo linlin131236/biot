@@ -4,13 +4,13 @@
 - 已完成到：M90 Team Dogfood（V4 终点，等待爸爸复审）
 - V3 项目理解与长期记忆（M71-M80）全部完成
 - V4 多 Agent 团队（M81-M90）全部完成
-- 全量测试：1186 backend + 27 shared + 159 desktop = **1372 passed**
-- 远程状态：M67-M80 已 push 到 `origin/main`（`db8194a`）；M81-M90 本地已 commit 8 个，**未 push**
+- 全量测试：1186 backend + 27 shared + 212 desktop = **1425 passed**
+- 远程状态：M67-M80 已 push 到 `origin/main`（`db8194a`）；M81-M90 本地已 commit **9 个**，**未 push**
 - 最近稳定链路：M61→M70（大复盘✅）→M71→M80（大复盘✅）→M81→M82→M83→M84→M85→M86→M87→M88→M89→M90（大复盘✅）
 
 ## 当前进行中
 - 当前阶段：**M90 已完成，按文档规则停止，未进入 M91**
-- 当前状态：本地已 commit 8 个 / 未 push / 未 release / 未 tag / 未 delete
+- 当前状态：本地已 commit 9 个 / 未 push / 未 release / 未 tag / 未 delete
 - V4 各 milestone 结果：
   - M81：角色协议（58 tests）
   - M82：Planner/Builder/Reviewer 工作流（39 tests）
@@ -54,7 +54,7 @@
 - `handoff` 只能记录下一步人工处理意图，不能直接调用 Harness、PermissionGate、Agent Loop 或 shell。
 - 复审发现过的问题不能回退：切换闭环必须清空旧 queue item；handoff 终态不能被改写；本文件必须保持真实状态。
 - `.claude/` 未跟踪、未提交，按规则保持。
-- `docs/references/anthropic-jlens-global-workspace-2026.md` 为新增参考文档，已纳入本批参考资料（M81-M90 架构参考），待提交。
+- `docs/references/anthropic-jlens-global-workspace-2026.md` 为长期安全研究参考文档（已纳入知识索引 M113-M120、M124+ 区段），已提交。
 
 ## 新窗口接手指令
 ```text

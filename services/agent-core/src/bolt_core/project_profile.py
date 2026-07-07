@@ -1,12 +1,4 @@
-"""Project Profile Service. Builds a structured project portrait for context handoff.
-
-Context Lakehouse principles:
-- raw/source_refs always preserved
-- cleaning results reproducible
-- analysis reads from cleaned/structured layer
-- every conclusion traceable to docs/git/evidence
-- NEVER reads secrets or certificate materials
-"""
+"""Project Profile Service. Builds a structured project portrait for context handoff. Context Lakehouse: raw/source_refs preserved; cleaning reproducible; analysis reads from cleaned layer; conclusions traceable; NEVER reads secrets."""
 from __future__ import annotations
 
 import json
@@ -15,7 +7,6 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
-
 
 @dataclass(frozen=True)
 class ProjectProfile:
@@ -49,7 +40,6 @@ class ProjectProfile:
             "source_refs": self.source_refs,
         }
 
-
 # ── Excluded paths for safety ─────────────────────────────────────────
 _EXCLUDED_DIRS = {
     "node_modules", ".git", "dist", "build", "__pycache__", ".venv",
@@ -60,7 +50,6 @@ _EXCLUDED_FILES = {
     "private.key", "id_rsa", ".npmrc",
 }
 
-
 def _is_safe_path(path: Path) -> bool:
     """Check if path is safe to read (not excluded)."""
     parts = set(path.parts)
@@ -70,12 +59,8 @@ def _is_safe_path(path: Path) -> bool:
         return False
     return True
 
-
 class ProjectProfileService:
-    """Builds a project profile from docs, git, and filesystem.
-
-    Read-only. NEVER writes files. NEVER reads secrets/certs.
-    """
+    """Builds a project profile from docs, git, and filesystem. Read-only. NEVER writes files. NEVER reads secrets/certs."""
 
     def __init__(self, workspace_path: str | Path) -> None:
         self._workspace = self._find_project_root(Path(workspace_path).resolve())

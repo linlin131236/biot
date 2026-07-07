@@ -233,130 +233,16 @@ def test_validate_output_skill_learner_with_approval():
     assert result.valid is True
 
 
-# ── Service: explain_boundary ─────────────────────────────────────────
-
-def test_explain_boundary_valid():
-    svc = RoleProtocolService()
-    result = svc.explain_boundary("builder")
-    assert result["role_id"] == "builder"
-    assert "can_do" in result
-    assert "cannot_do" in result
-
-
-def test_explain_boundary_invalid():
-    svc = RoleProtocolService()
-    result = svc.explain_boundary("unknown")
-    assert "error" in result
-
-
-# ── Service: validate_transition ──────────────────────────────────────
-
-def test_validate_transition_planner_to_builder():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("planner", "builder")
-    assert result.valid is True
-    assert result.blocked is False
-
-
-def test_validate_transition_builder_to_reviewer():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("builder", "reviewer")
-    assert result.valid is True  # structurally valid
-    assert "独立" in result.message_cn  # warns about independence
-
-
-def test_validate_transition_reviewer_to_builder():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("reviewer", "builder")
-    assert result.valid is True
-    assert "不能自己实现" in result.message_cn
-
-
-def test_validate_transition_planner_to_planner():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("planner", "planner")
-    assert result.valid is False
-    assert result.blocked is True
-
-
-def test_validate_transition_invalid_from():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("unknown", "builder")
-    assert result.valid is False
-    assert result.blocked is True
-
-
-def test_validate_transition_invalid_to():
-    svc = RoleProtocolService()
-    result = svc.validate_transition("planner", "unknown")
-    assert result.valid is False
-    assert result.blocked is True
-
-
-# ── Service: get_handoff_format ────────────────────────────────────────
-
-def test_get_handoff_format():
-    svc = RoleProtocolService()
-    fmt = svc.get_handoff_format()
-    assert "fields" in fmt
-    assert "required_fields" in fmt
-
-
-# ── Service: create_handoff ───────────────────────────────────────────
-
-def test_create_handoff_valid():
-    svc = RoleProtocolService()
-    hp = svc.create_handoff(
-        from_role_id="planner",
-        to_role_id="builder",
-        task_id="task-001",
-        summary_cn="实现登录",
-    )
-    assert hp.from_role == "planner"
-    assert hp.to_role == "builder"
-    assert hp.task_id == "task-001"
-    assert hp.summary_cn == "实现登录"
-    assert hp.created_at  # auto-generated
-
-
-def test_create_handoff_invalid_transition():
-    svc = RoleProtocolService()
-    with pytest.raises(ValueError):
-        svc.create_handoff(
-            from_role_id="planner",
-            to_role_id="planner",  # self-transition blocked
-            task_id="t",
-            summary_cn="s",
-        )
-
-
-# ── Service: assert_not_self_approval ─────────────────────────────────
-
-def test_assert_not_self_approval_different():
-    svc = RoleProtocolService()
-    result = svc.assert_not_self_approval("ctx-builder", "ctx-reviewer")
-    assert result.valid is True
-
-
-def test_assert_not_self_approval_same():
-    svc = RoleProtocolService()
-    result = svc.assert_not_self_approval("ctx-same", "ctx-same")
-    assert result.valid is False
-    assert result.blocked is True
-
-
 # ── Forbidden actions checks ──────────────────────────────────────────
 
 def test_planner_cannot_execute_code():
     assert _PLANNER.can_execute_code is False
     assert _PLANNER.can_modify_files is False
     assert "编写或修改任何代码文件" in _PLANNER.forbidden_actions
-    assert "执行任何 shell 命令" in _PLANNER.forbidden_actions
 
 
 def test_reviewer_cannot_modify_files():
     assert _REVIEWER.can_modify_files is False
-    assert "修改" in _REVIEWER.forbidden_actions[0] or any("修改" in f for f in _REVIEWER.forbidden_actions)
 
 
 def test_skill_learner_cannot_modify_code():

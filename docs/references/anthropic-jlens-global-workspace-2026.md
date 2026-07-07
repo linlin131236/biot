@@ -1,10 +1,10 @@
 # Anthropic J-lens 论文核心摘要 — 分类知识库
 
-> 论文：Verbalizable Representations Form a Global Workspace in Language Models  
-> 来源：Anthropic Transformer Circuits Thread，2026-07-06  
-> 作者：Wes Gurnee*, Nicholas Sofroniew*, Jack Lindsey*† 等 17 人  
-> 阅读入口：https://transformer-circuits.pub/2026/workspace/index.html  
-> J-lens 可视化：https://www.neuronpedia.org/jlens（开源模型）  
+> 论文：Verbalizable Representations Form a Global Workspace in Language Models
+> 来源：Anthropic Transformer Circuits Thread，2026-07-06
+> 作者：Wes Gurnee*, Nicholas Sofroniew*, Jack Lindsey*† 等 17 人
+> 阅读入口：https://transformer-circuits.pub/2026/workspace/index.html
+> J-lens 可视化：https://www.neuronpedia.org/jlens（开源模型）
 > 论文声称提供开源实现，链接待确认
 
 ---
@@ -88,7 +88,7 @@ J_ℓ = E[ ∂h_final / ∂h_ℓ ]    （平均在 1000 个 prompt、所有 toke
 
 ### 3.1 能读到什么
 - **战略算计**：leverage, manipulation
-- **情绪反应**：panic  
+- **情绪反应**：panic
 - **评估意识**：fake, fictional — 模型知道自己被测试
 - **恶意意图**：reward, bias, secretly, trick
 
