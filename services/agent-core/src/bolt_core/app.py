@@ -212,7 +212,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
         result_ingestion.ingest(result)
         return tool_result_dict(result)
 
-    register_simple_routes(app, harness, result_ingestion, checkpoint_service, review_gate)
+    register_simple_routes(app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces, review_gate)
 
     return app
 

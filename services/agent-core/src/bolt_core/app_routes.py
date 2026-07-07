@@ -6,7 +6,7 @@ from bolt_core.review_gate import ReviewChecklist
 from bolt_core.tool_result_api import tool_result_dict
 
 
-def register(app, harness, result_ingestion, checkpoint_service, review_gate):
+def register(app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces, review_gate):
     @app.get("/terminal")
     def terminal_list() -> list[dict]:
         return harness.terminal_list()
