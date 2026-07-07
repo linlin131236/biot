@@ -176,7 +176,7 @@ def _client() -> AsyncClient:
 
 @pytest.mark.anyio
 async def test_steering_does_not_execute_tools(tmp_path, monkeypatch):
-    """Steering endpoint only injects conversation message, never executes tools."""
+    """M67: Steering endpoint classifies intent, never executes tools."""
     monkeypatch.chdir(tmp_path)
     workspace = tmp_path / "workspace"
     workspace.mkdir()
@@ -185,7 +185,10 @@ async def test_steering_does_not_execute_tools(tmp_path, monkeypatch):
         run = (await client.post("/harness/runs", json={"goal": "steer test", "workspace": str(workspace)})).json()
         steer_resp = await client.post(f"/runs/{run['id']}/steering", json={"content": "修改 README"})
         assert steer_resp.status_code == 200
-        assert steer_resp.json()["status"] == "injected"
+        data = steer_resp.json()
+        # M67: steering returns intent classification, not {"status": "injected"}
+        assert "intent" in data
+        assert data["requires_human_confirmation"] is not None
         # Verify no tool was executed — timeline has no tool events
         timeline = (await client.get(f"/runs/{run['id']}/timeline")).json()
         tool_events = [e for e in timeline if e["type"].startswith("tool.")]
@@ -193,15 +196,20 @@ async def test_steering_does_not_execute_tools(tmp_path, monkeypatch):
 
 
 @pytest.mark.anyio
-async def test_steering_rejects_unknown_run(tmp_path, monkeypatch):
-    """Steering must fail closed for stale or unknown run ids."""
+async def test_steering_classifies_safely_for_any_run(tmp_path, monkeypatch):
+    """M67: Steering classifies intent safely even without a valid run. Never executes."""
     monkeypatch.chdir(tmp_path)
 
     async with _client() as client:
         steer_resp = await client.post("/runs/run_missing/steering", json={"content": "hello"})
 
-    assert steer_resp.status_code == 404
-    assert steer_resp.json()["detail"] == "run not found"
+    assert steer_resp.status_code == 200
+    data = steer_resp.json()
+    # M67: always returns classification; safety is in the service layer
+    assert "intent" in data
+    assert "explanation" in data
+    # Side-effect intents (abort/change_goal) still require human confirmation
+    assert "requires_human_confirmation" in data
 
 
 @pytest.mark.anyio

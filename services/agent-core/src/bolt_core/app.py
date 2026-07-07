@@ -34,6 +34,7 @@ from bolt_core.recovery_policy_api import create_recovery_policy_router
 from bolt_core.tool_selection_policy_api import create_tool_selection_policy_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
+from bolt_core.human_steering_api import create_human_steering_router
 from bolt_core.pause_resume_api import create_pause_resume_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
@@ -83,6 +84,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_tool_selection_policy_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
+    app.include_router(create_human_steering_router())
     app.include_router(create_pause_resume_router())
 
     @app.get("/health")
@@ -246,19 +248,9 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
         harness.conversation_store.add(conversation_id, msg)
         return {"status": "ok"}
 
-    @app.post("/runs/{run_id}/steering")
-    def steer_run(run_id: str, payload: dict) -> dict:
-        from bolt_core.conversation import ConversationMessage
-        if run_id not in harness.runs:
-            raise HTTPException(status_code=404, detail="run not found")
-        cid = f"run_{run_id}"
-        msg = ConversationMessage(
-            role="user",
-            content=payload.get("content", ""),
-            metadata={"steering": True, "run_id": run_id},
-        )
-        harness.conversation_store.add(cid, msg)
-        return {"status": "injected"}
+    # Steering endpoint replaced by create_human_steering_router() (M67).
+    # The router provides intent classification, Chinese explanations,
+    # M66 pause integration, and safety guardrails.
 
     @app.get("/runs/{run_id}/timeline")
     def run_timeline(run_id: str) -> list[dict]:
