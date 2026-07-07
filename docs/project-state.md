@@ -1,18 +1,19 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M63 Tool Selection Policy
+- 已完成到：M64 Failure Classification
 - 最新提交：（待提交）
-- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62/M63 本地完成待 push
-- 最近稳定链路：... -> M62 Execution State Machine -> M63 Tool Selection Policy
+- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62/M63/M64 本地完成待 push
+- 最近稳定链路：... -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification
 
 ## 当前进行中
-- 当前阶段：M63 已完成，进入 M64 Failure Classification
-- 当前状态：M62/M63 本地完成；继续 M64-M66
+- 当前阶段：M64 已完成，进入 M65 Safe Retry Loop
+- 当前状态：M62/M63/M64 本地完成；继续 M65-M66
 - 当前结果：
   - M62：执行状态机，8 状态 + 18 转换 + 中文标签
   - M63：工具选择策略，26 种工具注册 + 4 级分类
-  - 637 backend + 195 frontend + 27 shared passed，desktop build 通过
+  - M64：失败分类器，8 种分类 + 中文诊断建议
+  - 656 backend + 195 frontend + 27 shared passed，desktop build 通过
 - 下一步：实现 M64 Failure Classification；不进入 M67
   - V1 安全与发布底座（M55-M60）验收通过 ✅
   - V2 Agent 工作流核心启动（M61 Planner Task Graph）
