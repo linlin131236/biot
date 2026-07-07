@@ -1,6 +1,6 @@
 # 桌面 AI 编程 Agent 全流程架构对比
 
-> Claude Code × Codex CLI × Hermes Agent × Biot  
+> Claude Code × Codex CLI × Hermes Agent × Biot
 > 2026-07-07 调研整理
 
 ---

@@ -102,9 +102,16 @@ export interface ReviewResult {
   failures: string[];
 }
 
-// === Steering ===
+// === Steering (M67) ===
 export interface SteeringResult {
-  status: string;
+  intent: string;
+  intent_label: string;
+  explanation: string;
+  requires_human_confirmation: boolean;
+  action_taken: string;
+  pending_actions: string[];
+  evidence_ref: string;
+  timestamp: number;
 }
 
 // === Goal Timeline & Evidence ===

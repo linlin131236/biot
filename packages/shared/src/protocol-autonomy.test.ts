@@ -54,9 +54,19 @@ describe('shared autonomy protocol', () => {
     expect(result.failures).toContain('lint');
   });
 
-  it('supports SteeringResult shape', () => {
-    const s: SteeringResult = { status: 'injected' };
-    expect(s.status).toBe('injected');
+  it('supports SteeringResult shape (M67)', () => {
+    const s: SteeringResult = {
+      intent: 'continue',
+      intent_label: '继续',
+      explanation: '收到继续指令',
+      requires_human_confirmation: false,
+      action_taken: '已记录继续意图',
+      pending_actions: [],
+      evidence_ref: 'steering_abc123',
+      timestamp: 1234567890,
+    };
+    expect(s.intent).toBe('continue');
+    expect(s.intent_label).toBe('继续');
   });
 
   it('supports TaskTemplate and TASK_TEMPLATES', async () => {
