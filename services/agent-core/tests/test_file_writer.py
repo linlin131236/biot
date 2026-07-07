@@ -38,7 +38,7 @@ def test_apply_file_write_applies_change_set(tmp_path):
     proposal = propose_file_write(str(target), "new\n", str(workspace))
     payload = json.loads(change_set_json(proposal.change))
 
-    allowed, reason = apply_file_write(payload)
+    allowed, reason = apply_file_write(payload, str(workspace))
 
     assert allowed is True
     assert reason == "change applied"
@@ -53,7 +53,7 @@ def test_apply_file_write_rejects_hash_mismatch(tmp_path):
     proposal = propose_file_write(str(target), "new\n", str(workspace))
     target.write_text("user edit\n", encoding="utf-8")
 
-    allowed, reason = apply_file_write(proposal.change.__dict__)
+    allowed, reason = apply_file_write(proposal.change.__dict__, str(workspace))
 
     assert allowed is False
     assert reason == "file changed since proposal"

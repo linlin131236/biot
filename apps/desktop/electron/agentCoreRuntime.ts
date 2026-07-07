@@ -31,10 +31,10 @@ type SpawnProcess = (command: string, args: string[], options: { cwd: string; en
 export function resolveAgentCoreRuntime(options: AgentCoreRuntimeOptions): AgentCoreRuntime {
   const env = options.env ?? process.env;
   const port = normalizePort(env.BOLT_AGENT_CORE_PORT);
-  const coreRoot = env.BOLT_AGENT_CORE_ROOT || defaultCoreRoot(options);
-  const sourceRoot = env.BOLT_AGENT_CORE_SRC || joinPath(coreRoot, 'src');
+  const coreRoot = options.packaged ? defaultCoreRoot(options) : env.BOLT_AGENT_CORE_ROOT || defaultCoreRoot(options);
+  const sourceRoot = options.packaged ? joinPath(coreRoot, 'src') : env.BOLT_AGENT_CORE_SRC || joinPath(coreRoot, 'src');
   const venvPython = joinPath(coreRoot, '.venv', 'Scripts', 'python.exe');
-  const command = env.BOLT_AGENT_CORE_PYTHON || ((options.exists ?? (() => false))(venvPython) ? venvPython : 'python');
+  const command = options.packaged ? venvPython : env.BOLT_AGENT_CORE_PYTHON || ((options.exists ?? (() => false))(venvPython) ? venvPython : 'python');
   const validationError = packagedResourceError(options, coreRoot, sourceRoot);
   return {
     baseUrl: `http://127.0.0.1:${port}`,

@@ -24,7 +24,6 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
-
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
                  memory_db_path: str | None = None,
@@ -59,48 +58,47 @@ class Harness:
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:
-        self._trace_log(run_id).record("tool.requested", {"tool": request.tool})
-        decision = PermissionGate(self._workspace(run_id)).evaluate(request)
-        self._trace_log(run_id).record("permission.evaluated", {"status": decision.status})
-        if decision.status == "denied":
-            return self._record_task_closure_tool_result(run_id, self._deny(request, decision.reason))
-        if decision.action == "allow":
-            return self._record_task_closure_tool_result(run_id, self._run_immediate(run_id, request))
-        if request.tool == "file.write":
-            return self._record_task_closure_tool_result(run_id, self._queue_file_write(run_id, request, decision))
-        if request.tool == "file.patch":
-            return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
-        self.permissions.add(run_id, request, decision)
-        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
-        return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
+        with self._state_lock:
+            self._trace_log(run_id).record("tool.requested", {"tool": request.tool})
+            decision = PermissionGate(self._workspace(run_id)).evaluate(request)
+            self._trace_log(run_id).record("permission.evaluated", {"status": decision.status})
+            if decision.status == "denied":
+                return self._record_task_closure_tool_result(run_id, self._deny(request, decision.reason))
+            if decision.action == "allow":
+                return self._record_task_closure_tool_result(run_id, self._run_immediate(run_id, request))
+            if request.tool == "file.write":
+                return self._record_task_closure_tool_result(run_id, self._queue_file_write(run_id, request, decision))
+            if request.tool == "file.patch":
+                return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
+            self.permissions.add(run_id, request, decision)
+            self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
+            return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
 
     def trace(self, run_id: str) -> list[TraceEvent]:
         return self._trace_log(run_id).events()
-
     def pending_permissions(self) -> list[PendingPermission]:
         return self.permissions.pending()
-
     def approve_permission(self, request_id: str) -> ToolResult:
-        item = self.permissions.approve(request_id)
-        self._trace_log(item.run_id).record("permission.approved", {"request_id": request_id})
-        if item.tool == "file.write":
-            return self._apply_file_write(item)
-        if item.tool == "file.patch":
-            return self._apply_file_patch(item)
-        request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
-        execution = self._execute(item.run_id, request)
-        return self._result_from_execution(request, execution)
+        with self._state_lock:
+            item = self.permissions.approve(request_id)
+            self._trace_log(item.run_id).record("permission.approved", {"request_id": request_id})
+            if item.tool == "file.write":
+                return self._apply_file_write(item)
+            if item.tool == "file.patch":
+                return self._apply_file_patch(item)
+            request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
+            execution = self._execute(item.run_id, request)
+            return self._result_from_execution(request, execution)
 
     def reject_permission(self, request_id: str) -> ToolResult:
-        item = self.permissions.reject(request_id)
-        self._trace_log(item.run_id).record("permission.rejected", {"request_id": request_id})
-        if item.tool in ("file.write", "file.patch"):
-            self._trace_log(item.run_id).record("change.rejected", {"request_id": request_id})
-        return ToolResult.rejected(request_id, "rejected by user")
-
+        with self._state_lock:
+            item = self.permissions.reject(request_id)
+            self._trace_log(item.run_id).record("permission.rejected", {"request_id": request_id})
+            if item.tool in ("file.write", "file.patch"):
+                self._trace_log(item.run_id).record("change.rejected", {"request_id": request_id})
+            return ToolResult.rejected(request_id, "rejected by user")
     def p0_context(self) -> dict[str, list]:
         return self.memory.p0_context()
-
     def memory_snapshot(self) -> dict:
         return self.memory.snapshot()
 
@@ -249,7 +247,7 @@ class Harness:
         return ToolResult.pending(request.id, change_set_json(change))
 
     def _apply_file_write(self, item: PendingPermission) -> ToolResult:
-        allowed, reason = apply_file_write(item.payload["change_set"])
+        allowed, reason = apply_file_write(item.payload["change_set"], self._workspace(item.run_id))
         event = "change.applied" if allowed else "change.failed"
         self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
         if allowed:
@@ -262,7 +260,7 @@ class Harness:
         change_set = item.payload.get("change_set", {})
         from bolt_core.patch_engine import ChangeSet
         change = ChangeSet(**change_set)
-        decision = apply_change_set(change)
+        decision = apply_change_set(change, self._workspace(item.run_id))
         event = "change.applied" if decision.allowed else "change.failed"
         self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
         if decision.allowed:

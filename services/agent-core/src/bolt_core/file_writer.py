@@ -28,10 +28,10 @@ def propose_file_write(path: str, proposed_content: str, workspace: str) -> File
     return FileWriteProposal("pending_review", change, None)
 
 
-def apply_file_write(change_payload: dict) -> tuple[bool, str]:
+def apply_file_write(change_payload: dict, workspace: str) -> tuple[bool, str]:
     change = ChangeSet(**change_payload)
     try:
-        decision = apply_change_set(change)
+        decision = apply_change_set(change, workspace)
     except OSError as exc:
         return False, f"write error: {exc}"
     return decision.allowed, decision.reason

@@ -62,3 +62,14 @@ def test_rejects_empty_command(tmp_path):
 
     assert result.status == "failed"
     assert result.error == "empty command"
+
+
+def test_rejects_shell_control_syntax(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    request = ToolRequest.create("shell.execute", "command", {"command": "python --version && echo unsafe", "workdir": str(workspace)})
+
+    result = execute_shell_command(request, str(workspace))
+
+    assert result.status == "failed"
+    assert result.error == "shell control syntax not allowed: &"

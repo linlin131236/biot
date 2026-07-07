@@ -46,7 +46,7 @@ def test_apply_change_set_writes_when_base_hash_matches(tmp_path):
     target.write_text("old\n", encoding="utf-8")
     change = build_change_set(str(target), "old\n", "new\n")
 
-    decision = apply_change_set(change)
+    decision = apply_change_set(change, str(tmp_path))
 
     assert decision.allowed is True
     assert decision.reason == "change applied"
@@ -59,8 +59,36 @@ def test_apply_change_set_rejects_when_file_changed(tmp_path):
     change = build_change_set(str(target), "old\n", "new\n")
     target.write_text("user edit\n", encoding="utf-8")
 
-    decision = apply_change_set(change)
+    decision = apply_change_set(change, str(tmp_path))
 
     assert decision.allowed is False
     assert decision.reason == "file changed since proposal"
     assert target.read_text(encoding="utf-8") == "user edit\n"
+
+
+def test_apply_change_set_denies_outside_workspace(tmp_path):
+    workspace = tmp_path / "workspace"
+    outside = tmp_path / "outside.ts"
+    workspace.mkdir()
+    outside.write_text("old\n", encoding="utf-8")
+    change = build_change_set(str(outside), "old\n", "new\n")
+
+    decision = apply_change_set(change, str(workspace))
+
+    assert decision.allowed is False
+    assert decision.reason == "path outside workspace"
+    assert outside.read_text(encoding="utf-8") == "old\n"
+
+
+def test_apply_change_set_denies_secret_path(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    secret = workspace / ".env"
+    secret.write_text("TOKEN=old\n", encoding="utf-8")
+    change = build_change_set(str(secret), "TOKEN=old\n", "TOKEN=new\n")
+
+    decision = apply_change_set(change, str(workspace))
+
+    assert decision.allowed is False
+    assert decision.reason == "secret path denied"
+    assert secret.read_text(encoding="utf-8") == "TOKEN=old\n"

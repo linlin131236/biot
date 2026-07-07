@@ -20,11 +20,16 @@ async function createWindow() {
     }
   });
 
+  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  window.webContents.on('will-navigate', (event, url) => {
+    const allowed = devServerUrl ? url.startsWith(devServerUrl) : url.startsWith('file://');
+    if (!allowed) event.preventDefault();
+  });
   if (devServerUrl) {
     await window.loadURL(devServerUrl);
-    return;
+  } else {
+    await window.loadFile(path.join(__dirname, '../dist/index.html'));
   }
-  await window.loadFile(path.join(__dirname, '../dist/index.html'));
 }
 
 async function startAgentCore() {

@@ -91,4 +91,23 @@ describe('agent core runtime', () => {
     expect(status.error).toContain('missing packaged Agent Core resource');
     expect(spawn).not.toHaveBeenCalled();
   });
+
+  it('ignores agent core path and python overrides in packaged mode', () => {
+    const runtime = resolveAgentCoreRuntime({
+      repoRoot: 'C:/Projects/Bolt',
+      resourcesPath: 'C:/Program Files/Bolt/resources',
+      packaged: true,
+      env: {
+        BOLT_AGENT_CORE_ROOT: 'C:/attacker/core',
+        BOLT_AGENT_CORE_SRC: 'C:/attacker/src',
+        BOLT_AGENT_CORE_PYTHON: 'C:/attacker/python.exe',
+        PYTHONPATH: 'C:/existing'
+      },
+      exists: () => true
+    });
+
+    expect(runtime.cwd).toBe('C:/Program Files/Bolt/resources/agent-core');
+    expect(runtime.command).toBe('C:/Program Files/Bolt/resources/agent-core/.venv/Scripts/python.exe');
+    expect(runtime.env.PYTHONPATH).toBe('C:/Program Files/Bolt/resources/agent-core/src;C:/existing');
+  });
 });

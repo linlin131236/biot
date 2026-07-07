@@ -130,3 +130,14 @@ def test_background_kill_releases_ref(tmp_path):
     killed = executor.kill(result.session_id)
     assert killed.status == "killed"
     assert result.session_id not in executor._processes
+
+
+def test_background_rejects_shell_control_syntax(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    executor = BackgroundExecutor(str(workspace))
+
+    result = executor.spawn("echo safe | powershell", str(workspace))
+
+    assert result.status == "failed"
+    assert result.output == "shell control syntax not allowed: |"

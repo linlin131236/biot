@@ -50,7 +50,6 @@ async def test_health_endpoint_reports_service_status():
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "bolt-agent-core"}
 
-
 @pytest.mark.anyio
 async def test_p0_context_endpoint_returns_failure_shape():
     async with _client() as client:
@@ -294,4 +293,3 @@ async def test_steering_endpoint_classifies_intent(tmp_path):
     assert resp.status_code == 200
     data = resp.json()
     assert data.get("intent") and data.get("explanation") and "requires_human_confirmation" in data
-

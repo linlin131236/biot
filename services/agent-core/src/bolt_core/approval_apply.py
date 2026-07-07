@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from bolt_core.path_guard import PathGuard, PathCheck
+from bolt_core.path_guard import PathGuard
 from bolt_core.write_tool_proposal import WriteProposal, WriteProposalStore, STATUS_APPROVED, STATUS_APPLIED
 
 # ── Apply result ──
@@ -119,8 +119,10 @@ class ApprovalApplyEngine:
             )
 
         # ── 9. Re-validate target paths ──
+        safe_targets: dict[str, Path] = {}
         for tf in proposal.target_files:
             check = self._path_guard.check(tf)
+            safe_targets[tf] = check.path
             if not check.allowed:
                 return ApplyResult(
                     success=False, proposal_id=proposal_id,
@@ -160,7 +162,7 @@ class ApprovalApplyEngine:
 
         files_changed: list[str] = []
         for tf in proposal.target_files:
-            target_path = self._project_dir / tf
+            target_path = safe_targets[tf]
             per_file_diff = file_diffs.get(tf, "")
             try:
                 if proposal.operation_type == "create":

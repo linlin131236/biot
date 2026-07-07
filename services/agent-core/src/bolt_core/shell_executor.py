@@ -1,6 +1,7 @@
 import subprocess
 from dataclasses import dataclass
 
+from bolt_core.command_security import parse_command_argv
 from bolt_core.path_guard import PathGuard
 from bolt_core.tool_protocol import ToolRequest
 
@@ -30,10 +31,15 @@ def execute_shell_command(request: ToolRequest, workspace: str) -> ShellExecutio
 
 
 def _run(command: str, workdir: str, timeout: int) -> ShellExecutionOutcome:
+    parsed, error = parse_command_argv(command)
+    if error is not None or parsed is None:
+        return ShellExecutionOutcome("failed", None, error or "invalid command")
     try:
-        result = subprocess.run(command, cwd=workdir, shell=True, capture_output=True, text=True, timeout=timeout)
+        result = subprocess.run(parsed.argv, cwd=workdir, shell=False, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         return ShellExecutionOutcome("failed", None, "command timed out")
+    except OSError as exc:
+        return ShellExecutionOutcome("failed", None, f"command failed to start: {exc}")
     output = _limit_output((result.stdout or "") + (result.stderr or ""))
     if result.returncode != 0:
         return ShellExecutionOutcome("failed", output, f"command exited with {result.returncode}")

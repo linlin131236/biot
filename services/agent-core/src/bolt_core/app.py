@@ -96,11 +96,15 @@ from bolt_core.app_routes import register as register_simple_routes
 def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
+    audit_store_status = "ok"
+    audit_store_error = ""
     try:
         task_closure_service = TaskClosureService(audit_store)
         execution_queue_service = ExecutionQueueService(audit_store)
         execution_handoff_service = ExecutionHandoffService(audit_store)
-    except ExecutionAuditStoreError:
+    except ExecutionAuditStoreError as exc:
+        audit_store_status = "degraded"
+        audit_store_error = str(exc)
         task_closure_service = TaskClosureService(None)
         execution_queue_service = ExecutionQueueService(None)
         execution_handoff_service = ExecutionHandoffService(None)
@@ -194,7 +198,15 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_desktop_beta_dogfood_router())
 
     @app.get("/health")
-    def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
+    def health() -> dict[str, str]:
+        if audit_store_status != "ok":
+            return {
+                "status": "degraded",
+                "service": "bolt-agent-core",
+                "audit_store": audit_store_status,
+                "audit_error": audit_store_error,
+            }
+        return {"status": "ok", "service": "bolt-agent-core"}
 
     @app.get("/context/p0")
     def p0_context() -> dict[str, list]: return harness.p0_context()

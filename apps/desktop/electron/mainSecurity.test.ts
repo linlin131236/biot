@@ -30,6 +30,13 @@ describe('main process security', () => {
     expect(mainSource).toContain('registerWorkspacePickerIpc');
   });
 
+  it('denies new windows and blocks unexpected navigation', () => {
+    expect(mainSource).toContain('setWindowOpenHandler');
+    expect(mainSource).toContain("action: 'deny'");
+    expect(mainSource).toContain('will-navigate');
+    expect(mainSource).toContain('event.preventDefault()');
+  });
+
   it('uses bolt:select-workspace channel in workspacePicker', () => {
     expect(workspacePickerSource).toContain('bolt:select-workspace');
   });

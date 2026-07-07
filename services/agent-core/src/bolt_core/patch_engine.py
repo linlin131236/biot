@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from difflib import unified_diff
 from hashlib import sha256
-from pathlib import Path
+
+from bolt_core.path_guard import PathGuard
 
 
 @dataclass(frozen=True)
@@ -35,13 +36,15 @@ def can_apply_change(change: ChangeSet, current_content: str) -> ApplyDecision:
     return ApplyDecision(True, "base hash matches")
 
 
-def apply_change_set(change: ChangeSet) -> ApplyDecision:
-    path = Path(change.path)
-    current = path.read_text(encoding="utf-8")
+def apply_change_set(change: ChangeSet, workspace: str) -> ApplyDecision:
+    check = PathGuard(workspace).check(change.path)
+    if not check.allowed:
+        return ApplyDecision(False, check.reason)
+    current = check.path.read_text(encoding="utf-8")
     decision = can_apply_change(change, current)
     if not decision.allowed:
         return decision
-    path.write_text(change.proposed, encoding="utf-8")
+    check.path.write_text(change.proposed, encoding="utf-8")
     return ApplyDecision(True, "change applied")
 
 

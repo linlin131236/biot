@@ -54,6 +54,23 @@
 - 自动执行 / 自动 approve / push-release-tag-delete：最终验证必须无新增违规。
 - PermissionGate：不得绕过；M124/M125 只读审计不能替代 PermissionGate。
 
+## 外部审计修复（2026-07-08）
+- 当前阶段：M125 后安全审计修复，不是新 milestone，未进入 M126。
+- 已修复：
+  - `shell_executor.py` / `background_executor.py` 不再使用 `shell=True`，统一解析 argv 并拒绝 shell 控制语法。
+  - `patch_engine.py` / `file_writer.py` / `approval_apply.py` 写入路径统一经过 `PathGuard` 后再写。
+  - Electron 主进程阻断新窗口和非预期导航；packaged 模式忽略 `BOLT_AGENT_CORE_PYTHON/ROOT/SRC` 覆盖。
+  - 审计存储损坏时 `/health` 返回 `degraded`，不再静默伪装为完全健康。
+  - `PermissionQueue` 加锁，`Harness` 的提交/批准/拒绝组合入口加锁。
+- 最新验证：
+  - `uv run pytest -q --color=no`：**1524 passed, 2 warnings**。
+  - `pnpm --filter @bolt/shared test`：**27 passed**。
+  - `pnpm --filter @bolt/desktop test`：**35 files / 270 tests passed**。
+  - `pnpm --filter @bolt/desktop build`：通过。
+  - `pnpm run quality`：通过。
+  - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- 未 push / 未 release / 未 tag / 未 delete。
+
 ## 已知风险
 - `harnessClientAutonomy.ts` 超过 300 行（历史豁免）。
 - M61 Task Graph / M81-M89 多 Agent 工作流以纯内存为主，后续如进入 M126+ 可评估持久化。
