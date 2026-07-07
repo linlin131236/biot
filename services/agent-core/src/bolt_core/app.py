@@ -34,6 +34,7 @@ from bolt_core.recovery_policy_api import create_recovery_policy_router
 from bolt_core.tool_selection_policy_api import create_tool_selection_policy_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
+from bolt_core.pause_resume_api import create_pause_resume_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 
@@ -82,6 +83,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_tool_selection_policy_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
+    app.include_router(create_pause_resume_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}

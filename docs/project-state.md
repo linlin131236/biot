@@ -1,21 +1,23 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M65 Safe Retry Loop
+- 已完成到：M66 Pause/Resume Long Task
 - 最新提交：（待提交）
-- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62-M65 本地完成待 push
-- 最近稳定链路：... -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop
+- 远程状态：`main` 与 `origin/main` 同步（M58-M61 已 push），M62-M66 本地完成待 push
+- 最近稳定链路：... -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task
 
 ## 当前进行中
-- 当前阶段：M65 已完成，进入 M66 Pause/Resume Long Task
-- 当前状态：M62-M65 本地完成；继续 M66
+- 当前阶段：M66 已完成，等待爸爸审核后 push
+- 当前状态：M62-M66 全部实现并验证通过；未 push / 未 release / 未 tag / 未 delete / 未进入 M67
 - 当前结果：
-  - M62：执行状态机，8 状态 + 18 转换，25 tests
-  - M63：工具选择策略，26 种工具注册 + 4 级分类，21 tests
-  - M64：失败分类器，8 种分类 + 中文诊断，19 tests
-  - M65：安全重试循环，双重安全门 + 审计历史，20 tests
-  - 676 backend + 195 frontend + 27 shared passed，desktop build 通过
-- 下一步：实现 M66 Pause/Resume Long Task；不进入 M67
+  - V2 Agent 工作流核心（M61-M66）骨架搭建完成
+  - M62：执行状态机（8 状态 + 18 转换）
+  - M63：工具选择策略（26 种工具 + 4 级分类）
+  - M64：失败分类器（8 种分类 + 中文诊断）
+  - M65：安全重试循环（双重安全门 + 审计历史）
+  - M66：暂停/恢复（快照机制 + 三重安全检查）
+  - 698 backend + 195 frontend + 27 shared passed，desktop build 通过
+- 下一步：全量质量扫描 + push；不进入 M67
 - 下一步：实现 M64 Failure Classification；不进入 M67
   - V1 安全与发布底座（M55-M60）验收通过 ✅
   - V2 Agent 工作流核心启动（M61 Planner Task Graph）
