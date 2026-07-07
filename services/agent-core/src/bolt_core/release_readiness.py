@@ -104,16 +104,22 @@ class ReleaseReadinessService:
         }
 
     def _scan_secrets(self) -> bool:
-        """Return True if any secret pattern found in audit JSON."""
+        """Return True if any PLAINTEXT secret pattern found in audit JSON.
+        Excludes already-redacted placeholders like '[已脱敏]' from M56 redaction.
+        Handles both literal Chinese and JSON-escaped \\uXXXX forms.
+        """
         if not self._audit_store._path.exists():
             return False
         try:
             raw = self._audit_store._path.read_text(encoding="utf-8")
         except OSError:
             return False
+        redacted_markers = ("[已脱敏]", "[\\u5df2\\u8131\\u654f]")
         for pattern, _ in _PATTERNS:
-            if pattern.search(raw):
-                return True
+            for match in pattern.finditer(raw):
+                matched = match.group()
+                if not any(marker in matched for marker in redacted_markers):
+                    return True
         return False
 
     def _git_clean(self) -> bool:
@@ -156,21 +162,58 @@ class ReleaseReadinessService:
             return False
 
     def _docs_consistent(self) -> bool:
-        """Check project-state.md mentions current phase."""
-        state_path = self._project_dir / "docs" / "project-state.md"
-        if not state_path.exists():
+        """Check project-state.md mentions the latest phase and the
+        corresponding phase review gate exists."""
+        current = self._parse_current_milestone()
+        if current is None:
             return False
+        state_path = self._project_dir / "docs" / "project-state.md"
         try:
             content = state_path.read_text(encoding="utf-8")
-            expect = "已完成到：M57"
+            expect = f"已完成到：M{current}"
             return expect in content
         except OSError:
             return False
 
     def _review_gate_exists(self) -> bool:
-        """Check if phase-57-review-gate.md exists."""
-        gate_path = self._project_dir / "docs" / "phase-57-review-gate.md"
-        return gate_path.exists()
+        """Check if a phase-{n}-review-gate.md exists for the current milestone.
+        Scans all phase-*-review-gate.md files and picks the highest number,
+        then compares against the current milestone from project-state.md."""
+        current = self._parse_current_milestone()
+        docs_dir = self._project_dir / "docs"
+        if not docs_dir.exists():
+            return False
+        import re
+        highest = 0
+        pat = re.compile(r"^phase-(\d+)-review-gate\.md$")
+        try:
+            for entry in docs_dir.iterdir():
+                m = pat.match(entry.name)
+                if m:
+                    n = int(m.group(1))
+                    if n > highest:
+                        highest = n
+        except OSError:
+            pass
+        if current is None:
+            return highest > 0
+        return highest >= current
+
+    def _parse_current_milestone(self) -> int | None:
+        """Extract milestone number from docs/project-state.md.
+        Looks for pattern: '已完成到：M{number}'."""
+        state_path = self._project_dir / "docs" / "project-state.md"
+        if not state_path.exists():
+            return None
+        try:
+            content = state_path.read_text(encoding="utf-8")
+            import re
+            m = re.search(r"已完成到：M(\d+)", content)
+            if m:
+                return int(m.group(1))
+        except OSError:
+            pass
+        return None
 
 
 def _check(code: str, label: str, passed: bool, severity: str, detail: str) -> dict:

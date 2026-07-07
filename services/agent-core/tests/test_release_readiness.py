@@ -91,9 +91,60 @@ def test_secret_in_audit_returns_not_ready(tmp_path):
         "queue_items": [],
         "handoff_records": [],
         "closure_records": [{"id": "cl_0", "command_results": ["OPENAI_API_KEY=sk-abc123def456789"]}],
-    }), encoding="utf-8")
+    }, ensure_ascii=False), encoding="utf-8")
     store = ExecutionAuditStore(path)
-    d = tmp_path / "proj"
+    svc = ReleaseReadinessService(str(_make_git_repo(tmp_path, "proj_plain")), store)
+    result = svc.assess()
+    assert result["ready"] is False
+
+
+def test_redacted_placeholders_do_not_trigger_secret_scan(tmp_path):
+    """已脱敏占位符（如 TOKEN=[已脱敏]）不触发 secret scan 阻断。"""
+    path = tmp_path / "execution-audit.json"
+    path.write_text(json.dumps({
+        "version": 1,
+        "queue_items": [],
+        "handoff_records": [],
+        "closure_records": [{"id": "cl_0", "command_results": [
+            "TOKEN=[已脱敏]",
+            "API_KEY=[已脱敏]",
+            "OPENAI_API_KEY=[已脱敏]",
+            "Bearer [已脱敏]",
+            "SECRET=[已脱敏]",
+            "PASSWORD=[已脱敏]",
+        ]}],
+    }, ensure_ascii=False), encoding="utf-8")
+    store = ExecutionAuditStore(path)
+    svc = ReleaseReadinessService(str(_make_git_repo(tmp_path, "proj_redacted")), store)
+    result = svc.assess()
+
+    # 不应有 secret 阻断
+    secret_check = next((c for c in result["checks"] if c["code"] == "secret_scan"), None)
+    assert secret_check is not None
+    assert secret_check["passed"] is True, f"secret_scan should pass for redacted placeholders, got: {secret_check['detail']}"
+
+
+def test_mixed_plaintext_and_redacted_detects_plaintext(tmp_path):
+    """已脱敏 + 明文混合时仍能检测到明文。"""
+    path = tmp_path / "execution-audit.json"
+    path.write_text(json.dumps({
+        "version": 1,
+        "queue_items": [],
+        "handoff_records": [],
+        "closure_records": [{"id": "cl_0", "command_results": [
+            "TOKEN=[已脱敏]",
+            "API_KEY=real_secret_abc123",
+        ]}],
+    }, ensure_ascii=False), encoding="utf-8")
+    store = ExecutionAuditStore(path)
+    svc = ReleaseReadinessService(str(_make_git_repo(tmp_path, "proj_mixed")), store)
+    result = svc.assess()
+    assert result["ready"] is False
+
+
+def _make_git_repo(tmp_path, name):
+    """Helper: create a minimal git repo with docs."""
+    d = tmp_path / name
     d.mkdir()
     subprocess.run(["git", "init"], cwd=str(d), capture_output=True)
     subprocess.run(["git", "config", "user.email", "t@t.com"], cwd=str(d), capture_output=True)
@@ -102,9 +153,7 @@ def test_secret_in_audit_returns_not_ready(tmp_path):
     (d / "docs" / "project-state.md").write_text("ok", encoding="utf-8")
     subprocess.run(["git", "add", "."], cwd=str(d), capture_output=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=str(d), capture_output=True)
-    svc = ReleaseReadinessService(str(d), store)
-    result = svc.assess()
-    assert result["ready"] is False
+    return d
 
 
 def test_result_structure_has_required_fields(project_dir, clean_store):

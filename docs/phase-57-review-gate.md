@@ -1,21 +1,23 @@
 # Phase 57 Review Gate
 
-## 状态：已完成/已验证
+## 状态：已完成/已验证（含 P1/P2 修复）
 
 ## 覆盖范围
 - 新增 ReleaseReadinessService：汇总 integrity / secret scan / git clean / branch sync / docs consistency / review gate 检查
 - 新增 GET /release-readiness API 端点
-- 前端新增发布准备度面板（中文）：显示 ready 状态、阻断项、警告项、已通过检查、建议下一步
-- 测试：10 个 release readiness 测试（含 clean/damaged/secret/structure/chinese/readonly）
+- 前端新增发布准备度面板（中文）
+- P1 修复：_scan_secrets 排除已脱敏占位符（[已脱敏]），同时兼容 JSON escaped Unicode 形式
+- P2 修复：动态解析 project-state.md 当前 milestone；扫描最高编号 phase-*-review-gate.md；去硬编码 M57
+- 测试：12 个 release readiness 测试（含脱敏占位符不阻断、明文+脱敏混合检测）
 
 ## 安全硬线
 - 未自动批准 PermissionGate。
 - 未绕过 PermissionGate。
 - 未自动执行 git push/release/tag/delete。
 - 未新增自动执行入口。
-- git 操作仅为只读查询（git status --porcelain, git rev-parse）。
+- git 操作仅为只读查询。
 - API 返回结果不包含可执行命令。
-- renderer 未新增 ipcRenderer / fs / shell / process。
+- renderer 未新增危险暴露。
 - 未使用 `as any` / `unknown as`。
 
 ## 已跑验证
