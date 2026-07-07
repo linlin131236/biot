@@ -286,6 +286,17 @@ export async function fetchPermissionCenter(baseUrl: string, fetcher: Fetcher = 
   return readJson(await fetcher(`${baseUrl}/permission-center`));
 }
 
+// === Audit Timeline (M93) ===
+export async function fetchAuditTimeline(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  const params = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
+  return readJson(await fetcher(`${baseUrl}/audit-timeline${params}`));
+}
+
+// === Diagnostics Center (M94) ===
+export async function fetchDiagnosticsCenter(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/diagnostics-center`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
