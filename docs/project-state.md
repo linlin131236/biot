@@ -1,24 +1,25 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M67 Human Steering
-- 最新提交：待 commit（M67 实现完成，review gate 通过）
+- 已完成到：M68 Agent Budget Controls
+- 最新提交：待 commit（M68 实现完成，review gate 通过）
 - 远程状态：未 push（按规则等待爸爸明确指令）
-- 最近稳定链路：... -> M61 Planner Task Graph -> M62 Execution State Machine -> M63 Tool Selection Policy -> M64 Failure Classification -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task -> M67 Human Steering
+- 最近稳定链路：... -> M65 Safe Retry Loop -> M66 Pause/Resume Long Task -> M67 Human Steering -> M68 Agent Budget Controls
 
 ## 当前进行中
-- 当前阶段：M68 Budget Controls（M67 完成，等待 commit 后自动继续）
-- 当前状态：未 release / 未 tag / 未 delete；已进入 M67 并完成
+- 当前阶段：M69 Long Task Recovery Dogfood（M68 完成，等待 commit 后自动继续）
+- 当前状态：未 release / 未 tag / 未 delete
 - 当前结果：
-  - V2 Agent 工作流核心（M61-M67）持续推进
+  - V2 Agent 工作流核心（M61-M68）持续推进
   - M62：执行状态机（8 状态 + 18 转换，25 tests）
   - M63：工具选择策略（26 种工具 + 4 级分类，21 tests）
   - M64：失败分类器（8 种分类 + 中文诊断，19 tests）
   - M65：安全重试循环（双重安全门 + 审计历史，20 tests）
-  - M66：暂停/恢复（快照机制 + 三重安全检查；resume 权限复查强制执行）
-  - M67：人工转向（6 种意图分类，中文解释，M66 集成，副作用仅生成 pending；46 targeted tests）
-  - 全量后端 745 passed，前端 195 passed，desktop build 通过
-- 下一步：commit M67，自动进入 M68 Budget Controls
+  - M66：暂停/恢复（快照机制 + 三重安全检查）
+  - M67：人工转向（6 种意图分类，46 targeted tests）
+  - M68：预算控制（四维门控：steps/tool_calls/runtime/context_tokens，39 targeted tests）
+  - 全量后端 784 passed，前端 195 passed，desktop build 通过
+- 下一步：commit M68，自动进入 M69 Long Task Recovery Dogfood
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
