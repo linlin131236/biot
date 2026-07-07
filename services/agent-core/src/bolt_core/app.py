@@ -38,6 +38,8 @@ from bolt_core.tool_permission_contract_api import create_tool_permission_contra
 from bolt_core.readonly_tool_runner_api import create_readonly_tool_runner_router
 from bolt_core.write_tool_proposal_api import create_write_tool_proposal_router
 from bolt_core.patch_proposal_api import create_patch_proposal_router
+from bolt_core.approval_apply_api import create_approval_apply_router
+from bolt_core.test_runner_integration_api import create_test_runner_integration_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
 from bolt_core.code_map_index_api import create_code_map_index_router
@@ -123,6 +125,8 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_readonly_tool_runner_router())
     app.include_router(create_write_tool_proposal_router())
     app.include_router(create_patch_proposal_router())
+    app.include_router(create_approval_apply_router())
+    app.include_router(create_test_runner_integration_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
     app.include_router(create_code_map_index_router())
