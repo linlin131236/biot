@@ -14,7 +14,7 @@
 - 当前阶段：M125 完成并已 push，等待爸爸决定是否进入后续 M126+。
 - 本地状态：M121-M125 已完成并 push；HEAD = origin/main。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
-- 最新已知远端基线：`674be18 docs: update M125 verification baseline after P1 fix`。
+- 最新已知远端基线：`f4fa70c docs: mark M121-M125 pushed`。
 - 最新验证基线：
   - M121-M125 targeted tests：**29 passed**。
   - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1511 passed**，2 warnings。
