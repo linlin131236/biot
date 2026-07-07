@@ -37,7 +37,7 @@ def test_data_migration_passes_with_manifest_and_lineage(tmp_path):
     result = DataMigrationReadinessService(str(project)).review()
 
     assert result.all_passed is True
-    assert len(result.checks) == 8
+    assert len(result.checks) == 11
 
 
 def test_data_migration_fails_without_rollback_plan(tmp_path):
@@ -52,10 +52,32 @@ def test_data_migration_fails_without_rollback_plan(tmp_path):
 
 def test_data_migration_is_plan_only_not_auto_apply(tmp_path):
     project = make_data_migration_project(tmp_path)
-    service_text = "dry-run only; no auto migration"
-    (project / "services/agent-core/src/bolt_core/data_migration.py").write_text(service_text, encoding="utf-8")
 
     result = DataMigrationReadinessService(str(project)).review()
 
     assert result.all_passed is True
-    assert "自动迁移" not in str(result.to_dict())
+    no_auto_check = next(item for item in result.checks if "自动迁移" in item.name)
+    assert no_auto_check.passed is True
+
+
+def test_data_migration_fails_when_docs_are_missing(tmp_path):
+    project = make_data_migration_project(tmp_path)
+    (project / "docs/phase-122-review-gate.md").unlink()
+
+    result = DataMigrationReadinessService(str(project)).review()
+
+    assert result.all_passed is False
+    assert any("文档链" in item for item in result.p1_failures)
+
+
+def test_data_migration_blocks_automatic_migration_language(tmp_path):
+    project = make_data_migration_project(tmp_path)
+    (project / "docs/release/data-migration-plan.md").write_text(
+        "raw staging clean lineage rollback manual approval dry-run automatic migration",
+        encoding="utf-8",
+    )
+
+    result = DataMigrationReadinessService(str(project)).review()
+
+    assert result.all_passed is False
+    assert any("自动迁移" in item for item in result.p1_failures)

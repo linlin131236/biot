@@ -16,7 +16,7 @@
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新已知远端基线：`f2e25c5 docs: mark M111-M120 pushed`。
 - 最新验证基线：
-  - M121-M125 targeted tests：**22 passed**。
+  - M121-M125 targeted tests：**29 passed**。
   - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1504 passed**，2 warnings。
   - `pnpm --filter @bolt/shared test`：**27 passed**。
   - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
@@ -46,7 +46,7 @@
 - `test_privacy_security_audit_api.py`
 - `test_public_beta_readiness.py`
 - `test_public_beta_readiness_api.py`
-- 当前新增目标测试：**22 tests**。
+- 当前新增目标测试：**29 tests**。
 
 ## 安全扫描目标
 - `as any` / `unknown as`：最终验证必须无新增违规。

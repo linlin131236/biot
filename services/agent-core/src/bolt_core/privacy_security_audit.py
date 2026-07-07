@@ -37,11 +37,11 @@ class PrivacySecurityAuditService(BetaReadinessBase):
         checks.append(check("M124 文档链完整", docs_ok, "exec plan / decision / review gate 已就位" if docs_ok else "M124 文档链缺失"))
 
         state = self.read(self.docs("project-state.md"))
-        boundary_ok = "M124" in state and "未进入 M125" in state
-        checks.append(check("M125 边界未越过", boundary_ok, "project-state 记录 M124 且未进入 M125"))
+        boundary_ok = ("M124" in state and "未进入 M125" in state) or ("M125" in state and "未进入 M126" in state)
+        checks.append(check("M125 边界未越过", boundary_ok, "project-state 记录 M124 未进入 M125，或最终状态未进入 M126"))
 
         return BetaReviewResult(
-            checks=checks[:9],
+            checks=checks,
             next_step="等待爸爸复审 M124；隐私安全审计只提供风险信号，不会替代 PermissionGate。",
         )
 

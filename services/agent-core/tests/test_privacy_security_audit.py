@@ -43,7 +43,7 @@ def test_privacy_security_audit_passes_for_complete_project(tmp_path):
     result = PrivacySecurityAuditService(str(project)).review()
 
     assert result.all_passed is True
-    assert len(result.checks) == 9
+    assert len(result.checks) == 11
 
 
 def test_privacy_security_audit_fails_on_renderer_exposure(tmp_path):
@@ -64,3 +64,22 @@ def test_privacy_security_audit_fails_on_type_escape(tmp_path):
 
     assert result.all_passed is False
     assert any("as any" in item for item in result.p1_failures)
+
+
+def test_privacy_security_audit_fails_when_docs_are_missing(tmp_path):
+    project = make_privacy_project(tmp_path)
+    (project / "docs/phase-124-review-gate.md").unlink()
+
+    result = PrivacySecurityAuditService(str(project)).review()
+
+    assert result.all_passed is False
+    assert any("文档链" in item for item in result.p1_failures)
+
+
+def test_privacy_security_audit_accepts_final_m125_boundary_state(tmp_path):
+    project = make_privacy_project(tmp_path)
+    (project / "docs/project-state.md").write_text("已完成到：M125\n未进入 M126", encoding="utf-8")
+
+    result = PrivacySecurityAuditService(str(project)).review()
+
+    assert result.all_passed is True

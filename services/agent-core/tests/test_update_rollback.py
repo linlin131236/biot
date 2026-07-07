@@ -36,7 +36,7 @@ def test_update_rollback_passes_for_manual_plan(tmp_path):
     result = UpdateRollbackReadinessService(str(project)).review()
 
     assert result.all_passed is True
-    assert len(result.checks) == 8
+    assert len(result.checks) == 9
 
 
 def test_update_rollback_fails_without_release_readiness(tmp_path):
@@ -60,3 +60,13 @@ def test_update_rollback_blocks_auto_release_language(tmp_path):
 
     assert result.all_passed is False
     assert any("自动发布" in item for item in result.p1_failures)
+
+
+def test_update_rollback_fails_when_boundary_state_is_wrong(tmp_path):
+    project = make_update_project(tmp_path)
+    (project / "docs/project-state.md").write_text("已完成到：M124\n未进入 M125", encoding="utf-8")
+
+    result = UpdateRollbackReadinessService(str(project)).review()
+
+    assert result.all_passed is False
+    assert any("边界" in item for item in result.p1_failures)

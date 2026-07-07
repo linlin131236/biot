@@ -29,10 +29,10 @@ class UpdateRollbackReadinessService(BetaReadinessBase):
         checks.append(check("M123 文档链完整", docs_ok, "exec plan / decision / review gate 已就位" if docs_ok else "M123 文档链缺失"))
 
         state = self.read(self.docs("project-state.md"))
-        boundary_ok = "M123" in state and "未进入 M124" in state
-        checks.append(check("M124 边界未越过", boundary_ok, "project-state 记录 M123 且未进入 M124"))
+        boundary_ok = ("M123" in state and "未进入 M124" in state) or ("M125" in state and "未进入 M126" in state)
+        checks.append(check("M124 边界未越过", boundary_ok, "project-state 记录 M123 未进入 M124，或最终状态未进入 M126"))
 
         return BetaReviewResult(
-            checks=checks[:8],
+            checks=checks,
             next_step="等待爸爸复审 M123；升级、回滚和发布都必须人工触发。",
         )

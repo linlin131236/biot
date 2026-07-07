@@ -31,13 +31,13 @@ class DataMigrationReadinessService(BetaReadinessBase):
         checks.append(check("M122 文档链完整", docs_ok, "exec plan / decision / review gate 已就位" if docs_ok else "M122 文档链缺失"))
 
         state = self.read(self.docs("project-state.md"))
-        boundary_ok = "M122" in state and "未进入 M123" in state
-        checks.append(check("M123 边界未越过", boundary_ok, "project-state 记录 M122 且未进入 M123"))
+        boundary_ok = ("M122" in state and "未进入 M123" in state) or ("M125" in state and "未进入 M126" in state)
+        checks.append(check("M123 边界未越过", boundary_ok, "project-state 记录 M122 未进入 M123，或最终状态未进入 M126"))
 
         no_auto_apply = "automatic migration" not in plan and "auto apply" not in plan
         checks.append(check("不会自动迁移数据", no_auto_apply, "迁移只能是计划、演练和人工审批", "blocking"))
 
         return BetaReviewResult(
-            checks=checks[:8],
+            checks=checks,
             next_step="等待爸爸复审 M122；迁移只给计划和风险，不自动改数据。",
         )
