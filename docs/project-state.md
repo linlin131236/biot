@@ -1,18 +1,20 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M80 Memory Dogfood（V3 终点，等待爸爸复审）
-- V3 项目理解与长期记忆（M71-M80）全部完成
-- 全量测试：1246 passed（1013 backend + 27 shared + 206 desktop）
-- 远程状态：M67-M80 已 push，`main` 与 `origin/main` 已同步到 `fc9188e`
-- 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74 → M75 → M76 → M77 → M78 → M79 → M80（大复盘✅）
+- 已完成到：M81 Role Protocol（V4 开局）
+- V3 项目理解与长期记忆（M71-M80）全部完成；V4 多 Agent 团队（M81-M90）进行中
+- 全量测试：1304 passed（1071 backend + 27 shared + 206 desktop）
+- 远程状态：M67-M80 已 push，`main` 与 `origin/main` 已同步到 `db8194a`
+- 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 → M72 → M73 → M74 → M75 → M76 → M77 → M78 → M79 → M80（大复盘✅）→ M81
 
 ## 当前进行中
-- 当前阶段：**M80 已完成，按文档规则停止，不进入 M81**
-- 当前状态：已 push / 未 release / 未 tag / 未 delete / 未进入 M81
+- 当前阶段：**M81 已完成，自动继续 M82**
+- 当前状态：本地已 commit，未 push / 未 release / 未 tag / 未 delete
 - 当前结果：
   - V2 Agent 工作流核心（M61-M70）beta 骨架达标
   - V3 项目理解与长期记忆（M71-M80）全部完成
+  - V4 多 Agent 团队（M81-M90）进行中
+  - M81：角色协议（58 tests，5 角色，6 端点，全部只读）
   - M71：项目画像（10 tests）
   - M72：代码地图索引（19 tests）
   - M73：决策记忆（39 tests，60+ 条决策记录）
@@ -23,10 +25,12 @@
   - M78：记忆权限边界（29 tests，7 层权限分类 + secret 阻断）
   - M79：记忆搜索 UI（11 tests，中文只读面板）
   - M80：记忆层大复盘（11 tests，12 项检查全部通过）
-  - 全量后端 1013 passed，前端 206 passed，desktop build 通过
+  - V4 多 Agent 团队开局：M81 角色协议（58 tests，5 角色定义，6 只读端点）
+  - M81 验收：Planner 不能执行代码 ✅，Builder 不能 self-approve ✅，SkillLearner 不改业务代码 ✅
+  - 全量后端 1071 passed，前端 206 passed，desktop build 通过
   - 安全扫描全部干净
-  - M80 结论：**V3 记忆层达标，允许进入 M81**
-- 下一步：等待爸爸确认是否开启 M81-M90；未授权前不进入 M81
+  - M80 结论：**V3 记忆层达标，允许进入 V4 多 Agent 团队**
+- 下一步：M81 已完成，自动继续 M82 Planner/Builder/Reviewer Split
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。

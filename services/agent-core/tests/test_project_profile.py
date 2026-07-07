@@ -22,7 +22,7 @@ def test_profile_has_current_milestone():
     svc = ProjectProfileService(".")
     profile = svc.build()
     assert profile.current_milestone != ""
-    assert "M6" in profile.current_milestone or "M7" in profile.current_milestone or "未知" in profile.current_milestone
+    assert "M6" in profile.current_milestone or "M7" in profile.current_milestone or "M8" in profile.current_milestone or "未知" in profile.current_milestone
 
 
 def test_profile_has_latest_head():
@@ -63,7 +63,12 @@ def test_profile_no_secret_in_output():
     text = str(d).lower()
     assert ".env" not in text or "文档" in str(d.get("important_docs"))
     assert "password" not in text
-    assert "secret" not in text
+    # "secret" may appear in feature descriptions (e.g. "secret 阻断"),
+    # but actual secret patterns (sk-..., PEM headers, AKIA...) must not.
+    import re
+    assert not re.search(r'sk-[a-z0-9]{20,}', text), "sk- token found"
+    assert not re.search(r'-----begin\s+(rsa\s+)?private\s+key', text), "PEM private key found"
+    assert not re.search(r'akia[a-z0-9]{16}', text), "AKIA key found"
 
 
 def test_profile_chinese_in_milestone():
