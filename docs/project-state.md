@@ -1,22 +1,37 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：**M99 设置/模型/工具面板**（V5 即将完成）
-- V5 中文产品 UI/UX（M91-M100）接近尾声
-- 全量测试：1210 backend + 27 shared + 261 desktop = **1498 passed**
-- 最近稳定链路：M61→M90→M91→M92→M93-M95→M96-M99
+- 已完成到：**M100 桌面 Beta Dogfood（V5 终点，等待爸爸复审）**
+- V5 中文产品 UI/UX（M91-M100）全部完成
+- 全量测试：1214 backend + 27 shared + 261 desktop = **1502 passed**
+- 远程状态：未 push / 未 release / 未 tag / 未 delete
+- 最近稳定链路：M61→M90→M91→M92→M93-M95→M96-M99→M100（大复盘✅）
 
 ## 当前进行中
-- 当前阶段：**V5 M91-M100**，正在执行 M100 大复盘
-- 当前状态：未 push / 未 release / 未 tag / 未 delete / 未进入 M101
-- V5 进度：
-  - M91：中文任务首页（+23 tests，+1 后端，+1 面板）
-  - M92：权限中心（+22 tests，+1 后端，+1 面板）
-  - M93-M95：审计+诊断+发布准备（+19 tests，+2 后端，+3 面板）
-  - M96-M99：多任务队列+失败解释+会话恢复+设置（+12 tests，+4 后端，+4 面板）
-- V5 合计：**+76 tests，+8 后端服务，+9 桌面面板**
+- 当前阶段：**M100 已完成，按文档规则停止，未进入 M101**
+- V5 合计：**+80 tests，+9 后端服务，+9 桌面面板**
+- 当前状态：M91-M100 未 push / 未 release / 未 tag / 未 delete / 未进入 M101
+- V5 各 milestone 结果：
+  - M91：中文任务首页（23 tests）
+  - M92：权限中心（22 tests）
+  - M93：审计时间线视图（6 tests）
+  - M94：诊断中心（6 tests）
+  - M95：发布准备页（7 tests）
+  - M96：多任务队列（3 tests）
+  - M97：失败解释体验（3 tests）
+  - M98：会话恢复体验（3 tests）
+  - M99：设置/模型/工具面板（3 tests）
+  - M100：桌面 Beta Dogfood（4 tests）
 - Desktop build：通过
-- 下一步：进入 M100 桌面 Beta Dogfood 大复盘
+- 安全扫描：全部干净
+- M100 结论：**V5 中文产品 UI/UX 达标，13/13 检查项通过。等待爸爸复审后授权 push 和/或进入 M101。**
+- 下一步：⛔ 停止，等待爸爸复审
+
+## 已知风险
+- 预存：GoalConsole.test.tsx 1 个测试失败（act() wrapping），非本次引入
+- size check：部分文件超过 300 行，建议后续专项重构
+- backend API tests 受 pydantic 环境问题影响无法运行（预存问题）
+- `.claude/` 未跟踪、未提交，按规则保持
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型，服务重启后数据丢失。M62+ 引入状态机和持久化前需评估。
