@@ -36,4 +36,4 @@
 - 已检查：所有检查项 label 为中文。
 
 ## 是否 push
-- 未 push。
+- 已 push 到 `origin/main`。

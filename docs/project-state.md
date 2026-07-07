@@ -3,12 +3,12 @@
 ## 当前稳定基线
 - 已完成到：M57 Release Readiness Review Gate（等待爸爸审核）
 - 最新 M57 修复提交：`e9a7480 fix(M57): exclude redacted placeholders from secret scan; dynamic milestone parsing`
-- 远程状态：`main` 领先 `origin/main` 9 个提交（M55/M56/M57 本地完成，未 push）
+- 远程状态：`main` 已同步到 `origin/main`（M55/M56/M57 已 push）
 - 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate
 
 ## 当前进行中
 - 当前阶段：M57 已完成，等待爸爸审核
-- 当前状态：M55-M57 全部实现并本地验证通过；未 push / 未 release / 未 tag / 未 delete / 未进入 M58
+- 当前状态：M55-M57 全部实现并验证通过；已 push / 未 release / 未 tag / 未 delete / 未进入 M58
 - 当前结果：
   - M55：audit 文件完整性检查，GET /execution-audit/integrity，前端展示
   - M56：evidence redactor 覆盖 9 种高风险模式，集成到 closure/handoff/timeline
