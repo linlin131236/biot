@@ -1,11 +1,11 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：**M110 工具生态大复盘（V6 终点，等待爸爸复审）**
+- 已完成到：M110 工具生态大复盘（V6 终点，等待爸爸复审）
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成，未 push。
 - 远程状态：`origin/main` 在 `abaee62`（M100 推送点）。
-- 当前本地分支：`main`，领先 `origin/main` 10 commits（M101-M110）。
+- 当前本地分支：`main`，领先 `origin/main` 9 commits（M101-M110）。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M111。
 

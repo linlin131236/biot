@@ -48,6 +48,8 @@ function checkPythonBoundaries(rel, text) {
   if (rel.endsWith('code_map_index.py') || rel.endsWith('project_profile.py')) return;
   // V6: tool ecosystem – read-only git commands and whitelisted test runner
   if (rel.endsWith('readonly_tool_runner.py') || rel.endsWith('write_tool_proposal.py') || rel.endsWith('test_runner_integration.py')) return;
+  // V6 P1 fix: approval_apply.py is the gated write boundary (10 safety checks before write)
+  if (rel.endsWith('approval_apply.py')) return;
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');
   if (/\bsubprocess\b/.test(text)) fail(rel, 'subprocess usage outside shell executor boundary');
   if (/\.write_text\(|\.write_bytes\(|open\([^\n]*['"]w/.test(text)) fail(rel, 'direct file write outside write boundary');

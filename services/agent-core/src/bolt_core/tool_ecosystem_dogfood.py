@@ -194,22 +194,29 @@ class ToolEcosystemDogfoodService:
             detail="所有写入必须经过 human approval，delete 操作被 approval_apply 明确拒绝",
         ))
 
-        # ── 15. docs 链完整 ──
-        docs_101 = self._project_dir / "docs/phase-101-review-gate.md"
-        docs_104 = self._project_dir / "docs/phase-104-review-gate.md"
-        docs_107 = self._project_dir / "docs/phase-107-review-gate.md"
-        docs_110 = self._project_dir / "docs/phase-110-review-gate.md"
-        # Check exec plans exist for all milestones
-        plan_files = list((self._project_dir / "docs/exec-plans/active").glob("10*-*.md"))
-        decision_files = list((self._project_dir / "docs/decisions").glob("10*-*.md"))
-        docs_ok = len(plan_files) >= 5 and len(decision_files) >= 5
+        # ── 15. docs 链完整（逐 milestone 检查 M101-M110）──
+        missing_docs: list[str] = []
+        for m in range(101, 111):
+            # exec plan
+            plan_matches = list((self._project_dir / "docs/exec-plans/active").glob(f"{m}-*.md"))
+            if not plan_matches:
+                missing_docs.append(f"M{m} exec plan")
+            # decision
+            dec_matches = list((self._project_dir / "docs/decisions").glob(f"{m}-*.md"))
+            if not dec_matches:
+                missing_docs.append(f"M{m} decision")
+            # review gate
+            rg = self._project_dir / f"docs/phase-{m}-review-gate.md"
+            if not rg.exists():
+                missing_docs.append(f"M{m} review gate")
+        docs_ok = len(missing_docs) == 0
         checks.append(DogfoodCheck(
-            name="15. docs 链完整",
+            name="15. docs 链完整（逐 M 检查 M101-M110）",
             passed=docs_ok,
-            detail=f"exec plans: {len(plan_files)}, decisions: {len(decision_files)}",
+            detail=f"缺失: {missing_docs}" if missing_docs else "M101-M110 exec plan / decision / review gate 全部就位",
         ))
         if not docs_ok:
-            p1.append("文档链不完整")
+            p1.append(f"文档链不完整: {', '.join(missing_docs)}")
 
         # ── 16. project-state 更新准确 ──
         ps_file = self._project_dir / "docs/project-state.md"

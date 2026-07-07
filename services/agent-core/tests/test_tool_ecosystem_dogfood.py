@@ -34,15 +34,19 @@ def make_full_project(tmp_path: Path) -> Path:
     (desktop / "PatchPreviewPanel.tsx").write_text("// PatchPreviewPanel")
     (desktop / "PatchPreviewPanel.test.tsx").write_text("// test")
 
-    # Docs
+    # Docs — exec plans for all 10 milestones
     exec_plans = tmp_path / "docs/exec-plans/active"
     exec_plans.mkdir(parents=True, exist_ok=True)
-    for n in (101, 102, 103, 104, 105):
+    for n in range(101, 111):
         (exec_plans / f"{n}-tool.md").write_text(f"# M{n}")
+    # Docs — decisions for all 10 milestones
     decisions = tmp_path / "docs/decisions"
     decisions.mkdir(parents=True, exist_ok=True)
-    for n in (101, 102, 103, 104, 105):
+    for n in range(101, 111):
         (decisions / f"{n}-tool.md").write_text(f"# M{n} decision")
+    # Docs — review gates for all 10 milestones
+    for n in range(101, 111):
+        (tmp_path / f"docs/phase-{n}-review-gate.md").write_text(f"# M{n} review gate")
 
     # project-state
     (tmp_path / "docs/project-state.md").write_text("## M110 完成\nV6 工具生态")

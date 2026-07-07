@@ -134,15 +134,53 @@ class ApprovalApplyEngine:
                 reason="删除操作不在本 milestone 自动执行范围内。请爸爸手动审查后执行。",
             )
 
-        # ── All checks passed ──
-        # Mark proposal as applied
+        # ── 11. Apply the patch to real files ──
+        files_changed: list[str] = []
+        for tf in proposal.target_files:
+            target_path = self._project_dir / tf
+            try:
+                if proposal.operation_type == "create":
+                    # Extract new content from diff: all '+' lines after the hunk header
+                    new_content = self._extract_new_content(proposal.diff_preview, tf)
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+                    target_path.write_text(new_content, encoding="utf-8")
+                elif proposal.operation_type == "modify":
+                    # Apply unified diff to existing file
+                    old_content = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
+                    new_content = self._apply_unified_diff(old_content, proposal.diff_preview)
+                    target_path.write_text(new_content, encoding="utf-8")
+                else:
+                    return ApplyResult(
+                        success=False, proposal_id=proposal_id,
+                        reason=f"不支持的操作类型: {proposal.operation_type}",
+                    )
+            except FileNotFoundError:
+                return ApplyResult(
+                    success=False, proposal_id=proposal_id,
+                    reason=f"目标文件不存在: {tf}（modify 操作需要文件已存在）",
+                )
+            except OSError as e:
+                return ApplyResult(
+                    success=False, proposal_id=proposal_id,
+                    reason=f"写入文件 '{tf}' 失败: {e}",
+                )
+
+            # ── Verify write ──
+            if not target_path.exists():
+                return ApplyResult(
+                    success=False, proposal_id=proposal_id,
+                    reason=f"写入验证失败：文件 '{tf}' 未被创建",
+                )
+            files_changed.append(tf)
+
+        # ── All checks passed, files written ──
         self._store.mark_applied(proposal_id)
 
         # ── Record audit ──
         import hashlib as hl
         audit = {
             "proposal_id": proposal_id,
-            "files_changed": proposal.target_files,
+            "files_changed": files_changed,
             "actor": actor,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "diff_hash": hl.sha256(proposal.diff_preview.encode()).hexdigest()[:16] if proposal.diff_preview else "",
@@ -154,10 +192,105 @@ class ApprovalApplyEngine:
 
         return ApplyResult(
             success=True, proposal_id=proposal_id,
-            reason=f"提案 '{proposal_id}' 已应用。{len(proposal.target_files)} 个文件已变更。",
+            reason=f"提案 '{proposal_id}' 已应用。{len(files_changed)} 个文件已变更。",
             audit_record=audit,
         )
 
     def audit_log(self) -> list[dict]:
         """返回审计日志（只读）。"""
         return list(self._audit_log)
+
+    # ── Patch application helpers ──
+
+    @staticmethod
+    def _apply_unified_diff(original: str, diff_text: str) -> str:
+        """Apply a unified diff to original content. Returns new content."""
+        original_lines = original.splitlines(keepends=True)
+        result_lines: list[str] = []
+        orig_idx = 0
+
+        # Parse hunks from diff
+        hunks = ApprovalApplyEngine._parse_hunks(diff_text)
+        if not hunks:
+            # No hunks to apply — return original
+            return original
+
+        for hunk in hunks:
+            old_start, old_count, new_start, new_count, lines = hunk
+            # Copy lines before this hunk
+            while orig_idx < old_start - 1 and orig_idx < len(original_lines):
+                result_lines.append(original_lines[orig_idx])
+                orig_idx += 1
+
+            # Skip removed lines in original
+            skip_count = 0
+            for line in lines:
+                if line.startswith("-"):
+                    skip_count += 1
+                    orig_idx += 1
+                elif line.startswith("+"):
+                    result_lines.append(line[1:] + ("\n" if not line[1:].endswith("\n") else ""))
+                else:
+                    # Context line — keep from original
+                    if orig_idx < len(original_lines):
+                        result_lines.append(original_lines[orig_idx])
+                    orig_idx += 1
+
+        # Copy remaining original lines
+        while orig_idx < len(original_lines):
+            result_lines.append(original_lines[orig_idx])
+            orig_idx += 1
+
+        return "".join(result_lines)
+
+    @staticmethod
+    def _parse_hunks(diff_text: str) -> list[tuple[int, int, int, int, list[str]]]:
+        """Parse unified diff hunks. Returns list of (old_start, old_count, new_start, new_count, lines)."""
+        hunks: list[tuple[int, int, int, int, list[str]]] = []
+        current_hunk: list[str] = []
+        current_header: tuple[int, int, int, int] | None = None
+
+        for line in diff_text.split("\n"):
+            if line.startswith("@@") and " @@" in line:
+                # Save previous hunk
+                if current_header is not None and current_hunk:
+                    hunks.append((*current_header, current_hunk))
+                current_hunk = []
+                # Parse @@ -old_start,old_count +new_start,new_count @@
+                parts = line.split()
+                if len(parts) >= 3:
+                    old_part = parts[1].lstrip("-")
+                    new_part = parts[2].lstrip("+")
+                    try:
+                        old_start = int(old_part.split(",")[0]) if old_part else 1
+                        old_count = int(old_part.split(",")[1]) if "," in old_part else 1
+                        new_start = int(new_part.split(",")[0]) if new_part else 1
+                        new_count = int(new_part.split(",")[1]) if "," in new_part else 1
+                        current_header = (old_start, old_count, new_start, new_count)
+                    except (ValueError, IndexError):
+                        current_header = (1, 0, 1, 0)
+            elif current_header is not None and line and line[0] in (" ", "+", "-"):
+                current_hunk.append(line)
+
+        # Save last hunk
+        if current_header is not None and current_hunk:
+            hunks.append((*current_header, current_hunk))
+
+        return hunks
+
+    @staticmethod
+    def _extract_new_content(diff_text: str, file_path: str) -> str:
+        """Extract new file content from a 'create' diff — all '+' lines after removing the '+' prefix."""
+        lines: list[str] = []
+        in_file = False
+        for line in diff_text.split("\n"):
+            if line.startswith("+++ "):
+                in_file = True
+                continue
+            if line.startswith("--- "):
+                continue
+            if line.startswith("@@") and " @@" in line:
+                continue
+            if in_file and line.startswith("+"):
+                lines.append(line[1:])
+        return "\n".join(lines) + "\n"

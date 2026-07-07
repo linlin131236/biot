@@ -18,7 +18,7 @@ def create_readonly_tool_runner_router(
     @router.post("/tools/readonly/run")
     def run_readonly_tool(payload: dict) -> dict:
         """执行只读工具操作。仅限已注册的 read_only 工具。所有输出经过安全检查和脱敏。
-        
+
         请求体: { "tool_id": "read_file", "operation": "read_file", "params": {"path": "README.md"} }
         """
         tool_id = str(payload.get("tool_id", "")).strip()
