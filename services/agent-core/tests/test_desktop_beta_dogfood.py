@@ -40,3 +40,11 @@ def test_check_structure():
     assert "m92_permission_center" in ids
     assert "cross_chinese_ui" in ids
     assert "cross_not_entered_m101" in ids
+
+
+def test_missing_project_files_fail_gate(tmp_path):
+    svc = DesktopBetaDogfoodService(tmp_path)
+    result = svc.run()
+    assert result.ready_for_next is False
+    assert result.failed > 0
+    assert any(not c.passed for c in result.checks)
