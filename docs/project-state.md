@@ -4,12 +4,12 @@
 - 已完成到：M72 Code Map Index（本批终点，等待爸爸复审）
 - M71-M72 已进入 V3 项目理解与长期记忆
 - 全量测试：1055 passed（833 backend + 27 shared + 195 desktop）
-- 远程状态：未 push（按规则等待爸爸明确指令）
+- 远程状态：M67-M72 已按爸爸明确指令 push，`main` 与 `origin/main` 当前同步到 `6bb526d`
 - 最近稳定链路：M61 → M62 → M63 → M64 → M65 → M66 → M67 → M68 → M69 → M70（大复盘✅）→ M71 Project Profile → M72 Code Map Index
 
 ## 当前进行中
 - 当前阶段：**M72 已完成，按文档规则停止，不进入 M73**
-- 当前状态：未 release / 未 tag / 未 delete / 未 push
+- 当前状态：已 push / 未 release / 未 tag / 未 delete / 未进入 M73
 - 当前结果：
   - V2 Agent 工作流核心（M61-M70）beta 骨架达标
   - V3 项目理解启动（M71-M72）
@@ -17,7 +17,7 @@
   - M72：代码地图索引（静态解析，4 个 scope 目录，按关键词/分类查询，19 tests）
   - 全量后端 833 passed，前端 195 passed，desktop build 通过
   - 安全扫描全部干净
-- 下一步：等待爸爸复审本批全部 6 个 milestone（M67-M72）
+- 下一步：等待爸爸确认是否开启下一批 M73-M80；未授权前不进入 M73
 
 ## 已知风险
 - M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
