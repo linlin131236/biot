@@ -43,4 +43,4 @@
 - 已检查：恢复 run 只用于 pending permission 绑定和既有 approve path，不自动执行或自动批准。
 
 ## 是否 push
-- 未 push。
+- 已 push 到 origin/main，提交 `d26d8a0 feat(M54): dogfood execution recovery flow`。

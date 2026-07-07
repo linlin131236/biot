@@ -1,16 +1,16 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M54 Recovery Dogfood + Release Hardening（本地待审核）
-- 最新同步提交：`303af5a docs: update M50 review fix state`
-- 远程状态：`main` 本地领先 `origin/main`；M50.1-M54 已本地完成，未 push
+- 已完成到：M54 Recovery Dogfood + Release Hardening（已 push）
+- 最新同步提交：`d26d8a0 feat(M54): dogfood execution recovery flow`
+- 远程状态：`main` 与 `origin/main` 已同步
 - 最近稳定链路：M42 Task Closure -> M43 Agent Loop Binding -> M44 Evidence Verification -> M45 Human Approval Queue -> M46 Controlled Execution Handoff -> M47 Execution Audit Persistence -> M48 PermissionGate-Bound Execution Bridge -> M49 Execution Result Evidence Ingestion -> M50 End-to-End Dogfood + Release Hardening -> M51 Execution Audit Timeline -> M52 Permission Request Recovery -> M53 Execution Audit Consistency Diagnostics -> M54 Recovery Dogfood + Release Hardening
 
 ## 当前进行中
-- 当前阶段：M54 Recovery Dogfood + Release Hardening
-- 当前状态：重启恢复 dogfood 已实现并通过验证；等待爸爸审核；不要进入 M55
-- 当前结果：execution audit store 可恢复 queue / handoff / closure evidence；重启后 pending permission 可安全重新申请，approve 后写回 queue、handoff、closure evidence，diagnostics clean；不自动批准、不绕过 PermissionGate、不新增执行入口
-- 下一步：等待爸爸审核；不要 push，等待爸爸确认
+- 当前阶段：M55 Execution Audit Store Integrity Guard
+- 当前状态：按爸爸授权进入 M55，不进入 M58
+- 当前结果：M54 已完成并 push；重启恢复 dogfood 通过验证；execution audit store 可恢复 queue / handoff / closure evidence；diagnostics clean
+- 下一步：按爸爸授权进入 M55 Execution Audit Store Integrity Guard
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
