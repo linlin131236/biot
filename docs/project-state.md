@@ -4,14 +4,14 @@
 - 已完成到：M120 Agent Intelligence Dogfood（V7 终点，等待爸爸复审）。
 - V5 中文产品 UI/UX（M91-M100）已完成并 push。
 - V6 工具生态（M101-M110）已完成并 push。
-- V7 智能评估 / Agent Dogfood（M111-M120）本地已完成，未 push。
-- 远程状态：`origin/main` 停在 M110 推送点；最新提交以 `git log` 为准。
-- 当前本地分支：`main` 领先 `origin/main` 7 commits（M111-M120）。
+- V7 智能评估 / Agent Dogfood（M111-M120）已完成并 push。
+- 远程状态：`origin/main` 与本地 `HEAD` 已同步，最新提交以 `git log` 为准。
+- 当前本地分支：`main` 与 `origin/main` 已同步。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M121。
 
 ## 当前状态
-- 当前阶段：M120 完成，等待爸爸复审后决定是否 push 和/或进入 M121。
+- 当前阶段：M120 完成并已 push，等待爸爸授权后再进入 M121。
 - 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 - 最新验证基线：
   - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1482 passed**，2 warnings。
