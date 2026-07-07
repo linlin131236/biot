@@ -297,6 +297,26 @@ export async function fetchDiagnosticsCenter(baseUrl: string, fetcher: Fetcher =
   return readJson(await fetcher(`${baseUrl}/diagnostics-center`));
 }
 
+// === Multi Task Queue (M96) ===
+export async function fetchMultiTaskQueue(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/multi-task-queue`));
+}
+
+// === Failure Explanation (M97) ===
+export async function fetchFailureExplanation(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/failure-explanation`));
+}
+
+// === Session Recovery (M98) ===
+export async function fetchSessionRecovery(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/session-recovery`));
+}
+
+// === Settings Tools (M99) ===
+export async function fetchSettingsTools(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/settings-tools`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

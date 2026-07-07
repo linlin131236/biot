@@ -12,7 +12,11 @@ import { PermissionCenterPanel } from './PermissionCenterPanel';
 import { AuditTimelinePanel } from './AuditTimelinePanel';
 import { DiagnosticsCenterPanel } from './DiagnosticsCenterPanel';
 import { ReleaseReadinessPanel } from './ReleaseReadinessPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, fetchAuditTimeline, fetchDiagnosticsCenter } from './harnessClientAutonomy';
+import { MultiTaskQueuePanel } from './MultiTaskQueuePanel';
+import { FailureExplanationPanel } from './FailureExplanationPanel';
+import { SessionRecoveryPanel } from './SessionRecoveryPanel';
+import { SettingsToolsPanel } from './SettingsToolsPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -55,6 +59,10 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
         fetchLocalChecklist: api.executionHandoff.fetchLocalReleaseChecklist,
         fetchRecoveryPolicy: api.executionHandoff.fetchRecoveryPolicy,
       }} />
+      <MultiTaskQueuePanel baseUrl={baseUrl} api={{ fetchMultiTaskQueue }} />
+      <FailureExplanationPanel baseUrl={baseUrl} api={{ fetchFailureExplanation }} />
+      <SessionRecoveryPanel baseUrl={baseUrl} api={{ fetchSessionRecovery }} />
+      <SettingsToolsPanel baseUrl={baseUrl} api={{ fetchSettingsTools }} />
       <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} baseUrl={baseUrl} />
       <GoalConsole workspacePath={workspace} goal={goalInfo} api={api.goal} baseUrl={baseUrl} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
       <SideChatPanel runId={runId} api={api.sideChat} baseUrl={baseUrl} />

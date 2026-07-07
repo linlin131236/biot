@@ -60,6 +60,10 @@ from bolt_core.task_home_api import create_task_home_router
 from bolt_core.permission_center_api import create_permission_center_router
 from bolt_core.audit_timeline_api import create_audit_timeline_router
 from bolt_core.diagnostics_center_api import create_diagnostics_center_router
+from bolt_core.multi_task_queue_api import create_multi_task_queue_router
+from bolt_core.failure_explanation_api import create_failure_explanation_router
+from bolt_core.session_recovery_api import create_session_recovery_router
+from bolt_core.settings_tools_api import create_settings_tools_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
@@ -134,6 +138,10 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_permission_center_router(harness.permissions))
     app.include_router(create_audit_timeline_router(timeline_service, task_closure_service))
     app.include_router(create_diagnostics_center_router(diagnostics_service, integrity_service))
+    app.include_router(create_multi_task_queue_router(harness, task_closure_service, planner_service))
+    app.include_router(create_failure_explanation_router())
+    app.include_router(create_session_recovery_router())
+    app.include_router(create_settings_tools_router())
 
     @app.get("/health")
     def health() -> dict[str, str]: return {"status": "ok", "service": "bolt-agent-core"}
