@@ -5,6 +5,8 @@ import ExecutionQueuePanel from './ExecutionQueuePanel';
 import { GoalConsole } from './GoalConsole';
 import { SideChatPanel } from './SideChatPanel';
 import TaskClosurePanel from './TaskClosurePanel';
+import { MemorySearchPanel } from './MemorySearchPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -44,6 +46,13 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId={runId} goalId={goalInfo?.id ?? null} api={api.taskClosure} onClosureChange={handleClosureChange} />
       <ExecutionQueuePanel baseUrl={baseUrl} closureId={closureId} fetcher={fetcher} api={api.executionQueue} onApprovedItemChange={setApprovedQueueItemId} />
       <ExecutionHandoffPanel baseUrl={baseUrl} closureId={closureId} selectedQueueItemId={approvedQueueItemId} fetcher={fetcher} api={api.executionHandoff} />
+      <MemorySearchPanel baseUrl={baseUrl} api={{
+        fetchDecisions: fetchMemoryDecisions,
+        fetchFailures: fetchMemoryFailures,
+        fetchPreferences: fetchMemoryPreferences,
+        fetchProfile: fetchProjectProfile,
+        fetchCodeMap: fetchCodeMapEntries,
+      }} />
     </>
   );
 }

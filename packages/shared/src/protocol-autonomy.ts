@@ -286,3 +286,14 @@ export const TASK_CLOSURE_LABELS: Record<TaskClosureStatus, string> = {
   failed: '已失败',
   stopped: '已停止',
 };
+
+// === Memory Search (M79) ===
+export type MemorySearchCategory = 'all' | 'decision' | 'failure' | 'preference' | 'project' | 'code_map';
+export interface MemorySearchResult {
+  type: MemorySearchCategory;
+  id: string;
+  title_cn: string;
+  summary_cn: string;
+  source_refs: string[];
+  risk_label?: string;
+}
