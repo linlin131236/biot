@@ -317,6 +317,15 @@ export async function fetchSettingsTools(baseUrl: string, fetcher: Fetcher = fet
   return readJson(await fetcher(`${baseUrl}/settings-tools`));
 }
 
+// === Patch Proposal (M107) ===
+export async function fetchPatchList(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/patch/list`));
+}
+
+export async function fetchPatchPreview(baseUrl: string, patchId: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/patch/${patchId}/preview`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
