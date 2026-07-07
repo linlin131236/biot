@@ -2,20 +2,26 @@
 
 ## 当前稳定基线
 - 已完成到：M61 Planner Task Graph
-- 最新提交：（待提交）
-- 远程状态：`main` 待 push（M58/M59/M60/M61 本地完成，准备 push）
+- 最新提交：`02ebd98 feat(M61): add planner task graph, plan only no auto-execution`
+- 远程状态：`main` 已同步到 `origin/main`（M58/M59/M60/M61 已 push）
 - 最近稳定链路：... -> M55 Execution Audit Store Integrity Guard -> M56 Execution Evidence Redaction -> M57 Release Readiness Review Gate -> M58 Local Release Checklist -> M59 Rollback and Recovery Policy -> M60 Safety Baseline Dogfood -> M61 Planner Task Graph
 
 ## 当前进行中
-- 当前阶段：M61 已完成，等待爸爸确认后 push
-- 当前状态：M55-M61 全部实现并验证通过；M58-M61 未 push
+- 当前阶段：M61 已完成，等待爸爸审核
+- 当前状态：M55-M61 全部实现并验证通过；已 push / 未 release / 未 tag / 未 delete / 未进入 M62
 - 当前结果：
   - V1 安全与发布底座（M55-M60）验收通过 ✅
   - V2 Agent 工作流核心启动（M61 Planner Task Graph）
-  - M61：任务规划图数据模型 + 状态机 + 中文 UI；22 个 targeted tests
-  - 591 backend + 195 frontend + 27 shared passed
-  - 安全红线全部重新扫描通过
-- 下一步：push 后等待爸爸指示；不进入 M62
+  - M58：本地发布检查清单，GET /local-release-checklist，8 项结构化检查 + 中文表格 UI
+  - M59：故障恢复策略，GET /recovery-policy，10 个场景/5 分类 + 中文可折叠 UI
+  - M60：安全底座大复盘，V1 安全底线验收通过
+  - M61：任务规划图数据模型 + 状态机 + 依赖检查 + 中文 UI
+  - 591 backend + 195 frontend + 27 shared passed，desktop build 通过
+- 下一步：等待爸爸复审确认；不进入 M62
+
+## 已知风险
+- M61 Task Graph 为纯内存模型（`PlannerTaskGraphService._graphs`），服务重启后图数据丢失。M62+ 引入状态机和持久化前需评估是否需要文件/数据库持久化。
+- P3：此风险已记录，不作为 M61 阻断项。
 
 ## 长期硬规则
 - 所有用户可见 UI 必须中文。
