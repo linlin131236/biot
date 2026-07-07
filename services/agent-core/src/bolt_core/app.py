@@ -48,6 +48,8 @@ from bolt_core.permission_boundary_eval_api import create_permission_boundary_ev
 from bolt_core.multi_agent_collaboration_eval_api import create_multi_agent_collaboration_eval_router
 from bolt_core.memory_retrieval_eval_api import create_memory_retrieval_eval_router
 from bolt_core.chinese_interaction_eval_api import create_chinese_interaction_eval_router
+from bolt_core.e2e_task_dogfood_api import create_e2e_task_dogfood_router
+from bolt_core.failure_recovery_dogfood_api import create_failure_recovery_dogfood_router
 from bolt_core.failure_classifier_api import create_failure_classifier_router
 from bolt_core.safe_retry_loop_api import create_safe_retry_loop_router
 from bolt_core.code_map_index_api import create_code_map_index_router
@@ -143,6 +145,8 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_multi_agent_collaboration_eval_router())
     app.include_router(create_memory_retrieval_eval_router())
     app.include_router(create_chinese_interaction_eval_router())
+    app.include_router(create_e2e_task_dogfood_router())
+    app.include_router(create_failure_recovery_dogfood_router())
     app.include_router(create_failure_classifier_router())
     app.include_router(create_safe_retry_loop_router())
     app.include_router(create_code_map_index_router())

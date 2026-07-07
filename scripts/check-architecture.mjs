@@ -52,6 +52,8 @@ function checkPythonBoundaries(rel, text) {
   if (rel.endsWith('approval_apply.py')) return;
   // V7 M112: patch_apply_eval.py writes in temp directories for eval (not real project files)
   if (rel.endsWith('patch_apply_eval.py')) return;
+  // V7 M118: e2e_task_dogfood.py writes in temp directories for dogfood (not real project files)
+  if (rel.endsWith('e2e_task_dogfood.py')) return;
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');
   if (/\bsubprocess\b/.test(text)) fail(rel, 'subprocess usage outside shell executor boundary');
   if (/\.write_text\(|\.write_bytes\(|open\([^\n]*['"]w/.test(text)) fail(rel, 'direct file write outside write boundary');
