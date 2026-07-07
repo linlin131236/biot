@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ExecutionAuditDiagnostic, ExecutionAuditIntegrity, ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
-import type { LocalReleaseChecklist, ReleaseReadiness } from '@bolt/shared/release';
-import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchExecutionAuditTimeline, fetchExecutionHandoffs, fetchLocalReleaseChecklist, fetchReleaseReadiness, requestExecutionHandoffPermission } from './harnessClientAutonomy';
+import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness } from '@bolt/shared/release';
+import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchExecutionAuditTimeline, fetchExecutionHandoffs, fetchLocalReleaseChecklist, fetchRecoveryPolicy, fetchReleaseReadiness, requestExecutionHandoffPermission } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -12,6 +12,7 @@ export interface ExecutionHandoffPanelApi {
   fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>;
   fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>;
   fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>;
+  fetchRecoveryPolicy: (b: string, f?: Fetcher) => Promise<RecoveryPolicy>;
   createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
   failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
@@ -20,7 +21,7 @@ export interface ExecutionHandoffPanelApi {
 
 interface Props { baseUrl: string; closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
 
-const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchReleaseReadiness, fetchLocalReleaseChecklist, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
+const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchReleaseReadiness, fetchLocalReleaseChecklist, fetchRecoveryPolicy, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
 const terminal = new Set(['completed', 'failed']);
 
 export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueueItemId, fetcher, api }: Props) {
@@ -30,6 +31,7 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   const [integrity, setIntegrity] = useState<ExecutionAuditIntegrity[]>([]);
   const [readiness, setReadiness] = useState<ReleaseReadiness | null>(null);
   const [checklist, setChecklist] = useState<LocalReleaseChecklist | null>(null);
+  const [recovery, setRecovery] = useState<RecoveryPolicy | null>(null);
   const [error, setError] = useState('');
   const call = api ?? defaultApi;
   const refresh = useCallback(async () => {
@@ -58,6 +60,10 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
     call.fetchLocalReleaseChecklist(baseUrl, fetcher).then(setChecklist).catch(() => { /* checklist fetch is best-effort */ });
   }, [baseUrl, fetcher, call]);
 
+  useEffect(() => {
+    call.fetchRecoveryPolicy(baseUrl, fetcher).then(setRecovery).catch(() => { /* recovery policy fetch is best-effort */ });
+  }, [baseUrl, fetcher, call]);
+
   async function createHandoff() {
     if (!selectedQueueItemId) { setError('请先选择已批准队列项'); return; }
     try {
@@ -76,7 +82,7 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   }
 
   if (!closureId) return <aside className="panel"><h2>安全交接</h2><p>暂无闭环任务</p></aside>;
-  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Checklist data={checklist} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
+  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Checklist data={checklist} /><RecoveryPanel data={recovery} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
 }
 
 function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; baseUrl: string; fetcher?: Fetcher }) {
@@ -135,6 +141,20 @@ function Checklist({ data }: { data: LocalReleaseChecklist | null }) {
       </tbody>
     </table>
     <p><strong>下一步：</strong>{data.next_step}</p>
+  </section>;
+}
+
+function RecoveryPanel({ data }: { data: RecoveryPolicy | null }) {
+  if (!data) return <section className="stack"><h3>故障恢复策略</h3><p>加载中...</p></section>;
+  return <section className="stack">
+    <h3>故障恢复策略</h3>
+    <p><em>{data.disclaimer}</em></p>
+    {data.scenarios.map(s => <details key={s.code}>
+      <summary><strong>{s.severity_label} {s.title}</strong> — {s.auto_recovery_label}</summary>
+      <p>{s.description}</p>
+      <div><strong>恢复步骤：</strong><ol>{s.recovery_steps.map((step, i) => <li key={i}>{step}</li>)}</ol></div>
+      {s.warnings.length > 0 && <div><strong>⚠️ 警告：</strong><ul>{s.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
+    </details>)}
   </section>;
 }
 

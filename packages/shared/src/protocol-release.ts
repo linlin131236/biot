@@ -34,3 +34,23 @@ export interface LocalReleaseChecklist {
   next_step: string;
   disclaimer: string;
 }
+
+export interface RecoveryScenario {
+  code: string;
+  title: string;
+  category: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity_label: string;
+  description: string;
+  recovery_steps: string[];
+  auto_recovery_possible: boolean;
+  auto_recovery_label: string;
+  warnings: string[];
+}
+
+export interface RecoveryPolicy {
+  scenarios: RecoveryScenario[];
+  categories: Record<string, RecoveryScenario[]>;
+  total: number;
+  disclaimer: string;
+}

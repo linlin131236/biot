@@ -9,7 +9,7 @@ import type {
   ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic,
   ExecutionAuditIntegrity,
 } from '@bolt/shared/autonomy';
-import type { LocalReleaseChecklist, ReleaseReadiness } from '@bolt/shared/release';
+import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness } from '@bolt/shared/release';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -204,6 +204,10 @@ export async function fetchReleaseReadiness(baseUrl: string, fetcher: Fetcher = 
 
 export async function fetchLocalReleaseChecklist(baseUrl: string, fetcher: Fetcher = fetch): Promise<LocalReleaseChecklist> {
   return readJson(await fetcher(`${baseUrl}/local-release-checklist`));
+}
+
+export async function fetchRecoveryPolicy(baseUrl: string, fetcher: Fetcher = fetch): Promise<RecoveryPolicy> {
+  return readJson(await fetcher(`${baseUrl}/recovery-policy`));
 }
 
 // === Review Gate ===
