@@ -16,6 +16,10 @@ const KNOWN_EXEMPT = new Set([
   'services/agent-core/src/bolt_core/long_task_recovery_dogfood.py',
   'services/agent-core/src/bolt_core/memory_dogfood.py',
   'apps/desktop/src/harnessClientAutonomy.ts',
+  // V6 P1: M108 approval apply engine (gated write + diff parsing, single concern, split candidate)
+  'services/agent-core/src/bolt_core/approval_apply.py',
+  // V6 P1: M108 test file (16 tests covering full security surface, split candidate)
+  'services/agent-core/tests/test_approval_apply.py',
 ]);
 
 const failures = scan(root).filter((file) => {
