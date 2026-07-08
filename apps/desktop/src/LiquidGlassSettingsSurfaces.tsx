@@ -143,6 +143,126 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '多任务队列', detail: '展示排队、暂停和恢复状态，写入仍需用户确认。', control: '队列状态', tone: 'warning' },
     ],
   },
+  skills: {
+    eyebrow: '能力目录',
+    title: '技能管理',
+    summary: '查看可用技能、启用状态和安全边界，技能变更仍需明确批准。',
+    metrics: [
+      { label: '内置技能', value: '只读可见', tone: 'success' },
+      { label: '用户技能', value: '本地管理' },
+      { label: '启用状态', value: '人工确认', tone: 'warning' },
+    ],
+    rows: [
+      { title: '技能来源', detail: '区分内置技能、项目技能和用户技能，避免混淆能力边界。', control: '来源分层' },
+      { title: '启用策略', detail: '技能只在匹配任务时进入候选，不自动修改项目文件。', control: '按需候选', tone: 'success' },
+      { title: '安全边界', detail: '涉及写入、联网、执行命令的技能必须经过权限门禁。', control: '门禁保护', tone: 'warning' },
+    ],
+  },
+  agents: {
+    eyebrow: '角色边界',
+    title: '子智能体',
+    summary: '展示子智能体角色、工具范围和交接状态，避免自审自批。',
+    metrics: [
+      { label: '默认角色', value: '规划/执行/审查' },
+      { label: '工具范围', value: '按角色限制', tone: 'success' },
+      { label: '人工接管', value: '随时可控', tone: 'warning' },
+    ],
+    rows: [
+      { title: '默认子智能体', detail: '规划、执行、审查分工展示清楚，同一任务不允许自我批准。', control: '角色隔离', tone: 'success' },
+      { title: '工具范围', detail: '每个角色只展示与职责匹配的工具能力。', control: '最小权限' },
+      { title: '人工接管', detail: '长任务、失败恢复和写入前都保留用户接管位置。', control: '可暂停', tone: 'warning' },
+    ],
+  },
+  mcp: {
+    eyebrow: '外部能力连接',
+    title: 'MCP 服务器',
+    summary: '查看 MCP 服务器配置、连接状态和工具授权，不自动连接未知服务。',
+    metrics: [
+      { label: '服务器', value: '配置可见' },
+      { label: '连接状态', value: '只读检查', tone: 'success' },
+      { label: '工具授权', value: '逐项批准', tone: 'warning' },
+    ],
+    rows: [
+      { title: '服务器列表', detail: '按名称、来源和状态展示 MCP 服务器，不自动导入外部配置。', control: '只读列表' },
+      { title: '工具授权', detail: 'MCP 工具执行前仍走权限分类和用户确认。', control: '逐项门禁', tone: 'warning' },
+      { title: '连接状态', detail: '显示在线、离线和错误提示，避免静默失败。', control: '状态检测', tone: 'success' },
+    ],
+  },
+  plugins: {
+    eyebrow: '扩展生态',
+    title: '插件管理',
+    summary: '集中查看已安装插件、发现入口和更新状态，不自动安装或升级。',
+    metrics: [
+      { label: '已安装', value: '本地插件' },
+      { label: '发现插件', value: '人工选择' },
+      { label: '更新检查', value: '只读提示', tone: 'warning' },
+    ],
+    rows: [
+      { title: '已安装插件', detail: '展示插件名称、版本和启用状态，避免隐藏能力。', control: '本地列表' },
+      { title: '发现插件', detail: '发现结果只作为候选展示，安装前必须由用户确认。', control: '手动安装', tone: 'warning' },
+      { title: '更新检查', detail: '显示可用更新和变更摘要，不自动下载或替换。', control: '只读提醒' },
+    ],
+  },
+  commands: {
+    eyebrow: '命令目录',
+    title: '命令管理',
+    summary: '管理可调用命令的说明、参数和权限边界，命令执行仍需门禁。',
+    metrics: [
+      { label: '命令文件', value: 'Markdown' },
+      { label: '调用方式', value: '/command' },
+      { label: '写入边界', value: '需批准', tone: 'warning' },
+    ],
+    rows: [
+      { title: '命令文件', detail: '命令说明以结构化文档展示，便于审查来源和用途。', control: '文档化' },
+      { title: '调用方式', detail: '聊天中通过明确命令触发，不从普通文本里静默执行。', control: '显式调用', tone: 'success' },
+      { title: '写入边界', detail: '命令涉及文件写入、删除、发布或外部调用时必须进入批准队列。', control: '权限门禁', tone: 'warning' },
+    ],
+  },
+  index: {
+    eyebrow: '项目知识',
+    title: '索引库',
+    summary: '展示项目画像、代码地图和记忆索引，让上下文可查、可追溯。',
+    metrics: [
+      { label: '项目画像', value: '结构摘要' },
+      { label: '代码地图', value: '模块索引', tone: 'success' },
+      { label: '记忆检索', value: '只读查询' },
+    ],
+    rows: [
+      { title: '项目画像', detail: '概括产品目标、技术栈、安全规则和当前阶段。', control: '画像摘要' },
+      { title: '代码地图', detail: '按模块记录入口文件、API 和测试位置，方便快速定位。', control: '模块导航', tone: 'success' },
+      { title: '记忆检索', detail: '检索决策、失败和偏好记忆，结果保持只读。', control: '安全检索' },
+    ],
+  },
+  usage: {
+    eyebrow: '使用洞察',
+    title: '使用统计',
+    summary: '以只读方式查看会话、消息、Token 和模型使用趋势。',
+    metrics: [
+      { label: 'Token 用量', value: '趋势统计' },
+      { label: '会话数量', value: '近期汇总' },
+      { label: '模型占比', value: '可视化' },
+    ],
+    rows: [
+      { title: 'Token 用量', detail: '按时间范围展示消耗趋势，辅助控制预算。', control: '趋势图' },
+      { title: '会话数量', detail: '统计任务、消息和活跃天数，帮助理解使用节奏。', control: '只读统计' },
+      { title: '模型占比', detail: '显示常用模型比例，不自动切换模型。', control: '手动选择', tone: 'warning' },
+    ],
+  },
+  guide: {
+    eyebrow: '上手路径',
+    title: '引导中心',
+    summary: '把新用户需要的工作区、权限、安全和下一步操作整理成清晰路径。',
+    metrics: [
+      { label: '新手引导', value: '分步完成' },
+      { label: '安全规则', value: '始终可见', tone: 'success' },
+      { label: '下一步建议', value: '人工决定', tone: 'warning' },
+    ],
+    rows: [
+      { title: '新手引导', detail: '从选择工作区、输入任务到查看结果，按步骤引导用户完成。', control: '分步引导' },
+      { title: '安全规则', detail: '解释权限批准、审计记录和写入前预览，降低误操作风险。', control: '安全说明', tone: 'success' },
+      { title: '下一步建议', detail: '给出可选建议，但不自动进入新阶段或执行危险操作。', control: '等待选择', tone: 'warning' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {

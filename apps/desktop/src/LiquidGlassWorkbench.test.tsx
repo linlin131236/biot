@@ -138,6 +138,29 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('统一展示记忆、角色分工和队列状态，不自动派发写入任务。')).toBeInTheDocument();
   });
 
+  it('renders specific read-only surfaces for every remaining settings category', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+
+    const categories = [
+      ['技能', '技能管理'],
+      ['子智能体', '子智能体'],
+      ['MCP 服务器', 'MCP 服务器'],
+      ['插件管理', '插件管理'],
+      ['命令', '命令管理'],
+      ['索引库', '索引库'],
+      ['使用统计', '使用统计'],
+      ['引导', '引导中心'],
+    ];
+
+    for (const [buttonName, headingName] of categories) {
+      fireEvent.click(screen.getByRole('button', { name: buttonName }));
+      expect(screen.getByRole('heading', { name: headingName })).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: '常规设置' })).not.toBeInTheDocument();
+    }
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 

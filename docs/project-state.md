@@ -4,7 +4,7 @@
 
 - 已完成到：M150 Liquid Glass UI Dogfood（本地完成，待复审 / 待 push）。
 - 最新远端基线：`origin/main = 61ecee1 docs: mark M143 pushed`。
-- 当前本地基线：M150 收口提交（本提交）。
+- 当前本地基线：M150 本地收口链，最新提交以 `git log --oneline -1` 为准。
 - 当前本地分支：`main...origin/main`，本地领先远端，待 push。
 - 当前工作区：M144-M150 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 push / 未 release / 未 tag / 未 delete。
