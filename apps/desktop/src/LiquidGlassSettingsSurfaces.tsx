@@ -83,6 +83,21 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '审计记录', detail: '每次批准、拒绝和执行结果都进入审计链路。', control: '只读追踪' },
     ],
   },
+  patch: {
+    eyebrow: '写入前审查',
+    title: '补丁审查',
+    summary: '在写入前阅读 diff、风险摘要和批准状态，避免看不见的文件改动。',
+    metrics: [
+      { label: '补丁预览', value: '多文件 diff' },
+      { label: '风险摘要', value: '逐项解释', tone: 'warning' },
+      { label: '批准写入', value: '等待确认', tone: 'success' },
+    ],
+    rows: [
+      { title: '补丁预览', detail: '按文件展示新增、删除和上下文，不在这里直接写入。', control: '只读预览' },
+      { title: '风险摘要', detail: '标记权限、路径、敏感信息和测试影响。', control: '人工复核', tone: 'warning' },
+      { title: '批准写入', detail: '只有用户确认后，补丁才允许进入写入流程。', control: '批准门控', tone: 'success' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {

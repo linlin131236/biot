@@ -86,6 +86,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.queryByRole('button', { name: '自动批准' })).not.toBeInTheDocument();
   });
 
+  it('renders a patch review surface with approval boundary copy', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '补丁审查' }));
+
+    expect(screen.getByRole('heading', { name: '补丁审查' })).toBeInTheDocument();
+    expect(screen.getAllByText('补丁预览').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('风险摘要').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('批准写入').length).toBeGreaterThan(0);
+    expect(screen.getByText('只有用户确认后，补丁才允许进入写入流程。')).toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 
