@@ -44,6 +44,8 @@ import {
   updateTaskClosureAssessment,
   executeResearch,
   fetchResearchScopes,
+  executeBuilderTask,
+  fetchBuilderProposals,
 } from './harnessClientAutonomy';
 import { startWorkflowRun } from './workflowClient';
 
@@ -107,6 +109,10 @@ export function createPanelsApi(fetcher: Fetcher, goalInfo: Goal | null): Panels
       createBrief: createResearchBrief,
       executeResearch,
       fetchScopes: fetchResearchScopes,
+    },
+    builder: {
+      executeTask: executeBuilderTask,
+      fetchProposals: fetchBuilderProposals,
     },
   };
 }

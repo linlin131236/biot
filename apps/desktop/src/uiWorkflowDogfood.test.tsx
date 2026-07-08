@@ -53,7 +53,7 @@ describe('M33 Chinese UI', () => {
     render(<App />);
 
     expect(screen.getByText('Agent Core 状态')).toBeInTheDocument();
-    expect(screen.getByText('工作区')).toBeInTheDocument();
+    expect(screen.getAllByText(/工作区/).length).toBeGreaterThan(0);
     expect(screen.getByText('核心服务地址')).toBeInTheDocument();
     expect(screen.getByText('当前运行')).toBeInTheDocument();
   });

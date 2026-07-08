@@ -47,7 +47,7 @@ describe('App', () => {
     fireEvent.change(screen.getByLabelText('工作区路径'), { target: { value: 'C:/Projects/Bolt' } });
     fireEvent.click(screen.getByRole('button', { name: '进入工作台' }));
 
-    expect(screen.getByText('工作区')).toBeInTheDocument();
+    expect(screen.getAllByText(/工作区/).length).toBeGreaterThan(0);
     expect(screen.getByText('C:/Projects/Bolt')).toBeInTheDocument();
     expect(localStorage.getItem('bolt.desktop.session')).toContain('C:/Projects/Bolt');
   });

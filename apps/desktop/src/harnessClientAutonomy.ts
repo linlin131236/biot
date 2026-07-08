@@ -384,6 +384,15 @@ export async function fetchResearchScopes(baseUrl: string, fetcher: Fetcher = fe
   return readJson(await fetcher(`${baseUrl}/research/scopes`));
 }
 
+// === Builder (M160) ===
+export async function executeBuilderTask(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/builder/execute`, jsonPost(payload)));
+}
+
+export async function fetchBuilderProposals(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/builder/proposals`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

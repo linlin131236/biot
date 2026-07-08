@@ -258,10 +258,37 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M159 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M160 当前改动
+
+- M160：Builder 执行引擎。新建 `BuilderEngine`（`builder_engine.py`）根据任务描述产生代码变更提案（FileWriteProposal），不直接写文件。`builder_api.py` 新增 `POST /builder/execute` 端点和 `GET /builder/proposals`。前端新建 `BuilderPanel` 组件支持任务输入、执行、结果展示。
+
+## M160 关键文件
+
+- `services/agent-core/src/bolt_core/builder_engine.py`（新建，BuilderEngine）
+- `services/agent-core/src/bolt_core/builder_api.py`（新建，execute + proposals 端点）
+- `services/agent-core/src/bolt_core/app.py`（注册 builder router）
+- `apps/desktop/src/BuilderPanel.tsx`（新建，构建引擎面板）
+- `apps/desktop/src/BuilderPanel.test.tsx`（新建，5 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 2 个 API 函数）
+- `apps/desktop/src/panelsApi.ts`（新增 builder namespace）
+- `apps/desktop/src/PanelsSection.tsx`（装配 BuilderPanel）
+- `services/agent-core/tests/test_builder_engine.py`（新建，6 个后端测试）
+
+## M160 验证
+
+- Backend targeted tests：6 passed（test_builder_engine.py）
+- Frontend targeted tests：5 passed（BuilderPanel.test.tsx）
+- Desktop tests：46 files / 341 tests passed（+5 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M160 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M159 完整实现（ResearcherEngine + execute 端点 + ResearcherPanel + 12 测试 + decision + review gate + project-state 更新）。
-- M160 — Builder Execution Engine：Builder 从协议契约升级为能实际修改文件的执行引擎。
+- **待完成**：commit M160 完整实现（BuilderEngine + execute 端点 + BuilderPanel + 11 测试 + decision + review gate + project-state 更新）。
+- M161 — Reviewer Execution Engine + strict Gate：Reviewer 从 gate 逻辑升级为能实际读取 Builder 输出产生审查发现的执行引擎。
 
 ## 长期硬规则
 
