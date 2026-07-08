@@ -2,7 +2,7 @@
 
 ## 结论
 
-复审 FAIL，需修复 P1/P2 后重新提交。发现 5 项 findings：2 项 P1（认证 fetcher、主题通知）、3 项 P2（project-state 过期、测试路径错误、日志脱敏）。
+通过。M151 P1/P2 复审 findings 已修复，并补充设置页内部主题切换回归测试；不进入 M152，等待用户复审和 push 授权。
 
 ## 改动文件
 
@@ -27,7 +27,8 @@
 ## 验证
 
 - `pnpm --filter @bolt/desktop build`：通过。
-- `pnpm --filter @bolt/desktop exec vitest run`：42 files / 305 tests passed。
+- `pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：15 passed。
+- `pnpm --filter @bolt/desktop exec vitest run`：42 files / 306 tests passed。
 - `pnpm run quality`：通过（size/docs/boundaries/architecture/release/package-runtime/chinese-ui/test）。
 - `uv run pytest services/agent-core/tests/test_desktop_settings.py -q`：7 passed。
 - `uv run pytest services/agent-core/tests/test_desktop_settings.py services/agent-core/tests/test_model_settings.py services/agent-core/tests/test_app.py -q`：26 passed。
@@ -51,18 +52,18 @@
 - `.claude/` 保持未跟踪、未提交。
 - 不自动 push、release、tag、delete。
 
-## Findings（复审发现）
+## Findings（复审发现与修复）
 
 ### P1-1：设置页使用全局 fetch，绕过认证
 - 位置：`LiquidGlassSettings.tsx` 原直接 `fetch`
-- 修复：移除全局 fetch，改用父级传入的 `onSaveTheme` 回调
+- 修复：移除全局 fetch，改用父级传入的 `onSaveTheme` 回调；删除残留旧函数并补回归测试
 
 ### P1-2：主题切换保存后不更新 UI
 - 位置：`LiquidGlassSettings.tsx` 原 `handleSaveTheme` 只保存不通知
-- 修复：`onSaveTheme` 调用后父级 `setTheme` 触发重渲染
+- 修复：设置页内部主题按钮调用 `onSaveTheme`，父级 `setTheme` 触发重渲染
 
 ### P2-1：project-state.md HEAD 过期
-- 修复：更新为 `3ad65c0`，ahead 1
+- 修复：改为以 `git log --oneline -1` 校验最新本地提交，避免自引用 hash 过期
 
 ### P2-2：测试命令路径错误
 - 修复：文档中已修正为 `services/agent-core/tests/` 路径
@@ -72,4 +73,4 @@
 
 ## 下一步
 
-- 修复后重新复审，不进入 M152。
+- M151 已通过本轮复审。不进入 M152，等待用户决定是否 push 或继续规划。

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
 
@@ -206,5 +206,15 @@ describe('LiquidGlassWorkbench', () => {
     // Simulate parent re-rendering with updated theme
     rerender(<LiquidGlassWorkbench {...baseProps} theme="light" setTheme={setTheme} onSaveTheme={vi.fn()} />);
     expect(container.querySelector('.biotLiquidShell')).toHaveAttribute('data-theme', 'light');
+  });
+
+  it('saves the settings-page theme through the parent callback', async () => {
+    const onSaveTheme = vi.fn().mockResolvedValue(undefined);
+    render(<LiquidGlassWorkbench {...baseProps} onSaveTheme={onSaveTheme} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getAllByRole('button', { name: '浅色' }).at(-1)!);
+
+    await waitFor(() => expect(onSaveTheme).toHaveBeenCalledWith('light'));
   });
 });

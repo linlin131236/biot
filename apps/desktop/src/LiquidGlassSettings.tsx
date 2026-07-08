@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GlassPanel, GlassPill } from './LiquidGlassPrimitives';
-import { settingItems, surfaces, type DesktopSettingsStatus, type LiquidGlassSettingsProps } from './LiquidGlassSettingsData';
+import { settingItems, surfaces, type LiquidGlassSettingsProps } from './LiquidGlassSettingsData';
 
 export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, settings, onSaveTheme }: LiquidGlassSettingsProps) {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -37,25 +37,6 @@ export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, s
     { title: 'API 密钥', detail: '只显示是否已配置，保存后立即清空输入框。', control: '仅状态可见', tone: apiKeyTone },
     { title: '模型选择', detail: '聊天时使用当前选择的模型，不自动切换到未知供应商。', control: '手动选择' },
   ] : surface.rows;
-
-  async function handleSaveTheme(nextTheme: string) {
-    try {
-      const res = await fetch(`${coreUrl}/desktop/settings`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ theme: nextTheme }),
-      });
-      if (res.ok) {
-        const data = await res.json() as DesktopSettingsStatus;
-        // Theme state is managed by parent via onSaveTheme callback
-        setSaveMessage('设置已保存');
-        setTimeout(() => setSaveMessage(null), 2000);
-      }
-    } catch {
-      setSaveMessage('保存失败，请重试');
-      setTimeout(() => setSaveMessage(null), 3000);
-    }
-  }
 
   return (
     <div className="biotSettings">
