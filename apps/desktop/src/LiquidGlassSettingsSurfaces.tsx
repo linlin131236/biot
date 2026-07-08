@@ -98,6 +98,21 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '批准写入', detail: '只有用户确认后，补丁才允许进入写入流程。', control: '批准门控', tone: 'success' },
     ],
   },
+  audit: {
+    eyebrow: '状态与恢复',
+    title: '审计诊断',
+    summary: '阻断、警告、提示和下一步建议按优先级展示。',
+    metrics: [
+      { label: '审计时间线', value: '权限与工具链路' },
+      { label: '诊断中心', value: '阻断优先', tone: 'warning' },
+      { label: '恢复建议', value: '人工确认', tone: 'success' },
+    ],
+    rows: [
+      { title: '审计时间线', detail: '按时间记录权限请求、工具结果、测试反馈和恢复动作。', control: '只读查看' },
+      { title: '诊断中心', detail: '阻断、警告、提示分层显示，先处理高风险项。', control: '优先级' },
+      { title: '恢复建议', detail: '只给出可验证下一步，不自动执行修复。', control: '等待确认', tone: 'warning' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {

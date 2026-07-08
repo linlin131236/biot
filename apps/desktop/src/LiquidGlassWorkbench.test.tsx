@@ -99,6 +99,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('只有用户确认后，补丁才允许进入写入流程。')).toBeInTheDocument();
   });
 
+  it('renders an audit diagnostics surface with recovery guidance', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '审计诊断' }));
+
+    expect(screen.getByRole('heading', { name: '审计诊断' })).toBeInTheDocument();
+    expect(screen.getAllByText('审计时间线').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('诊断中心').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('恢复建议').length).toBeGreaterThan(0);
+    expect(screen.getByText('阻断、警告、提示和下一步建议按优先级展示。')).toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 

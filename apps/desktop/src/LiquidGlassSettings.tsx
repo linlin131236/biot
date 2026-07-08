@@ -1,4 +1,5 @@
 import {
+  Activity,
   Bot,
   Code2,
   Database,
@@ -22,6 +23,7 @@ const settingItems = [
   { id: 'model', label: '模型设置', icon: Database },
   { id: 'permission', label: '权限中心', icon: ShieldCheck },
   { id: 'patch', label: '补丁审查', icon: FileDiff },
+  { id: 'audit', label: '审计诊断', icon: Activity },
   { id: 'skills', label: '技能', icon: Sparkles },
   { id: 'agents', label: '子智能体', icon: Bot },
   { id: 'mcp', label: 'MCP 服务器', icon: Plug },
