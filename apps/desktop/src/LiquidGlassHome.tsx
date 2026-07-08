@@ -48,12 +48,12 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       meta: '只读',
       icon: <FileText size={18} />,
       action: props.refreshTrace,
-      disabled: !props.hasWorkspace,
+      disabled: !props.hasWorkspace || !props.runId,
     },
     {
-      title: '生成补丁预览',
-      description: '只生成差异预览，写入前等待人工批准。',
-      meta: '需批准',
+      title: '查看待批准权限',
+      description: '查看等待人工批准的工具请求。',
+      meta: '权限',
       icon: <GitBranch size={18} />,
       action: props.refreshPermissions,
       disabled: !props.hasWorkspace,
@@ -80,7 +80,7 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       meta: '文档',
       icon: <ClipboardCheck size={18} />,
       action: props.runGardener,
-      disabled: !props.hasWorkspace,
+      disabled: !props.hasWorkspace || !props.runId,
     },
     {
       title: '查看执行时间线',
@@ -88,7 +88,7 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       meta: '审计',
       icon: <History size={18} />,
       action: props.fetchTimeline,
-      disabled: !props.hasWorkspace,
+      disabled: !props.hasWorkspace || !props.runId,
     },
   ];
 

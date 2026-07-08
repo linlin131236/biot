@@ -53,7 +53,7 @@ describe('LiquidGlassHome interaction cockpit', () => {
     const recommendedTasks = screen.getByRole('region', { name: '推荐任务' });
 
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：读取文件并解释代码' }));
-    fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：生成补丁预览' }));
+    fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：查看待批准权限' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：运行白名单测试' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：同步项目记忆' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：整理项目文档' }));
@@ -83,6 +83,35 @@ describe('LiquidGlassHome interaction cockpit', () => {
 
     fireEvent.click(readButton);
     expect(props.refreshTrace).not.toHaveBeenCalled();
+  });
+
+  it('keeps run-bound task cards disabled until a run exists', () => {
+    const props = renderHome({ runId: null });
+    const recommendedTasks = screen.getByRole('region', { name: '推荐任务' });
+
+    const readButton = within(recommendedTasks).getByRole('button', { name: '开始：读取文件并解释代码' });
+    const permissionButton = within(recommendedTasks).getByRole('button', { name: '开始：查看待批准权限' });
+    const memoryButton = within(recommendedTasks).getByRole('button', { name: '开始：同步项目记忆' });
+    const gardenerButton = within(recommendedTasks).getByRole('button', { name: '开始：整理项目文档' });
+    const timelineButton = within(recommendedTasks).getByRole('button', { name: '开始：查看执行时间线' });
+
+    expect(readButton).toBeDisabled();
+    expect(gardenerButton).toBeDisabled();
+    expect(timelineButton).toBeDisabled();
+    expect(permissionButton).toBeEnabled();
+    expect(memoryButton).toBeEnabled();
+
+    fireEvent.click(readButton);
+    fireEvent.click(gardenerButton);
+    fireEvent.click(timelineButton);
+    fireEvent.click(permissionButton);
+    fireEvent.click(memoryButton);
+
+    expect(props.refreshTrace).not.toHaveBeenCalled();
+    expect(props.runGardener).not.toHaveBeenCalled();
+    expect(props.fetchTimeline).not.toHaveBeenCalled();
+    expect(props.refreshPermissions).toHaveBeenCalledTimes(1);
+    expect(props.refreshMemory).toHaveBeenCalledTimes(1);
   });
 
   it('does not render private address wording in the product UI', () => {

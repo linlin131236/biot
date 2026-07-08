@@ -8,6 +8,7 @@ Upgrade the liquid glass home screen from a polished composer into a usable Agen
 
 - Add a task cockpit section to `LiquidGlassHome`.
 - Add six recommended task cards wired to existing safe UI callbacks.
+- Disable run-bound cards until a run exists, and keep permission wording aligned with the actual pending-permission action.
 - Preserve current composer, command strip, legacy engineering panels, and compatibility text expected by older tests.
 - Add focused tests for cockpit state, task card routing, workspace-disabled state, and private-address exclusion.
 - Keep all user-visible UI Chinese.
