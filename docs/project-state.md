@@ -2,10 +2,10 @@
 
 ## 当前稳定基线
 
-- 已完成到：M151 Settings Persistence（真实设置持久化），P1/P2 复审修复已完成，已 commit 未 push。
-- 最新远端基线：`origin/main = 51e2502 docs: mark M150 pushed`。
-- 当前本地基线：M151 复审收口修复链，最新提交以 `git log --oneline -1` 为准。
-- 当前本地分支：`main...origin/main`，本地领先远端，具体 ahead 数以 `git status --short --branch` 为准。
+- 已完成到：M151 Settings Persistence（真实设置持久化），P1/P2 复审修复已完成，已 push。
+- 最新远端基线：`origin/main = 01c4fe4 docs: avoid stale M151 ahead count`。
+- 当前本地基线：`HEAD = 01c4fe4 docs: avoid stale M151 ahead count`。
+- 当前本地分支：`main...origin/main`，本地与远端同步。
 - 当前工作区：M151 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M152。
@@ -47,11 +47,11 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M151 已完成，P1/P2 复审修复与本轮收口修复完成后待 push。
+- M151 已完成、已复审、已 push，远端 `origin/main` 与本地 HEAD 同步。
 
 ## 下一步
 
-- M151 复审通过后等待用户决定是否 push；不自动进入 M152。
+- 下一步由用户授权后进入 M152；当前不自动进入 M152。
 
 ## 长期硬规则
 
