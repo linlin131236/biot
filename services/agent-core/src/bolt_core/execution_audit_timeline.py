@@ -23,13 +23,13 @@ class ExecutionAuditTimelineService:
         closure = self._closures.load(closure_id)
 
         for item in queue_items:
-            events.append(_event("queue", "pending", "待处理", f"队列项等待人工处理：{item.title}", item.created_at, closure_id, item.id))
+            events.append(_event("queue", "pending", "待处理", f"队列项等待人工处理：{redact(item.title)}", item.created_at, closure_id, item.id))
             if item.status in ("approved", "completed", "failed"):
-                events.append(_event("queue", "approved", "已批准队列", f"队列项已由人工批准：{item.title}", item.created_at + 0.001, closure_id, item.id))
+                events.append(_event("queue", "approved", "已批准队列", f"队列项已由人工批准：{redact(item.title)}", item.created_at + 0.001, closure_id, item.id))
             if item.status == "rejected":
-                events.append(_event("queue", "rejected", "已拒绝", item.reason or "队列项已被拒绝", item.created_at + 0.001, closure_id, item.id))
+                events.append(_event("queue", "rejected", "已拒绝", redact(item.reason) or "队列项已被拒绝", item.created_at + 0.001, closure_id, item.id))
             if item.status == "failed":
-                events.append(_event("queue", "failed", "已失败", item.result or "队列项已失败", item.created_at + 0.002, closure_id, item.id))
+                events.append(_event("queue", "failed", "已失败", redact(item.result) or "队列项已失败", item.created_at + 0.002, closure_id, item.id))
 
         for record in handoffs:
             base_time = _handoff_base_time(record, queue_items)

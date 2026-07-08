@@ -295,9 +295,12 @@ export async function rejectPermissionFromCenter(baseUrl: string, requestId: str
 }
 
 // === Audit Timeline (M93) ===
-export async function fetchAuditTimeline(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
-  const params = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
-  return readJson(await fetcher(`${baseUrl}/audit-timeline${params}`));
+export async function fetchAuditTimeline(baseUrl: string, closureId?: string, source?: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  const params = new URLSearchParams();
+  if (closureId) params.set("closure_id", closureId);
+  if (source) params.set("source", source);
+  const qs = params.toString();
+  return readJson(await fetcher(`${baseUrl}/audit-timeline${qs ? `?${qs}` : ""}`));
 }
 
 // === Diagnostics Center (M94) ===

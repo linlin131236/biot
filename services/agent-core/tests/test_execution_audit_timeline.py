@@ -52,6 +52,54 @@ def test_timeline_isolated_by_closure():
     assert {event["closure_id"] for event in timeline} == {first.id}
 
 
+# ── Payload redaction in event summaries ────────────────────────────────────
+
+def test_queue_event_summaries_redact_sensitive_title():
+    queue = ExecutionQueueService()
+    handoffs = ExecutionHandoffService()
+    closures = TaskClosureService()
+    closure = closures.start("敏感任务", "bugfix")
+    queue.create_item(closure.id, "manual_review", "API_KEY=sk-abc123def456 的命令", "需要人工审查", "read_only")
+
+    timeline = ExecutionAuditTimelineService(queue, handoffs, closures).for_closure(closure.id)
+
+    summaries = [e["summary"] for e in timeline if e["source"] == "queue"]
+    assert any("sk-abc123def456" not in s for s in summaries)
+    assert any("[已脱敏]" in s for s in summaries)
+
+
+def test_queue_event_summaries_redact_sensitive_reason():
+    queue = ExecutionQueueService()
+    handoffs = ExecutionHandoffService()
+    closures = TaskClosureService()
+    closure = closures.start("敏感任务", "bugfix")
+    item = queue.create_item(closure.id, "manual_review", "审查", "需要人工审查", "read_only")
+    # Sensitive token in rejection reason becomes item.reason after queue.reject()
+    queue.reject(item.id, "TOKEN=ghp_ABCDEF123456 泄露风险")
+
+    timeline = ExecutionAuditTimelineService(queue, handoffs, closures).for_closure(closure.id)
+
+    summaries = [e["summary"] for e in timeline if e["source"] == "queue" and e["status"] == "rejected"]
+    assert any("ghp_ABCDEF123456" not in s for s in summaries)
+    assert any("[已脱敏]" in s for s in summaries)
+
+
+def test_queue_event_summaries_redact_sensitive_result():
+    queue = ExecutionQueueService()
+    handoffs = ExecutionHandoffService()
+    closures = TaskClosureService()
+    closure = closures.start("敏感任务", "bugfix")
+    item = queue.create_item(closure.id, "manual_review", "审查", "需要人工审查", "read_only")
+    queue.approve(item.id)
+    queue.mark_failed(item.id, "执行结果包含 SECRET=mysecret123 的错误")
+
+    timeline = ExecutionAuditTimelineService(queue, handoffs, closures).for_closure(closure.id)
+
+    summaries = [e["summary"] for e in timeline if e["source"] == "queue" and e["status"] == "failed"]
+    assert any("mysecret123" not in s for s in summaries)
+    assert any("[已脱敏]" in s for s in summaries)
+
+
 def _completed_flow():
     closures = TaskClosureService()
     closure = closures.start("修复拼写", "bugfix")

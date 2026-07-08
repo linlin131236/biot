@@ -36,6 +36,14 @@ const SOURCE_CN: Record<string, string> = {
   queue: '执行队列', handoff: '人工交接', closure: '任务闭环', permission: '权限审批',
 };
 
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: '全部' },
+  { value: 'queue', label: '执行队列' },
+  { value: 'handoff', label: '人工交接' },
+  { value: 'closure', label: '任务闭环' },
+  { value: 'permission', label: '权限审批' },
+];
+
 function mapEvents(raw: Record<string, unknown>): TimelineData {
   return {
     events: Array.isArray(raw.events) ? (raw.events as Record<string, unknown>[]).map((e: Record<string, unknown>) => ({
@@ -56,12 +64,13 @@ export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchAuditTimeline(baseUrl, closureId || undefined);
+        const raw = await api.fetchAuditTimeline(baseUrl, closureId || undefined, activeFilter || undefined);
         if (cancelled) return;
         setData(mapEvents(raw));
       } catch (e) {
@@ -72,7 +81,7 @@ export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl, closureId]);
+  }, [baseUrl, closureId, activeFilter]);
 
   if (loading) return <div className="auditTimelinePanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="auditTimelinePanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;
@@ -84,6 +93,20 @@ export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
       <h2 style={{ margin: '0 0 0.5rem', fontSize: '1rem' }}>审计时间线</h2>
       <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>
         {data.total} 条事件{data.closure_id ? `（闭环：${data.closure_id}）` : '（最近）'}
+      </div>
+      <div style={{ display: 'flex', gap: '4px', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+        {SOURCE_OPTIONS.map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => setActiveFilter(opt.value)}
+            style={{
+              padding: '2px 8px', fontSize: '0.7rem', borderRadius: '3px',
+              border: activeFilter === opt.value ? '1px solid #888' : '1px solid #ccc',
+              background: activeFilter === opt.value ? '#e8e8e8' : '#f5f5f5',
+              cursor: 'pointer', color: activeFilter === opt.value ? '#333' : '#666',
+            }}
+          >{opt.label}</button>
+        ))}
       </div>
       {data.events.length === 0 ? (
         <div style={{ color: '#888', padding: '1rem' }}>暂无审计事件。</div>

@@ -77,7 +77,7 @@
 
 - Backend targeted tests：17 passed（test_permission_center.py 16 + test_permission_center_api.py 1）
 - Frontend targeted tests：11 passed（PermissionCenterPanel.test.tsx）
-- Desktop tests：42 files / 307 tests passed（+1 新增测试）
+- Desktop tests：42 files / 310 tests passed（+3 新增测试）
 - `pnpm run quality`：通过。
 - `git diff --check`：通过。
 - Chinese UI check：通过。
@@ -85,9 +85,35 @@
 - renderer 安全扫描：M153 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 - 密钥/token 泄露扫描：未命中真实密钥（测试数据仅含假占位符）。
 
+## M154 当前改动
+
+- M154：审计时间线脱敏与类型筛选。`execution_audit_timeline.py` 的 queue item title/reason/result 摘要经过 `evidence_redactor.redact()` 脱敏处理。`/audit-timeline` 端点新增 `source` 查询参数支持按事件来源筛选。前端 `AuditTimelinePanel` 新增类型筛选按钮组（全部/执行队列/人工交接/任务闭环/权限审批）。
+- 新增 3 个后端脱敏测试（title/reason/result）、2 个后端 source filter 集成测试、3 个前端筛选/脱敏测试。
+
+## M154 关键文件
+
+- `services/agent-core/src/bolt_core/execution_audit_timeline.py`（新增 redact 应用到 title/reason/result）
+- `services/agent-core/src/bolt_core/audit_timeline_api.py`（新增 source 筛选参数）
+- `apps/desktop/src/harnessClientAutonomy.ts`（fetchAuditTimeline 新增 source 参数）
+- `apps/desktop/src/AuditTimelinePanel.tsx`（新增类型筛选按钮组）
+- `services/agent-core/tests/test_execution_audit_timeline.py`（新增 3 个脱敏测试）
+- `services/agent-core/tests/test_execution_audit_timeline_api.py`（新增 2 个 source filter 测试）
+- `apps/desktop/src/AuditTimelinePanel.test.tsx`（新增 3 个前端测试）
+
+## M154 验证
+
+- Backend targeted tests：11 passed（test_execution_audit_timeline.py 6 + test_execution_audit_timeline_api.py 5）
+- Frontend targeted tests：9 passed（AuditTimelinePanel.test.tsx）
+- Desktop tests：42 files / 310 tests passed（+3 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M154 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- M154 — Audit Timeline Live：审计时间线真实接入。
+- M155 — Patch Preview Live：补丁预览真实接入。
 
 ## 长期硬规则
 
