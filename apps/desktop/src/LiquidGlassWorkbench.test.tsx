@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
 
@@ -58,6 +58,36 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByRole('button', { name: '模型设置' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'MCP 服务器' })).toBeInTheDocument();
     expect(screen.getByText('权限模式')).toBeInTheDocument();
+  });
+
+  it('returns from settings to the task workspace', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    expect(screen.getByRole('heading', { name: '液态玻璃设置中心' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '返回工作区' }));
+    expect(screen.getByText('今天让 Biot 做什么？')).toBeInTheDocument();
+  });
+
+  it('shows read-only setting controls without fake action buttons', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '权限中心' }));
+
+    const settingsStatus = screen.getByLabelText('当前设置状态');
+    expect(screen.getByText('不可绕过')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '不可绕过' })).not.toBeInTheDocument();
+    expect(within(settingsStatus).queryByRole('button', { name: '深色' })).not.toBeInTheDocument();
+    expect(within(settingsStatus).queryByRole('button', { name: '简体中文' })).not.toBeInTheDocument();
+  });
+
+  it('marks unavailable composer affordances as disabled', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    expect(screen.getByRole('button', { name: '添加上下文' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '语音输入' })).toBeDisabled();
   });
 
   it('renders section-specific product settings for code preview and model setup', () => {

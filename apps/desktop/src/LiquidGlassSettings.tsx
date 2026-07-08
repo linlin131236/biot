@@ -16,7 +16,7 @@ import {
   Terminal,
   Users,
 } from 'lucide-react';
-import { GlassButton } from './LiquidGlassPrimitives';
+import { GlassPill } from './LiquidGlassPrimitives';
 import { LiquidGlassSettingsSurface } from './LiquidGlassSettingsSurfaces';
 
 const settingItems = [
@@ -40,15 +40,17 @@ const settingItems = [
 
 export function LiquidGlassSettings({
   activeSetting,
+  onBack,
   setActiveSetting,
 }: {
   activeSetting: string;
+  onBack: () => void;
   setActiveSetting: (value: string) => void;
 }) {
   return (
     <div className="biotSettings">
       <aside className="biotSettingsNav">
-        <button type="button" className="biotBackButton">返回工作区</button>
+        <button type="button" className="biotBackButton" onClick={onBack}>返回工作区</button>
         {settingItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -66,10 +68,10 @@ export function LiquidGlassSettings({
 
       <section className="biotSettingsContent">
         <SettingsHeader />
-        <div className="biotSettingsTabs">
-          <GlassButton className="active">深色</GlassButton>
-          <GlassButton>浅色</GlassButton>
-          <GlassButton>简体中文</GlassButton>
+        <div className="biotSettingsTabs" aria-label="当前设置状态">
+          <GlassPill tone="success">深色</GlassPill>
+          <GlassPill>浅色可用</GlassPill>
+          <GlassPill>简体中文</GlassPill>
         </div>
         <LiquidGlassSettingsSurface activeSetting={activeSetting} />
       </section>

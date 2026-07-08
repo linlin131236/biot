@@ -17,7 +17,7 @@
 - M147：新增审计诊断页，展示审计时间线、诊断中心、恢复建议。
 - M148：新增验证发布页，展示验证门禁、测试反馈、发布准备，明确不执行推送、发布或打标签。
 - M149：新增智能协作页，展示记忆索引、多 Agent 团队、多任务队列。
-- M150：UI dogfood 大复盘，收口文档链和验证清单。
+- M150：UI dogfood 大复盘，收口文档链和验证清单；P1/P2 修复已补齐返回工作区、只读状态标签和未实现入口禁用。
 
 ## M144-M150 关键文件
 
@@ -44,10 +44,10 @@
 
 ## M144-M150 验证
 
-- Targeted：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：10 passed。
-- Targeted group：`LiquidGlassWorkbench`、`LiquidGlassPrimitives`、`LiquidGlassHomeInteraction`：18 passed。
+- Targeted：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：14 passed。
+- Targeted group：`LiquidGlassWorkbench`、`LiquidGlassPrimitives`、`LiquidGlassHomeInteraction`：22 passed。
 - Desktop build：通过。
-- `pnpm run quality`：通过，shared 27 passed，desktop 42 files / 301 tests passed。
+- `pnpm run quality`：通过，shared 27 passed，desktop 42 files / 305 tests passed。
 - `uv run pytest -q`：1564 passed，5 warnings。
 - `node scripts/check-docs.mjs`：通过。
 - `node scripts/check-chinese-ui.mjs`：通过。

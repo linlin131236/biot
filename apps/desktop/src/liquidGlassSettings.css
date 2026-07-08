@@ -18,8 +18,6 @@
 }
 
 .biotSettingsNav button,
-.biotSettingsTabs button,
-.biotSettingRow button,
 .biotSettingInput button {
   backdrop-filter: blur(18px) saturate(145%);
   background: rgb(255 255 255 / 8%);
@@ -38,7 +36,7 @@
 
 .biotSettingsNav button:hover,
 .biotSettingsNav button.active,
-.biotSettingsTabs button.active {
+.biotSettingsTabs .biotGlassPill.is-success {
   background: linear-gradient(135deg, rgb(94 232 255 / 18%), rgb(124 255 200 / 10%));
   border-color: var(--line-strong);
   box-shadow: inset 0 1px 0 var(--glass-highlight), 0 0 26px rgb(94 232 255 / 16%);
@@ -80,7 +78,7 @@
   margin: 28px 0;
 }
 
-.biotSettingsTabs button {
+.biotSettingsTabs .biotGlassPill {
   border: 1px solid var(--line-soft);
   min-width: 96px;
 }
@@ -181,9 +179,13 @@
   color: var(--text-secondary);
 }
 
-.biotSettingRow button,
+.biotSettingBadge,
 .biotSettingInput button {
   min-width: 150px;
+}
+
+.biotSettingBadge {
+  justify-content: center;
 }
 
 .biotSwitch {

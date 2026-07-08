@@ -14,11 +14,13 @@
 | M147 | 审计诊断液态玻璃页 | `174c656` |
 | M148 | 验证发布液态玻璃页 | `bee7ea3` |
 | M149 | 智能协作液态玻璃页 | `f518712` |
-| M150 | UI dogfood 复盘 | 本提交 |
+| M150 | UI dogfood 复盘 | `e035959` |
+| M150 P1/P2 | 设置页交互收口 | 最新本地 HEAD |
 
 ## 检查项
 
-- 设置中心包含常规、代码预览、模型设置、权限中心、补丁审查、审计诊断、验证发布、智能协作。
+- 设置中心包含常规、代码预览、模型设置、权限中心、补丁审查、审计诊断、验证发布、智能协作、技能、子智能体、MCP 服务器、插件管理、命令、索引库、使用统计、引导。
+- 设置中心返回工作区按钮可用；只读状态不渲染成假动作按钮；暂未实现的上下文和语音入口禁用展示。
 - 页面文案为中文产品表达，不出现私人称呼。
 - 不显示 API key 明文。
 - 不新增自动批准、自动执行、推送、发布、打标签、删除入口。
@@ -27,7 +29,8 @@
 
 ## 验证
 
-- `pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx src/LiquidGlassPrimitives.test.tsx src/LiquidGlassHomeInteraction.test.tsx --reporter dot`：通过。
+- `pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：14 passed。
+- `pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx src/LiquidGlassPrimitives.test.tsx src/LiquidGlassHomeInteraction.test.tsx --reporter dot`：22 passed。
 - `pnpm --filter @bolt/desktop build`：通过。
 - `pnpm run quality`：通过。
 - `uv run pytest -q`：通过。

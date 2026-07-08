@@ -97,7 +97,11 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
             legacyPanels={props.legacyPanels}
           />
         ) : (
-          <LiquidGlassSettings activeSetting={activeSetting} setActiveSetting={setActiveSetting} />
+          <LiquidGlassSettings
+            activeSetting={activeSetting}
+            onBack={() => setView('home')}
+            setActiveSetting={setActiveSetting}
+          />
         )}
       </section>
     </main>

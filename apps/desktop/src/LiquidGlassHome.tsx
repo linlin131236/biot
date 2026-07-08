@@ -109,14 +109,14 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
           onChange={(event) => props.setGoal(event.target.value)}
         />
         <GlassToolbar className="biotComposerBar" ariaLabel="任务操作">
-          <GlassButton className="biotIconButton" aria-label="添加上下文">+</GlassButton>
+          <GlassButton className="biotIconButton" aria-label="添加上下文" disabled>+</GlassButton>
           <GlassPill icon={<Folder size={17} />}>当前项目</GlassPill>
           <GlassPill tone="warning" icon={<ShieldCheck size={17} />}>完全访问</GlassPill>
           <span className="biotSpacer" />
           <GlassButton onClick={props.createGoal} disabled={!props.hasWorkspace}>目标</GlassButton>
           <GlassButton onClick={props.startRun} disabled={!props.hasWorkspace}>开始</GlassButton>
           <GlassButton onClick={props.runStep} disabled={!props.hasWorkspace}>一步</GlassButton>
-          <GlassButton className="biotRoundButton" aria-label="语音输入" icon={<Mic size={18} />} />
+          <GlassButton className="biotRoundButton" aria-label="语音输入" icon={<Mic size={18} />} disabled />
           <GlassButton variant="primary" className="biotSendButton" aria-label="发送任务" onClick={props.startRun} disabled={!props.hasWorkspace}>
             <ArrowUp size={22} />
           </GlassButton>

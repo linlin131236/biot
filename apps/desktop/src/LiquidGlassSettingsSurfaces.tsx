@@ -1,4 +1,4 @@
-import { GlassButton, GlassPanel, GlassPill } from './LiquidGlassPrimitives';
+import { GlassPanel, GlassPill } from './LiquidGlassPrimitives';
 
 type SettingMetric = {
   label: string;
@@ -290,7 +290,7 @@ export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: s
         {surface.rows.map((row) => (
           <div className="biotSettingRow" key={row.title}>
             <div><strong>{row.title}</strong><span>{row.detail}</span></div>
-            <GlassButton>{row.control}</GlassButton>
+            <GlassPill className="biotSettingBadge" tone={row.tone ?? 'default'}>{row.control}</GlassPill>
           </div>
         ))}
       </GlassPanel>
