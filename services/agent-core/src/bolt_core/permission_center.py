@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
+from bolt_core.evidence_redactor import redact
+
 
 # ── Risk classification ────────────────────────────────────────────────
 
@@ -163,7 +165,7 @@ class PermissionCenterService:
             else:
                 low += 1
 
-            payload_str = str(p.payload)[:200] if p.payload else "无附加数据"
+            payload_str = redact(str(p.payload))[:200] if p.payload else "无附加数据"
             tool_cn = _TOOL_CN.get(p.tool, p.tool)
             op_cn = _OP_CN.get(p.operation, p.operation)
 

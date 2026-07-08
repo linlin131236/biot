@@ -30,10 +30,10 @@ class FakePermissionQueue:
         return [i for i in self._items if i.status == "pending_permission"]
 
 
-def make_perm(id_="p1", tool="shell_executor", operation="execute", reason="需要执行测试"):
+def make_perm(id_="p1", tool="shell_executor", operation="execute", reason="需要执行测试", payload=None):
     return FakePermission(
         id=id_, run_id="r1", tool=tool, operation=operation,
-        payload={"cmd": "npm test"}, reason=reason, status="pending_permission",
+        payload=payload or {"cmd": "npm test"}, reason=reason, status="pending_permission",
     )
 
 
@@ -142,3 +142,43 @@ def test_handles_exceptions():
     result = svc.get_summary()
     assert result.total_pending == 0
     assert result.items == []
+
+
+# ── Payload redaction ──────────────────────────────────────────────────────
+
+def test_payload_redacted_for_api_key_inline():
+    # Realistic: API key appears inline in a shell command string
+    queue = FakePermissionQueue([
+        make_perm("p1", "shell_executor", "execute", reason="需要执行测试",
+                  payload={"cmd": "API_KEY=sk-abc123def4567890 npm start"}),
+    ])
+    svc = PermissionCenterService(queue)
+    result = svc.get_summary()
+    item = result.items[0]
+    assert "sk-abc123def4567890" not in item.payload_summary
+    assert "[已脱敏]" in item.payload_summary
+
+
+def test_payload_redacted_for_token_inline():
+    # Realistic: TOKEN appears inline in a curl command
+    queue = FakePermissionQueue([
+        make_perm("p1", "shell_executor", "execute", reason="需要执行测试",
+                  payload={"cmd": "curl -H TOKEN=ghp_ABCDEF1234567890 http://api.example.com"}),
+    ])
+    svc = PermissionCenterService(queue)
+    result = svc.get_summary()
+    item = result.items[0]
+    assert "ghp_ABCDEF1234567890" not in item.payload_summary
+    assert "[已脱敏]" in item.payload_summary
+
+
+def test_payload_redacted_for_bearer():
+    queue = FakePermissionQueue([
+        make_perm("p1", "shell_executor", "execute", reason="需要执行测试",
+                  payload={"headers": {"Authorization": "Bearer eyJhbGciOi..."}}),
+    ])
+    svc = PermissionCenterService(queue)
+    result = svc.get_summary()
+    item = result.items[0]
+    assert "eyJhbGciOi" not in item.payload_summary
+    assert "Bearer [已脱敏]" in item.payload_summary

@@ -60,9 +60,34 @@
 - `.claude/` 未跟踪、未提交，按规则保持。
 - M152 已完成、已 push。
 
+## M153 当前改动
+
+- M153：权限中心脱敏。`permission_center.py` 的 `payload_summary` 在展示前经过 `evidence_redactor.redact()` 脱敏处理，防止 API key、token、私钥等敏感信息通过权限中心面板泄露。
+- 新增 3 个后端脱敏测试（API key inline、TOKEN inline、Bearer）和 1 个前端脱敏展示测试。
+- M153 不涉及 PermissionGate 逻辑、approve/reject 流程、前端 UI 改动——所有功能已有 M92 基础设施支撑。
+
+## M153 关键文件
+
+- `services/agent-core/src/bolt_core/permission_center.py`（新增 redact 导入和应用）
+- `services/agent-core/tests/test_permission_center.py`（新增 3 个脱敏测试）
+- `apps/desktop/src/PermissionCenterPanel.test.tsx`（新增 1 个前端脱敏测试）
+- `services/agent-core/src/bolt_core/evidence_redactor.py`（复用已有脱敏工具）
+
+## M153 验证
+
+- Backend targeted tests：17 passed（test_permission_center.py 16 + test_permission_center_api.py 1）
+- Frontend targeted tests：11 passed（PermissionCenterPanel.test.tsx）
+- Desktop tests：42 files / 307 tests passed（+1 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M153 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+- 密钥/token 泄露扫描：未命中真实密钥（测试数据仅含假占位符）。
+
 ## 下一步
 
-- M153 — Permission Center Live：权限中心真实接入。
+- M154 — Audit Timeline Live：审计时间线真实接入。
 
 ## 长期硬规则
 

@@ -166,4 +166,22 @@ describe('PermissionCenterPanel', () => {
     });
     expect(screen.getByText(/已拒绝/)).toBeTruthy();
   });
+
+  it('does not expose raw api key in payload_summary', async () => {
+    const redactedData = {
+      ...pendingData,
+      items: [
+        {
+          ...pendingData.items[0],
+          payload_summary: '{"api_key":"[已脱敏]"}',
+        },
+      ],
+    };
+    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(redactedData)} />);
+    await waitFor(() => {
+      expect(screen.getByText('命令行执行')).toBeTruthy();
+    });
+    // The raw key must never appear in the rendered output
+    expect(screen.queryByText(/sk-/)).toBeNull();
+  });
 });
