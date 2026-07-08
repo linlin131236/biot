@@ -1,8 +1,8 @@
 ## 当前稳定基线
 
 - 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），P1/P2 复审修复与安全复审修复均已 push。
-- 最新远端基线：`origin/main = 302a9bd fix: harden local auth and approval actor boundary`。
-- 当前本地基线：`HEAD = 302a9bd fix: harden local auth and approval actor boundary`。
+- 最新远端基线：`origin/main = bb55e80 docs: mark M152 pushed`。
+- 当前本地基线：`HEAD = bb55e80 docs: mark M152 pushed`。
 - 当前本地分支：`main...origin/main`，本地与远端同步。
 - 当前工作区：M152 与安全复审修复已完成 targeted/quality 验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
