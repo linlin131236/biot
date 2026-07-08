@@ -85,7 +85,7 @@ def test_get_detail_address_pref():
     svc = UserPreferenceMemoryService(".")
     record = svc.get_detail("pref-002-address")
     assert record is not None
-    assert "爸爸" in record.statement_cn
+    assert "用户" in record.statement_cn
 
 
 def test_get_detail_safety_pref():

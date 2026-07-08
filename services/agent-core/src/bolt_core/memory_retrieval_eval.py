@@ -21,7 +21,7 @@ _MEMORY_FIXTURES: dict[str, list[dict]] = {
         {"id": "f2", "content": "patch apply串改：多文件diff应用到错误目标", "tags": ["安全", "补丁"]},
     ],
     "preference": [
-        {"id": "p1", "content": "爸爸要求所有UI必须中文，称呼用户为爸爸", "tags": ["UI", "中文"]},
+        {"id": "p1", "content": "用户要求所有 UI 必须中文，软件界面不使用私人称呼", "tags": ["UI", "中文"]},
         {"id": "p2", "content": "代码文件尽量保持在300行以内", "tags": ["规范", "size"]},
     ],
     "project": [
@@ -145,8 +145,8 @@ class MemoryRetrievalEvalService:
                chinese_reason="查询设计决策：后端架构选择"),
             MC("query_failure_git", "之前git push为什么失败", "failure", ["f1"],
                chinese_reason="查询历史失败：git push权限问题"),
-            MC("query_preference_ui", "爸爸对UI有什么要求", "preference", ["p1"],
-               chinese_reason="查询爸爸偏好：UI必须中文"),
+            MC("query_preference_ui", "用户对UI有什么要求", "preference", ["p1"],
+               chinese_reason="查询用户偏好：UI必须中文"),
             MC("query_project_overview", "这个项目是做什么的", "project", ["proj1"],
                chinese_reason="查询项目结构：Bolt项目概述"),
             MC("query_code_module", "代码中权限模块在哪里", "decision", ["d3"],
@@ -159,7 +159,7 @@ class MemoryRetrievalEvalService:
             MC("query_failure_patch", "补丁应用串改的问题是什么", "failure", ["f2"],
                chinese_reason="查询历史失败：patch apply串改"),
             MC("query_preference_size", "代码文件行数限制是多少", "preference", ["p2"],
-               chinese_reason="查询爸爸偏好：300行限制"),
+               chinese_reason="查询用户偏好：300行限制"),
             MC("query_decision_frontend", "前端用什么技术栈", "decision", ["d2"],
                chinese_reason="查询设计决策：前端React+Vite+TS"),
         ]

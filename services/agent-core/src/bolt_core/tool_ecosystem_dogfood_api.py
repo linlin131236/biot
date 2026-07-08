@@ -17,7 +17,7 @@ def create_tool_ecosystem_dogfood_router() -> APIRouter:
         return {
             "dogfood_result": result.to_dict(),
             "verdict": "✅ V6 工具生态通过" if result.all_passed else "❌ V6 存在 P1 失败项",
-            "disclaimer": "此为 M110 工具生态大复盘审查结果。如全部通过，V6 完成，等待爸爸复审。未进入 M111。",
+            "disclaimer": "此为 M110 工具生态大复盘审查结果。如全部通过，V6 完成，等待用户复审。未进入 M111。",
         }
 
     return router

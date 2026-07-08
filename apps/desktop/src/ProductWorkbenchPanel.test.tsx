@@ -7,7 +7,7 @@ const snapshot = {
   read_only: true,
   current_stage_id: 'user_intent',
   stages: [
-    { stage_id: 'user_intent', label_cn: '用户意图', status: 'active', detail_cn: '等待爸爸输入目标。' },
+    { stage_id: 'user_intent', label_cn: '用户意图', status: 'active', detail_cn: '等待用户输入目标。' },
     { stage_id: 'human_approval', label_cn: '人工批准', status: 'blocked', detail_cn: '写入前必须批准。' },
     { stage_id: 'run_tests', label_cn: '测试验证', status: 'ready', detail_cn: '只允许白名单测试。' },
   ],
@@ -20,14 +20,14 @@ const snapshot = {
     auto_approve_allowed: false,
     human_approval_required: true,
     dangerous_operations_blocked: true,
-    summary_cn: '所有写入必须由爸爸人工批准。',
+    summary_cn: '所有写入必须由用户人工批准。',
   },
   patch_approval: {
     label_cn: '补丁批准检查',
     warning_cn: '这里不会自动批准。',
     checks: [
       { check_id: 'preview_required', label_cn: '必须先看补丁预览', required: true, status: 'ready' },
-      { check_id: 'human_approval_required', label_cn: '必须由爸爸批准', required: true, status: 'blocked' },
+      { check_id: 'human_approval_required', label_cn: '必须由用户批准', required: true, status: 'blocked' },
     ],
   },
   test_feedback: {
@@ -77,7 +77,7 @@ describe('ProductWorkbenchPanel', () => {
     expect(screen.getByText('用户意图')).toBeInTheDocument();
     expect(screen.getByText('人工批准')).toBeInTheDocument();
     expect(screen.getByText('测试验证')).toBeInTheDocument();
-    expect(screen.getByText('所有写入必须由爸爸人工批准。')).toBeInTheDocument();
+    expect(screen.getByText('所有写入必须由用户人工批准。')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
   });
 
@@ -91,7 +91,7 @@ describe('ProductWorkbenchPanel', () => {
 
     expect(await screen.findByText('补丁批准检查')).toBeInTheDocument();
     expect(screen.getByText('必须先看补丁预览')).toBeInTheDocument();
-    expect(screen.getByText('必须由爸爸批准')).toBeInTheDocument();
+    expect(screen.getByText('必须由用户批准')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /批准/ })).toBeNull();
   });
 

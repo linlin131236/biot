@@ -136,7 +136,7 @@ class E2ETaskDogfoodService:
 
         # Step 4: Simulate human approval
         _approve(store, pid)
-        steps.append("4. 模拟爸爸批准 → 已批准")
+        steps.append("4. 模拟用户批准 → 已批准")
 
         # Step 5: Apply
         result = engine.apply(pid, {"actor": "human", "scope": pid})

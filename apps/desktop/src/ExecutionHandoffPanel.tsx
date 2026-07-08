@@ -122,7 +122,7 @@ function Readiness({ data }: { data: ReleaseReadiness | null }) {
     {data.blockers.length > 0 && <div><strong>阻断项：</strong><ul>{data.blockers.map((b, i) => <li key={i}>{b}</li>)}</ul></div>}
     {data.warnings.length > 0 && <div><strong>警告项：</strong><ul>{data.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
     <div><strong>已通过检查：</strong><ul>{data.checks.filter(c => c.passed).map(c => <li key={c.code}>{c.label}：{c.detail}</li>)}</ul></div>
-    {!data.ready && <p>建议下一步：人工审核后再由爸爸确认 push/release</p>}
+    {!data.ready && <p>建议下一步：人工审核后再由用户确认 push/release</p>}
   </section>;
 }
 

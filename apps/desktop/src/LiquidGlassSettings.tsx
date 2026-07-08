@@ -36,7 +36,7 @@ export function LiquidGlassSettings({
   return (
     <div className="biotSettings">
       <aside className="biotSettingsNav">
-        <button type="button" className="biotBackButton">← 返回工作区</button>
+        <button type="button" className="biotBackButton">返回工作区</button>
         {settingItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -85,7 +85,7 @@ function SettingsHeader() {
 
 function GeneralCard() {
   return (
-    <section className="biotGlassCard">
+    <section className="biotGlassCard biotLiquidBorder">
       <SettingRow title="界面主题" detail="切换应用界面使用的主题外观。" control="深色液态玻璃" />
       <SettingRow title="界面语言" detail="选择应用 UI 的显示语言。" control="简体中文" />
       <SettingRow title="启动时打开" detail="选择启动后默认进入的页面。" control="Agent 工作台" />
@@ -95,17 +95,17 @@ function GeneralCard() {
 
 function PermissionCard() {
   return (
-    <section className="biotGlassCard">
-      <SettingRow title="权限模式" detail="写入、apply、恢复前都需要爸爸确认。" control="完全访问，写入需批准" />
+    <section className="biotGlassCard biotLiquidBorder">
+      <SettingRow title="权限模式" detail="写入、apply、恢复前都需要用户确认。" control="完全访问，写入需批准" />
       <SettingToggle title="自动执行" detail="不自动执行危险命令。" enabled={false} />
-      <SettingToggle title="人工批准" detail="写入前永远等待爸爸确认。" enabled />
+      <SettingToggle title="人工批准" detail="写入前永远等待用户确认。" enabled />
     </section>
   );
 }
 
 function NetworkCard() {
   return (
-    <section className="biotGlassCard">
+    <section className="biotGlassCard biotLiquidBorder">
       <SettingInput title="HTTP 代理" placeholder="留空直连，例如 http://127.0.0.1:7890" />
       <SettingInput title="No Proxy" placeholder="localhost,127.0.0.1" />
     </section>

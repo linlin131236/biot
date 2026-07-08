@@ -42,7 +42,7 @@ class PrivacySecurityAuditService(BetaReadinessBase):
 
         return BetaReviewResult(
             checks=checks,
-            next_step="等待爸爸复审 M124；隐私安全审计只提供风险信号，不会替代 PermissionGate。",
+            next_step="等待用户复审 M124；隐私安全审计只提供风险信号，不会替代 PermissionGate。",
         )
 
     def _renderer_exposure_hits(self, desktop_dir) -> list[str]:

@@ -29,5 +29,5 @@ class CrashRecoveryService(BetaReadinessBase):
 
         return BetaReviewResult(
             checks=checks,
-            next_step="等待爸爸复审 M121；恢复能力只做检查，不执行任何恢复动作。",
+            next_step="等待用户复审 M121；恢复能力只做检查，不执行任何恢复动作。",
         )

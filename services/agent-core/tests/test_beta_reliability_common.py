@@ -9,7 +9,7 @@ def test_beta_review_result_counts_passes_and_failures():
             BetaCheck(name="安全门禁", passed=False, detail="missing", severity="blocking"),
         ],
         warnings=["需要人工复审"],
-        next_step="等待爸爸复审",
+        next_step="等待用户复审",
     )
 
     data = result.to_dict()
@@ -20,7 +20,7 @@ def test_beta_review_result_counts_passes_and_failures():
     assert data["all_passed"] is False
     assert data["p1_failures"] == ["安全门禁"]
     assert data["warnings"] == ["需要人工复审"]
-    assert data["next_step"] == "等待爸爸复审"
+    assert data["next_step"] == "等待用户复审"
 
 
 def test_beta_review_result_can_record_all_passed_state():

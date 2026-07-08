@@ -262,7 +262,7 @@ class MemoryPermissionBoundary:
         """Detect user preference patterns."""
         lower = (content + source).lower()
         indicators = [
-            "preference", "偏好", "爸爸",
+            "preference", "偏好", "用户",
             "用户偏好", "user_preference",
         ]
         return any(ind in lower for ind in indicators)

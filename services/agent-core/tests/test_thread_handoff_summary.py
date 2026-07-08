@@ -19,7 +19,7 @@ def test_handoff_summary_fields():
         required_docs=["docs/project-state.md"],
         latest_review_gate="docs/phase-75-review-gate.md",
         unresolved_risks=["M61 纯内存模型重启丢失"],
-        next_steps=["等待爸爸确认"],
+        next_steps=["等待用户确认"],
         source_refs=["docs/project-state.md"],
     )
     d = s.to_dict()

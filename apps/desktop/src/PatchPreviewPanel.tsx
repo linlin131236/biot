@@ -131,7 +131,7 @@ export function PatchPreviewPanel({ fetchPatchList, fetchPatchPreview }: Props) 
         borderRadius: 4, padding: '6px 10px', marginBottom: 12,
         fontSize: 12, color: '#92400e',
       }}>
-        此面板仅用于预览补丁提案，不执行任何写入操作。所有补丁需爸爸批准后方可应用。
+        此面板仅用于预览补丁提案，不执行任何写入操作。所有补丁需用户批准后方可应用。
       </div>
 
       {/* Patch list */}

@@ -14,7 +14,7 @@ def create_agent_intelligence_dogfood_router() -> APIRouter:
         return {
             "dogfood_result": d,
             "verdict": "✅ V7 智能Agent评估全部通过" if d["all_passed"] else "❌ V7 存在P1失败项",
-            "disclaimer": "此为 M120 Agent Intelligence Dogfood 大复盘结果。V7终点，等待爸爸复审。未进入M121。",
+            "disclaimer": "此为 M120 Agent Intelligence Dogfood 大复盘结果。V7终点，等待用户复审。未进入M121。",
         }
 
     return router

@@ -192,7 +192,7 @@ class ProductWorkbenchService:
                 auto_approve_allowed=False,
                 human_approval_required=True,
                 dangerous_operations_blocked=True,
-                summary_cn="工作台只读展示；写入、apply、测试执行和恢复动作必须走权限边界，由爸爸人工批准。",
+                summary_cn="工作台只读展示；写入、apply、测试执行和恢复动作必须走权限边界，由用户人工批准。",
             ),
             patch_approval=self._patch_approval(),
             test_feedback=self._test_feedback(),
@@ -216,7 +216,7 @@ class ProductWorkbenchService:
                 WorkbenchCheck("retry_risk_reviewed", "重试风险必须先评估", True, "ready"),
                 WorkbenchCheck("permission_reverified", "恢复前必须重新验证权限", True, "ready"),
                 WorkbenchCheck("state_reverified", "恢复前必须重新验证状态", True, "ready"),
-                WorkbenchCheck("manual_resume_required", "恢复必须由爸爸人工确认", True, "blocked"),
+                WorkbenchCheck("manual_resume_required", "恢复必须由用户人工确认", True, "blocked"),
             ],
         )
 
@@ -237,11 +237,11 @@ class ProductWorkbenchService:
 
     def _stages(self) -> list[WorkbenchStage]:
         return [
-            self._stage("user_intent", "用户意图", "active", "等待爸爸输入或确认任务目标。", ["apps/desktop/src/TaskHomePanel.tsx"]),
+            self._stage("user_intent", "用户意图", "active", "等待用户输入或确认任务目标。", ["apps/desktop/src/TaskHomePanel.tsx"]),
             self._stage("plan", "计划拆解", "ready", "任务进入执行前必须有计划、验收标准和风险边界。", ["services/agent-core/src/bolt_core/planner_task_graph.py"]),
             self._stage("read_context", "读取上下文", "ready", "只读读取项目资料、代码地图、记忆和审计摘要。", ["services/agent-core/src/bolt_core/code_map_index.py"]),
             self._stage("patch_preview", "补丁预览", self._exists_status("apps/desktop/src/PatchPreviewPanel.tsx"), "补丁先预览，不直接写入真实文件。", ["apps/desktop/src/PatchPreviewPanel.tsx"]),
-            self._stage("human_approval", "人工批准", "blocked", "写入和执行前必须由爸爸批准，Agent 不能自批。", ["services/agent-core/src/bolt_core/approval_apply.py"]),
+            self._stage("human_approval", "人工批准", "blocked", "写入和执行前必须由用户批准，Agent 不能自批。", ["services/agent-core/src/bolt_core/approval_apply.py"]),
             self._stage("apply_patch", "应用补丁", "ready", "批准后才可进入门控 apply；delete/push/release/tag 不在自动范围内。", ["services/agent-core/src/bolt_core/approval_apply.py"]),
             self._stage("run_tests", "测试验证", "ready", "只允许白名单测试命令，并回填结构化结果。", ["services/agent-core/src/bolt_core/test_runner_integration.py"]),
             self._stage("audit_and_recovery", "审计与恢复", "ready", "失败先解释、再恢复建议，不自动 retry 或 fix。", ["services/agent-core/src/bolt_core/session_recovery_api.py"]),
@@ -250,11 +250,11 @@ class ProductWorkbenchService:
     def _patch_approval(self) -> PatchApprovalSummary:
         return PatchApprovalSummary(
             label_cn="补丁批准检查",
-            warning_cn="这里不会自动批准；所有写入都必须由爸爸看过补丁、确认范围后批准。",
+            warning_cn="这里不会自动批准；所有写入都必须由用户看过补丁、确认范围后批准。",
             checks=[
                 WorkbenchCheck("preview_required", "必须先查看补丁预览", True, "ready"),
                 WorkbenchCheck("target_scope_locked", "目标文件范围必须和 diff 完全匹配", True, "ready"),
-                WorkbenchCheck("human_approval_required", "必须由爸爸人工批准", True, "blocked"),
+                WorkbenchCheck("human_approval_required", "必须由用户人工批准", True, "blocked"),
                 WorkbenchCheck("stale_recheck_required", "apply 前必须复查提案是否过期", True, "ready"),
                 WorkbenchCheck("audit_required", "成功或失败都必须留下审计记录", True, "ready"),
             ],

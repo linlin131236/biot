@@ -57,7 +57,7 @@ _RECOVERY_RULES: dict[str, dict] = {
     "permission_denied": {
         "category": "安全阻断", "safe_to_retry": False,
         "requires_human": True,
-        "plan": "权限不足：此操作需要爸爸在PermissionGate中明确批准。请等待批准后再执行。",
+        "plan": "权限不足：此操作需要用户在PermissionGate中明确批准。请等待批准后再执行。",
         "evidence": "permission_denied_audit_entry",
     },
     "stale_proposal": {
@@ -75,7 +75,7 @@ _RECOVERY_RULES: dict[str, dict] = {
     "interrupted_long_task": {
         "category": "未知失败", "safe_to_retry": False,
         "requires_human": True,
-        "plan": "长任务中断：请查看中断点检查点(checkpoint)，确认已完成步骤。由爸爸决定是否从检查点恢复或重新开始。",
+        "plan": "长任务中断：请查看中断点检查点(checkpoint)，确认已完成步骤。由用户决定是否从检查点恢复或重新开始。",
         "evidence": "checkpoint_snapshot",
     },
 }

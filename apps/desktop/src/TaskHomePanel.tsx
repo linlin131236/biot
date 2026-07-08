@@ -1,6 +1,6 @@
 /**
  * TaskHomePanel — 中文任务首页面板 (M91)。
- * 爸爸打开桌面的第一屏：当前目标、权限待处理、诊断风险、下一步建议。
+ * 桌面第一屏：当前目标、权限待处理、诊断风险、下一步建议。
  * 纯只读，无 push/release/delete/approve 按钮。
  * 不直接访问 fs/shell/process/ipcRenderer。
  */

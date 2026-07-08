@@ -17,7 +17,7 @@ class BetaCheck:
 class BetaReviewResult:
     checks: list[BetaCheck] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
-    next_step: str = "等待爸爸复审"
+    next_step: str = "等待用户复审"
     p1_failures: list[str] = field(default_factory=list)
     all_passed: bool = True
 

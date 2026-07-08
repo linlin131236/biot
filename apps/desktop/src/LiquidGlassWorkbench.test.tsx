@@ -5,7 +5,7 @@ import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
 const baseProps = {
   workspacePath: 'D:/Bolt/Bolt',
   coreStatus: 'ok',
-  runId: 'run_131',
+  runId: 'run_141',
   goal: '',
   setGoal: vi.fn(),
   hasWorkspace: true,
@@ -23,14 +23,16 @@ const baseProps = {
 };
 
 describe('LiquidGlassWorkbench', () => {
-  it('renders the liquid glass agent home in Chinese', () => {
+  it('renders the liquid glass agent home in clean Chinese', () => {
     render(<LiquidGlassWorkbench {...baseProps} />);
 
     expect(screen.getByText('Biot')).toBeInTheDocument();
     expect(screen.getByText('今天让 Biot 做什么？')).toBeInTheDocument();
     expect(screen.getByLabelText('任务目标')).toHaveAttribute('placeholder', '描述任务，或输入 / 选择能力');
     expect(screen.getByText('本地安全模式')).toBeInTheDocument();
-    expect(screen.getByText('写入前永远等待爸爸批准')).toBeInTheDocument();
+    expect(screen.getByText('写入前永远等待人工批准')).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/\u7238\u7238/);
+    expect(document.body.textContent).not.toMatch(/浠婂|鏂颁|娑叉|鐖哥|涓€|甯歌/);
   });
 
   it('keeps existing agent actions available from the home composer', () => {

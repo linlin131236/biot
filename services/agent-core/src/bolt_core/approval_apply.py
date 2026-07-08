@@ -98,10 +98,10 @@ class ApprovalApplyEngine:
 
         # ── 6. Actor must be human ──
         actor = str(approval_record.get("actor", "")).lower()
-        if actor not in ("human", "father", "user", "爸爸"):
+        if actor not in ("human", "father", "user", "用户"):
             return ApplyResult(
                 success=False, proposal_id=proposal_id,
-                reason=f"Agent '{actor}' 不能自我批准。apply 必须由爸爸（human）授权。",
+                reason=f"Agent '{actor}' 不能自我批准。apply 必须由人工用户授权。",
             )
 
         # ── 7. Scope must match ──
@@ -134,7 +134,7 @@ class ApprovalApplyEngine:
         if proposal.operation_type == "delete":
             return ApplyResult(
                 success=False, proposal_id=proposal_id,
-                reason="删除操作不在本 milestone 自动执行范围内。请爸爸手动审查后执行。",
+                reason="删除操作不在本 milestone 自动执行范围内。请用户手动审查后执行。",
             )
 
         # ── 11. Split diff by file, then apply each to its target ──

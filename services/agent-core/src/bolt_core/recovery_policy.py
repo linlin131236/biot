@@ -25,7 +25,7 @@ class RecoveryPolicyService:
                 auto_recovery_possible=False,
                 warnings=[
                     "禁止直接执行 rm/del 删除审计文件，除非已确认无法修复。",
-                    "删除审计文件前必须告知爸爸，获取明确许可。",
+                    "删除审计文件前必须告知用户，获取明确许可。",
                 ],
             ),
             _scenario(
@@ -56,7 +56,7 @@ class RecoveryPolicyService:
                     "2. 如果远程有新提交：git pull --rebase origin main 后重新检查冲突。",
                     "3. 如果是分支保护规则：在 GitHub/GitLab 设置中临时解除保护，或通过 PR/MR 流程提交。",
                     "4. 如果是网络问题：检查 VPN、代理、SSH key 配置。",
-                    "5. 不要使用 git push --force，除非爸爸明确确认。",
+                    "5. 不要使用 git push --force，除非用户明确确认。",
                 ],
                 auto_recovery_possible=False,
                 warnings=[
@@ -73,13 +73,13 @@ class RecoveryPolicyService:
                 [
                     "1. 运行 git tag -l 查看已存在的 tag。",
                     "2. 如果 tag 已存在且内容正确，无需重新创建。",
-                    "3. 如果 tag 内容错误，在爸爸确认后执行：git tag -d <tagname> && git push origin :refs/tags/<tagname>。",
+                    "3. 如果 tag 内容错误，在用户确认后执行：git tag -d <tagname> && git push origin :refs/tags/<tagname>。",
                     "4. 重新创建正确的 tag：git tag -a vX.Y.Z -m '...' && git push origin vX.Y.Z。",
                 ],
                 auto_recovery_possible=False,
                 warnings=[
                     "禁止自动删除远程 tag。",
-                    "删除 tag 操作不可逆，必须在爸爸明确确认后由人工执行。",
+                    "删除 tag 操作不可逆，必须在用户明确确认后由人工执行。",
                 ],
             ),
             # ── 权限误操作 ──
@@ -205,7 +205,7 @@ class RecoveryPolicyService:
             "scenarios": scenarios,
             "categories": categories,
             "total": len(scenarios),
-            "disclaimer": "本恢复策略为只读人工参考，不自动执行任何回滚、重置、删除或修复操作。所有恢复步骤需由爸爸在终端人工执行。",
+            "disclaimer": "本恢复策略为只读人工参考，不自动执行任何回滚、重置、删除或修复操作。所有恢复步骤需由用户在终端人工执行。",
         }
 
 

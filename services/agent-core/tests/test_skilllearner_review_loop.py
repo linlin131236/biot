@@ -46,7 +46,7 @@ def test_proposal_note_mentions_father():
     svc.record_failure("t", "f1", "d")
     svc.record_failure("t", "f2", "d")
     p = svc.propose_improvement("test", "t")
-    assert "爸爸" in p.to_dict()["note"] or "father" in p.to_dict()["note"].lower()
+    assert "用户" in p.to_dict()["note"] or "father" in p.to_dict()["note"].lower()
 
 
 def test_proposal_target_types():

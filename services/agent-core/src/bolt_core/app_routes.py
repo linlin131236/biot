@@ -109,7 +109,7 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
     def restore_checkpoint(checkpoint_id: str, payload: dict,
                            workspace: str | None = Query(default=None)) -> dict:
         if not bool(payload.get("confirm_restore")):
-            raise HTTPException(status_code=400, detail="恢复检查点需要爸爸明确确认")
+            raise HTTPException(status_code=400, detail="恢复检查点需要用户明确确认")
         target = workspace or checkpoint_workspaces.get(checkpoint_id, harness.workspace)
         service = CheckpointService(target) if target != harness.workspace else checkpoint_service
         result = service.restore(checkpoint_id, confirm_restore=True)

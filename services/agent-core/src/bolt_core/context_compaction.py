@@ -224,7 +224,7 @@ class ContextCompactionService:
         next_actions = [
             "按 milestone 顺序继续执行。",
             "每个 milestone 后执行 targeted tests + review gate。",
-            "不自动 push，等待爸爸明确授权。",
+            "不自动 push，等待用户明确授权。",
             "M80 Memory Dogfood 是大复盘门，M80 不通过不准进入 M81。",
         ]
 

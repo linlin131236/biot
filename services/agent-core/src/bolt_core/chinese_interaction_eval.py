@@ -128,9 +128,9 @@ class ChineseInteractionEvalService:
             CS("api_perm_boundary", "api", "权限边界评估仅验证 PermissionContractEngine 决策正确性，不执行任何真实操作。"),
             CS("api_multi_agent", "api", "多Agent协作评估仅验证角色边界定义，不执行真实Agent操作。"),
             CS("api_memory", "api", "记忆检索评估使用fixture数据，不访问真实记忆存储。"),
-            CS("ui_patch_preview", "ui", "补丁预览：以下是将要应用的代码变更，请爸爸审查后批准。"),
-            CS("ui_permission_center", "ui", "权限中心：当前有待处理的权限请求，请爸爸审核并决定批准或拒绝。"),
-            CS("ui_task_home", "ui", "任务首页：Bolt Agent 正在监控项目变更，等待爸爸的指令。"),
+            CS("ui_patch_preview", "ui", "补丁预览：以下是将要应用的代码变更，请用户审查后批准。"),
+            CS("ui_permission_center", "ui", "权限中心：当前有待处理的权限请求，请用户审核并决定批准或拒绝。"),
+            CS("ui_task_home", "ui", "任务首页：Bolt Agent 正在监控项目变更，等待用户的指令。"),
             CS("ui_audit_timeline", "ui", "审计时间线：展示最近的操作记录和审计结果。"),
             CS("doc_review_gate", "doc", "评估验证失败分类和脱敏，不自动修复任何问题（is_auto_fix_allowed=false）。"),
             CS("api_avoid_english_only", "api", "Error: something went wrong"),  # should fail

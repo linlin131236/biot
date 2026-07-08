@@ -115,7 +115,7 @@ def test_classify_public_project():
 
 def test_classify_user_preference():
     boundary = MemoryPermissionBoundary()
-    decision = boundary.classify("爸爸偏好：所有 UI 必须中文")
+    decision = boundary.classify("用户偏好：所有 UI 必须中文")
     assert decision.tier == PermissionTier.USER_PREFERENCE
     assert decision.can_read is True
 
@@ -152,7 +152,7 @@ def test_allow_public_write_without_source():
 
 def test_preference_write_needs_source():
     boundary = MemoryPermissionBoundary()
-    blocked, reason = boundary.should_block_memory_write("爸爸偏好：中文", source="")
+    blocked, reason = boundary.should_block_memory_write("用户偏好：中文", source="")
     assert blocked is True
     assert "source_refs" in reason
 
@@ -160,7 +160,7 @@ def test_preference_write_needs_source():
 def test_preference_write_with_source():
     boundary = MemoryPermissionBoundary()
     blocked, reason = boundary.should_block_memory_write(
-        "爸爸偏好：中文", source="docs/project-state.md"
+        "用户偏好：中文", source="docs/project-state.md"
     )
     assert blocked is False
 

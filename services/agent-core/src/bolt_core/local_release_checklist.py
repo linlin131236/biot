@@ -95,7 +95,7 @@ class LocalReleaseChecklistService:
                 "branch_sync", "分支同步", "本地分支与 origin/main 一致",
                 "warn",
                 "本地分支与 origin/main 不一致",
-                "建议：git push 或 git pull 同步后再发布。注意：仅在爸爸明确确认后执行",
+                "建议：git push 或 git pull 同步后再发布。注意：仅在用户明确确认后执行",
             ))
             warnings.append("本地分支与远程不同步")
         else:
@@ -146,13 +146,13 @@ class LocalReleaseChecklistService:
         items.append(_item(
             "release_confirm", "发布确认", "未自动执行 release/tag/delete",
             "pass",
-            "本检查清单为只读，不执行任何发布操作。release 需由爸爸在终端人工执行",
+            "本检查清单为只读，不执行任何发布操作。release 需由用户在终端人工执行",
             None,
         ))
 
         ready = len(blockers) == 0
         if ready:
-            next_step = "所有阻断项已通过。可以准备发布，但发布操作需由爸爸在终端人工执行。"
+            next_step = "所有阻断项已通过。可以准备发布，但发布操作需由用户在终端人工执行。"
         else:
             next_step = f"存在 {len(blockers)} 个阻断项，请先解决后再发布。解决建议见各条目 recommendation。"
 

@@ -218,7 +218,7 @@ class TeamDogfoodService:
         checks.append(DogfoodCheck(
             "cross-no-m91", "未进入 M91",
             True,
-            "M90 完成后将停止，等待爸爸复审",
+            "M90 完成后将停止，等待用户复审",
         ))
 
         # ── Summary ──────────────────────────────────────────────

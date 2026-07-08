@@ -73,7 +73,7 @@ class ImprovementProposal:
             "source_refs": self.source_refs,
             "requires_father_approval": self.requires_father_approval,
             "created_at": self.created_at,
-            "note": "此提案为只读建议，不直接修改任何文件。必须等待爸爸审批后才能应用。",
+            "note": "此提案为只读建议，不直接修改任何文件。必须等待用户审批后才能应用。",
         }
 
 

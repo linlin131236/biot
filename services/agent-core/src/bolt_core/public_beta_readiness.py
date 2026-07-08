@@ -70,5 +70,5 @@ class PublicBetaReadinessService(BetaReadinessBase):
 
         return PublicBetaReviewResult(
             checks=checks,
-            next_step="M125 完成后停止，等待爸爸复审；不自动 push、release、tag、delete。",
+            next_step="M125 完成后停止，等待用户复审；不自动 push、release、tag、delete。",
         )

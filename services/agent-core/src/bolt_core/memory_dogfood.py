@@ -205,7 +205,7 @@ class MemoryDogfoodService:
             detail = f"用户偏好：{len(records)} 条（安全偏好: {len(safety)} 条）。"
             # Check key preferences
             has_lang = any("中文" in r.statement_cn for r in records)
-            has_address = any("爸爸" in r.statement_cn for r in records)
+            has_address = any("用户" in r.statement_cn for r in records)
             has_no_push = any("push" in r.statement_cn.lower() for r in records)
             return DogfoodCheck(
                 name="M75 User Preference Memory",

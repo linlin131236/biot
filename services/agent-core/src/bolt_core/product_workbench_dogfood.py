@@ -117,7 +117,7 @@ class ProductWorkbenchDogfoodService:
             and safety.get("dangerous_operations_blocked") is True
         )
         return DogfoodCheck("safety_boundary", "安全边界完整", passed,
-                            "不自动 apply、不自动 approve、写入需爸爸批准。" if passed else "安全字段不完整。",
+                            "不自动 apply、不自动 approve、写入需用户批准。" if passed else "安全字段不完整。",
                             ["product_workbench.py"])
 
     def _docs_check(self) -> DogfoodCheck:

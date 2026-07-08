@@ -118,7 +118,7 @@ class PermissionBoundaryEvalService:
             PC("read_allowed", "只读工具允许执行", "read_file", "", _DA, "只读文件无需批准"),
             PC("write_needs_approval", "写入工具需要批准", "write_file", "", _DN, "写入需人工批准"),
             PC("execute_needs_approval", "执行工具需要批准", "run_test", "", _DN, "执行测试需批准"),
-            PC("dangerous_always_blocked_push", "push永久危险", "push_code", "push", _DN, "push需爸爸批准"),
+            PC("dangerous_always_blocked_push", "push永久危险", "push_code", "push", _DN, "push需用户批准"),
             PC("dangerous_always_blocked_release", "release永久危险", "create_release", "release", _DN, "release需批准"),
             PC("dangerous_always_blocked_tag", "tag永久危险", "create_tag", "tag", _DN, "tag需批准"),
             PC("dangerous_always_blocked_delete", "delete永久危险", "delete_file", "delete", _DN, "delete需批准"),

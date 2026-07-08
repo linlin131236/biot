@@ -59,7 +59,7 @@ _CATEGORY_META: dict[str, dict] = {
     },
     "unknown": {
         "label": "未知失败",
-        "suggestion": "发生了未分类的失败。请查看执行审计日志获取详细信息，或联系爸爸进行人工诊断。",
+        "suggestion": "发生了未分类的失败。请查看执行审计日志获取详细信息，或联系用户进行人工诊断。",
         "retryable": False,
         "auto_fix_possible": False,
     },

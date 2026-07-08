@@ -182,8 +182,8 @@ def test_checklist_is_read_only(project_dir, clean_store):
 
 
 def test_next_step_when_ready(project_dir, clean_store):
-    """When ready, next_step mentions 爸爸 and manual release."""
+    """When ready, next_step mentions 用户 and manual release."""
     svc = LocalReleaseChecklistService(project_dir, clean_store)
     result = svc.checklist()
-    assert "爸爸" in result["next_step"] or "人工" in result["next_step"]
+    assert "用户" in result["next_step"] or "人工" in result["next_step"]
     assert "终端" in result["next_step"] or "手动" in result["next_step"] or "人工" in result["next_step"]

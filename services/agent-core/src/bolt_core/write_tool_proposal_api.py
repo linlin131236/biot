@@ -26,7 +26,7 @@ def create_write_tool_proposal_router(store: WriteProposalStore | None = None) -
 
         return {
             "proposal": validation.proposal.to_dict(),
-            "disclaimer": "写入提案仅为结构化变更建议，不会直接修改任何文件。需要爸爸批准后才可 apply。",
+            "disclaimer": "写入提案仅为结构化变更建议，不会直接修改任何文件。需要用户批准后才可 apply。",
         }
 
     @router.get("/tools/proposal/list")

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Folder, History, Search, Settings, ShieldCheck, Sparkles } from 'lucide-react';
+import { Activity, Folder, History, Search, Settings, ShieldCheck, Sparkles } from 'lucide-react';
 import { LiquidGlassHome } from './LiquidGlassHome';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
 import type { LiquidGlassWorkbenchProps, ThemeMode, ViewMode } from './LiquidGlassTypes';
@@ -13,9 +13,9 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
   const [activeSetting, setActiveSetting] = useState('general');
   const safeWorkspace = props.workspacePath || '工作区未选择';
   const recentSessions = useMemo(() => [
-    { label: 'M131 液态玻璃界面', status: 'green', time: '现在' },
-    { label: '补丁预览与批准', status: 'green', time: '昨天' },
-    { label: '测试反馈回填', status: 'amber', time: '昨天' },
+    { label: 'M141 液态玻璃视觉系统', status: 'green', time: '现在' },
+    { label: '补丁预览与人工批准', status: 'green', time: '昨天' },
+    { label: '测试反馈回灌', status: 'amber', time: '昨天' },
     { label: '失败恢复链路', status: 'amber', time: '3 天前' },
   ], []);
 
@@ -24,7 +24,10 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
       <aside className="biotRail">
         <div className="biotBrand">
           <div className="biotLogo">B</div>
-          <strong>Biot</strong>
+          <div>
+            <strong>Biot</strong>
+            <span>本地 Agent 工作台</span>
+          </div>
         </div>
 
         <nav className="biotNav" aria-label="主导航">
@@ -50,7 +53,7 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
         </div>
 
         <div className="biotRecent">
-          <div className="biotBlockTitle"><span>最近会话</span><span>清空</span></div>
+          <div className="biotBlockTitle"><span>最近会话</span><span>只读</span></div>
           {recentSessions.map((item) => (
             <div className="biotRecentItem" key={item.label}>
               <i data-status={item.status} />
@@ -61,9 +64,9 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
         </div>
 
         <div className="biotUserCard">
-          <div className="biotAvatar">爸</div>
-          <div><strong>爸爸</strong><span><ShieldCheck size={14} /> 本地安全模式</span></div>
-          <Settings size={18} />
+          <div className="biotAvatar">U</div>
+          <div><strong>用户</strong><span><ShieldCheck size={14} /> 本地安全模式</span></div>
+          <Activity size={18} />
         </div>
       </aside>
 
@@ -112,14 +115,14 @@ function TopBar({
 }) {
   return (
     <header className="biotWindowBar">
-      <div>
+      <div className="biotThemeSwitch" aria-label="主题切换">
         <button type="button" onClick={() => setTheme('dark')} className={theme === 'dark' ? 'active' : ''}>深色</button>
         <button type="button" onClick={() => setTheme('light')} className={theme === 'light' ? 'active' : ''}>浅色</button>
       </div>
       <div className="biotStatusPills">
         <span><i /> 核心服务 <strong>{coreStatus === 'ok' ? '在线' : coreStatus}</strong></span>
         <span><i /> 运行状态 <strong>{runId ? '已绑定' : '无运行'}</strong></span>
-        <span><i /> 写入前永远等待爸爸批准</span>
+        <span><i /> 写入前永远等待人工批准</span>
       </div>
     </header>
   );

@@ -145,7 +145,7 @@ class ThreadHandoffSummaryService:
             "不使用 as any / unknown as。",
             "renderer 不暴露 ipcRenderer / fs / shell / process。",
             "不提交生成物、缓存、虚拟环境、证书材料、.bolt、uv.lock。",
-            "不提交 .claude/，除非爸爸明确授权。",
+            "不提交 .claude/，除非用户明确授权。",
             "记忆系统不得保存 secret/token/cert/private key。",
             "不自动执行危险命令。",
         ]
@@ -159,7 +159,7 @@ class ThreadHandoffSummaryService:
             "2. 读取最新 review gate 了解验收状态。",
             "3. 运行 git status --short --branch 确认工作区状态。",
             "4. 运行 git log --oneline -10 --decorate 了解提交历史。",
-            "5. 等待爸爸确认后再开始实现或审查。",
+            "5. 等待用户确认后再开始实现或审查。",
         ]
 
         return HandoffSummary(

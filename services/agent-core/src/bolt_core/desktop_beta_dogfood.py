@@ -134,7 +134,7 @@ class DesktopBetaDogfoodService:
             passed=passed,
             failed=failed,
             ready_for_next=failed == 0,
-            summary_cn=f"V5 桌面 Beta Dogfood：{passed}/{len(checks)} 项通过。{'✅ 准备就绪，等待爸爸复审。' if failed == 0 else f'❌ {failed} 项未通过。'}",
+            summary_cn=f"V5 桌面 Beta Dogfood：{passed}/{len(checks)} 项通过。{'✅ 准备就绪，等待用户复审。' if failed == 0 else f'❌ {failed} 项未通过。'}",
             created_at=now,
         )
 

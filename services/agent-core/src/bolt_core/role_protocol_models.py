@@ -192,7 +192,7 @@ _REVIEWER = RoleProtocol(
 
 _SKILL_LEARNER = RoleProtocol(
     role_id="skill_learner", name_cn="技能学习者",
-    description_cn="分析流程缺陷，提出技能/流程/文档改进建议。只提案，不改业务代码。必须等爸爸审批。",
+    description_cn="分析流程缺陷，提出技能/流程/文档改进建议。只提案，不改业务代码。必须等用户审批。",
     responsibilities=[
         "收集同类失败模式（>= 2 次触发）",
         "分析流程和技能文档的改进空间",
@@ -205,7 +205,7 @@ _SKILL_LEARNER = RoleProtocol(
     ],
     forbidden_actions=[
         "修改任何业务代码", "直接修改技能文件或流程文档",
-        "执行代码或命令", "未经爸爸审批应用任何改动",
+        "执行代码或命令", "未经用户审批应用任何改动",
         "批准任何结果", "修改项目配置文件",
     ],
     can_approve=False, can_execute_code=False, can_modify_files=False,

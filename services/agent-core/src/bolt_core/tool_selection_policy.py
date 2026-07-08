@@ -129,7 +129,7 @@ class ToolSelectionPolicy:
             suggestion = ""
 
             if cls == DANGEROUS:
-                warnings.append("危险工具：需要爸爸在 PermissionGate 中明确批准后才可执行。")
+                warnings.append("危险工具：需要用户在 PermissionGate 中明确批准后才可执行。")
                 suggestion = "请通过 PermissionGate 人工审批后执行。"
             elif cls == SIDE_EFFECT:
                 warnings.append("有副作用工具：将修改文件或状态，需进入执行队列等待人工确认。")

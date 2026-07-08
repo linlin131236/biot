@@ -110,7 +110,7 @@ _NEXT_STEP_MAP: dict[str, str] = {
     "timeout": "请检查网络连接或增加超时时间后重试",
     "frontend_test": "请查看组件渲染输出，确认交互逻辑是否符合预期",
     "build_error": "请检查编译错误信息，修复代码后重新构建",
-    "permission_denied": "请联系爸爸在 PermissionGate 中批准此操作后再试",
+    "permission_denied": "请联系用户在 PermissionGate 中批准此操作后再试",
     "secret_leak": "输出已脱敏，请检查代码中是否有硬编码密钥并替换为环境变量",
     "syntax_error": "请检查语法错误位置，修复后重新运行",
 }
@@ -206,7 +206,7 @@ class FailureDiagnosisEvalService:
         return FailureDiagnosis(
             failure_category=_CATEGORY_MAP.get(cat_key, "未知失败"),
             likely_cause=_CAUSE_MAP.get(cat_key, "未知原因"),
-            recommended_next_step=_NEXT_STEP_MAP.get(cat_key, "请查看完整日志后联系爸爸"),
+            recommended_next_step=_NEXT_STEP_MAP.get(cat_key, "请查看完整日志后联系用户"),
             redacted_output=redacted,
             confidence=confidence,
             is_auto_fix_allowed=False,

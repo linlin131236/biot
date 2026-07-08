@@ -60,7 +60,7 @@ _HARD_PREFERENCES: list[PreferenceRecord] = [
     PreferenceRecord(
         preference_id="pref-002-address",
         category="address",
-        statement_cn="称呼用户为爸爸。全程中文回复。",
+        statement_cn="用户界面不使用私人称呼；对话与界面默认使用中文。",
         confidence="confirmed",
         source_refs=["docs/project-state.md:硬规则", "用户明确指令"],
         can_apply_automatically=True,
@@ -69,7 +69,7 @@ _HARD_PREFERENCES: list[PreferenceRecord] = [
     PreferenceRecord(
         preference_id="pref-003-no-auto-push",
         category="safety",
-        statement_cn="不自动 push、release、tag、delete。只在爸爸明确授权后执行。",
+        statement_cn="不自动 push、release、tag、delete。只在用户明确授权后执行。",
         confidence="confirmed",
         source_refs=["docs/project-state.md:长期硬规则"],
         can_apply_automatically=True,

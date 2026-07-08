@@ -22,7 +22,7 @@ async def test_checkpoint_restore_api_requires_confirmation(tmp_path):
         )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "恢复检查点需要爸爸明确确认"
+    assert response.json()["detail"] == "恢复检查点需要用户明确确认"
     assert target.read_text(encoding="utf-8") == "after\n"
 
 

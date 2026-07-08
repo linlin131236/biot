@@ -6,11 +6,12 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
     <div className="biotHome">
       <div className="biotHeroMark">B</div>
       <div className="biotHero">
+        <span>本地安全执行层</span>
         <h1>今天让 Biot 做什么？</h1>
-        <p>本地权限受控，写入前永远等待爸爸批准。</p>
+        <p>本地权限受控，写入前永远等待人工批准。</p>
       </div>
 
-      <section className="biotComposer" aria-label="Agent 任务输入">
+      <section className="biotComposer biotLiquidBorder" aria-label="Agent 任务输入">
         <textarea
           aria-label="任务目标"
           placeholder="描述任务，或输入 / 选择能力"
@@ -54,10 +55,10 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       </section>
 
       <div className="biotSuggestionList">
-        <button type="button" onClick={props.refreshTrace}>读取文件并解释</button>
-        <button type="button" onClick={props.refreshPermissions}>生成补丁预览，等待爸爸批准</button>
-        <button type="button" onClick={props.runReview}>运行白名单测试并汇总结果</button>
-        <button type="button" onClick={props.refreshMemory}>同步记忆快照</button>
+        <button type="button" onClick={props.refreshTrace}>读取文件并解释关键代码</button>
+        <button type="button" onClick={props.refreshPermissions}>生成补丁预览，等待人工批准</button>
+        <button type="button" onClick={props.runReview}>运行白名单测试并汇总结论</button>
+        <button type="button" onClick={props.refreshMemory}>同步项目记忆快照</button>
         <button type="button" onClick={props.runGardener}>整理项目文档</button>
         <button type="button" onClick={props.fetchTimeline}>查看执行时间线</button>
       </div>

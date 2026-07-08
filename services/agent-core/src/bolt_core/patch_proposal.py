@@ -224,7 +224,7 @@ class PatchProposalEngine:
                 "hunk_count": len(f.hunks),
             } for f in patch.files],
             "unified_diff": patch.unified_diff,
-            "disclaimer": "此为补丁预览，未应用到任何真实文件。需要爸爸批准后才可 apply。",
+            "disclaimer": "此为补丁预览，未应用到任何真实文件。需要用户批准后才可 apply。",
         }
 
     # ── Internal ──

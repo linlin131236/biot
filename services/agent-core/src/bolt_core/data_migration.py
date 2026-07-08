@@ -39,5 +39,5 @@ class DataMigrationReadinessService(BetaReadinessBase):
 
         return BetaReviewResult(
             checks=checks,
-            next_step="等待爸爸复审 M122；迁移只给计划和风险，不自动改数据。",
+            next_step="等待用户复审 M122；迁移只给计划和风险，不自动改数据。",
         )

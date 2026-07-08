@@ -124,7 +124,7 @@ class PermissionContractEngine:
             return PermissionDecision(
                 tool_id=tool_id,
                 decision=DECISION_NEEDS_APPROVAL,
-                reason=f"操作 '{operation}' 属于永久危险操作，必须获得爸爸明确批准。",
+                reason=f"操作 '{operation}' 属于永久危险操作，必须获得用户明确批准。",
                 required_level=LEVEL_DANGEROUS,
                 human_approval_required=True,
                 required_approval_by="human",
@@ -159,7 +159,7 @@ class PermissionContractEngine:
             return PermissionDecision(
                 tool_id=tool_id,
                 decision=DECISION_NEEDS_APPROVAL,
-                reason=f"危险工具 '{tool_def.display_name}'，必须获得爸爸在 PermissionGate 中明确批准后才可执行。",
+                reason=f"危险工具 '{tool_def.display_name}'，必须获得用户在 PermissionGate 中明确批准后才可执行。",
                 required_level=LEVEL_DANGEROUS,
                 human_approval_required=True,
                 required_approval_by="human",
@@ -219,7 +219,7 @@ class PermissionContractEngine:
 
         # ── 3. Actor must be human ──
         actor = str(approval_record.get("actor", "")).lower()
-        if actor not in ("human", "father", "user", "爸爸"):
+        if actor not in ("human", "father", "user", "用户"):
             checks.append({
                 "check": "actor_is_human",
                 "passed": False,
@@ -227,7 +227,7 @@ class PermissionContractEngine:
             })
             return ApprovalVerification(
                 valid=False,
-                reason=f"Agent '{actor}' 不能自我批准。批准必须由爸爸（human）执行。",
+                reason=f"Agent '{actor}' 不能自我批准。批准必须由人工用户执行。",
                 checks=checks,
             )
         checks.append({
@@ -285,5 +285,5 @@ class PermissionContractEngine:
         return {
             "always_dangerous_ops": sorted(_ALWAYS_DANGEROUS_OPS),
             "total": len(_ALWAYS_DANGEROUS_OPS),
-            "disclaimer": "这些操作在任何上下文中都需要爸爸明确批准，不可自动执行。",
+            "disclaimer": "这些操作在任何上下文中都需要用户明确批准，不可自动执行。",
         }

@@ -56,7 +56,7 @@ class SafeRetryPolicy:
                         "category": failure_category,
                         "attempt": attempt,
                         "max_attempts": max_attempts,
-                        "suggestion": "危险操作不可自动重试，需由爸爸在 PermissionGate 中明确批准。",
+                        "suggestion": "危险操作不可自动重试，需由用户在 PermissionGate 中明确批准。",
                     }
 
         # Check if failure is retryable at all

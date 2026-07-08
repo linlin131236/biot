@@ -34,5 +34,5 @@ class UpdateRollbackReadinessService(BetaReadinessBase):
 
         return BetaReviewResult(
             checks=checks,
-            next_step="等待爸爸复审 M123；升级、回滚和发布都必须人工触发。",
+            next_step="等待用户复审 M123；升级、回滚和发布都必须人工触发。",
         )

@@ -3,207 +3,63 @@
 ## 当前稳定基线
 
 - 已完成到：M140 Harness Execution Lock Boundary（已 push）。
-- 最新远端基线：`origin/main = main = HEAD`。
-- 最新本地提交：`HEAD docs: mark M140 fixes pushed`。
-- 当前本地分支：`main...origin/main`（无 ahead / 无 behind）。
-- M133-M140 已提交并 push。
-- M140 已通过 targeted tests、full backend、quality 和 build。
-- 未 release / 未 tag / 未 delete。
-- 未进入 M141。
+- 最新远端基线：`origin/main = main = caf5493 docs: mark M140 fixes pushed`。
+- 当前本地分支：`main...origin/main`，M141 本地验证完成。
+- 当前工作区：M141 改动由本次提交收口，`.claude/` 未跟踪、未提交。
+- 未 push / 未 release / 未 tag / 未 delete。
 
-## M135 当前修复
+## M141 当前修复
 
-- 新增真实 checkpoint restore 语义。
-- restore 必须显式确认，未确认不写文件。
-- restore 只写 workspace 内文件。
-- checkpoint 创建时跳过秘密路径内容。
-- restore 时秘密路径也会跳过。
-- 新增 `POST /checkpoints/{checkpoint_id}/restore`，未确认返回中文 400。
+- 桌面主界面升级为液态玻璃视觉系统。
+- 首页、工作台、设置页统一中文产品文案。
+- 深色和浅色主题均支持液态玻璃 token。
+- 新增慢速流光边框 `biotBorderFlow`。
+- 软件内私人称呼已清理，产品 UI 使用“用户 / 人工批准 / 用户确认”。
+- 后端可能被 UI 展示的中文返回文案同步产品化。
+- 未新增自动执行、自动批准、push、release、tag、delete 入口。
 
-## M135 关键文件
+## M141 关键文件
 
-- `services/agent-core/src/bolt_core/checkpoint.py`
-- `services/agent-core/src/bolt_core/app_routes.py`
-- `services/agent-core/tests/test_checkpoint.py`
-- `services/agent-core/tests/test_checkpoint_api.py`
-- `docs/exec-plans/active/135-checkpoint-restore-semantics.md`
-- `docs/decisions/135-checkpoint-restore-semantics.md`
-- `docs/phase-135-review-gate.md`
+- `apps/desktop/src/LiquidGlassWorkbench.tsx`
+- `apps/desktop/src/LiquidGlassHome.tsx`
+- `apps/desktop/src/LiquidGlassSettings.tsx`
+- `apps/desktop/src/liquidGlassShell.css`
+- `apps/desktop/src/liquidGlassHome.css`
+- `apps/desktop/src/liquidGlassSettings.css`
+- `apps/desktop/src/LiquidGlassDesignTokens.test.ts`
+- `docs/exec-plans/active/141-liquid-glass-visual-system.md`
+- `docs/decisions/141-liquid-glass-visual-system.md`
+- `docs/phase-141-review-gate.md`
 
-## M135 验证
+## M141 已完成验证
 
-- Targeted tests：17 passed。
-- Full backend tests：1553 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 284 tests passed。
+- Targeted desktop tests：40 files / 287 tests passed。
+- Targeted backend tests：137 passed。
+- 浏览器实机深色主题检查：通过。
+- 浏览器实机浅色主题检查：通过。
+- 产品源码私人称呼扫描：无命中。
+- `rg "clamp\(" apps/desktop/src -n`：无命中。
+
+## M141 全量验证
+
 - `pnpm --filter @bolt/desktop build`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无 M135 新增违规。
-- renderer 暴露扫描：无 M135 新增暴露。
-- 自动危险操作扫描：无 M135 新增自动 push/release/tag/delete/approve 入口。
-
-## M136 当前修复
-
-- 权限中心返回真实 `request_id`。
-- 桌面权限中心新增“批准并执行”和“拒绝”按钮。
-- 按钮复用既有 `/permissions/{request_id}/approve` 与 `/reject`。
-- 操作必须由爸爸点击触发，不自动 approve。
-- 操作后刷新权限中心列表并显示中文结果。
-
-## M136 关键文件
-
-- `services/agent-core/src/bolt_core/permission_center.py`
-- `services/agent-core/tests/test_permission_center_api.py`
-- `apps/desktop/src/PermissionCenterPanel.tsx`
-- `apps/desktop/src/PermissionCenterPanel.test.tsx`
-- `apps/desktop/src/harnessClientAutonomy.ts`
-- `apps/desktop/src/harnessClientAutonomy.test.ts`
-- `apps/desktop/src/PanelsSection.tsx`
-- `docs/exec-plans/active/136-permission-center-real-gate-binding.md`
-- `docs/decisions/136-permission-center-real-gate-binding.md`
-- `docs/phase-136-review-gate.md`
-
-## M136 验证
-
-- Targeted desktop tests：39 files / 286 tests passed。
-- Targeted backend tests：15 passed（含 M100 dogfood 回归）。
-- Full backend tests：1554 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无 M136 新增违规。
-- renderer 暴露扫描：无 M136 新增暴露。
-- 自动危险操作扫描：无 M136 新增自动 push/release/tag/delete/auto-approve 入口。
-
-## M137 当前修复
-
-- 新增 `atomic_write_text()`。
-- `patch_engine.apply_change_set()` 改用原子写。
-- `approval_apply.py` 的 create/modify 写入改用原子写。
-- modify 目标不存在时仍失败，不被隐式创建。
-
-## M137 关键文件
-
-- `services/agent-core/src/bolt_core/atomic_write.py`
-- `services/agent-core/src/bolt_core/patch_engine.py`
-- `services/agent-core/src/bolt_core/approval_apply.py`
-- `services/agent-core/tests/test_patch_engine.py`
-- `services/agent-core/tests/test_approval_apply.py`
-- `docs/exec-plans/active/137-atomic-write-apply.md`
-- `docs/decisions/137-atomic-write-apply.md`
-- `docs/phase-137-review-gate.md`
-
-## M137 验证
-
-- Targeted tests：25 passed。
-- Full backend tests：1556 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无 M137 新增违规。
-- 自动危险操作扫描：无 M137 新增自动 push/release/tag/delete/auto-approve 入口。
-
-## M138 当前修复
-
-- `AgentLoop.run_loop()` 维护 messages 历史。
-- 模型 tool_calls 会追加 assistant tool_calls 消息。
-- 工具结果以 `role="tool"` 消息回灌给下一轮。
-- 同一轮多个 tool_calls 会顺序执行。
-- 默认 loop 上限从 3 提升到 50。
-- LLM 失败立即停止，不消耗 50 步。
-
-## M138 关键文件
-
-- `services/agent-core/src/bolt_core/agent_loop.py`
-- `services/agent-core/src/bolt_core/model_gateway.py`
-- `services/agent-core/src/bolt_core/harness.py`
-- `services/agent-core/src/bolt_core/harness_api.py`
-- `services/agent-core/tests/test_agent_loop.py`
-- `docs/exec-plans/active/138-agent-loop-tool-message-history.md`
-- `docs/decisions/138-agent-loop-tool-message-history.md`
-- `docs/phase-138-review-gate.md`
-
-## M138 验证
-
-- Targeted agent loop/model tests：26 passed。
-- Targeted closure/API regression：35 passed。
-- Full backend tests：1560 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无 M138 新增违规。
-- renderer 暴露扫描：无 M138 新增暴露。
-- 自动危险操作扫描：无 M138 新增自动 push/release/tag/delete/auto-approve 入口。
-
-## M139 当前修复
-
-- 新增 `tool_operations.py` 作为工具名到操作类型的共享入口。
-- `AgentLoop` 提交 tool call 时使用共享映射。
-- `FakeModelGateway` 生成测试内容时使用共享映射。
-- 修复 `file.patch` 在 fake gateway 内容中被误标为 `read` 的问题。
-- 删除 `agent_loop.py` 和 `model_gateway.py` 的重复私有映射。
-
-## M139 关键文件
-
-- `services/agent-core/src/bolt_core/tool_operations.py`
-- `services/agent-core/src/bolt_core/agent_loop.py`
-- `services/agent-core/src/bolt_core/model_gateway.py`
-- `services/agent-core/tests/test_tool_operations.py`
-- `services/agent-core/tests/test_model_gateway.py`
-- `docs/exec-plans/active/139-tool-operation-registry.md`
-- `docs/decisions/139-tool-operation-registry.md`
-- `docs/phase-139-review-gate.md`
-
-## M139 验证
-
-- Targeted tests：14 passed。
-- Full backend tests：1563 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无 M139 新增违规。
-- renderer 暴露扫描：无 M139 新增暴露。
-- 自动危险操作扫描：无 M139 新增自动 push/release/tag/delete/auto-approve 入口。
-
-## M140 当前修复
-
-- `submit_tool_request()` 不再持有 `_state_lock` 执行 auto-allowed 工具。
-- 权限判断、状态记录、pending 入队仍在锁内完成。
-- 真实 `_execute()` 移到锁外执行。
-- 删除未使用的 `_run_immediate()`。
-- 新增独立锁边界测试，避免 `test_harness.py` 超 size gate。
-
-## M140 关键文件
-
-- `services/agent-core/src/bolt_core/harness.py`
-- `services/agent-core/tests/test_harness_lock_boundary.py`
-- `services/agent-core/tests/test_harness.py`
-- `docs/exec-plans/active/140-harness-execution-lock-boundary.md`
-- `docs/decisions/140-harness-execution-lock-boundary.md`
-- `docs/phase-140-review-gate.md`
-
-## M140 验证
-
-- Targeted harness tests：19 passed。
-- Full backend tests：1564 passed。
-- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `pnpm lint:size`：通过。
-- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- renderer 暴露扫描：无 M140 新增暴露。
-- 自动危险操作扫描：无 M140 新增自动 push/release/tag/delete/auto-approve 入口。
+- `pnpm run quality`：通过，shared 27 passed，desktop 40 files / 287 tests passed。
+- `uv run pytest -q`：1564 passed，5 warnings。
+- `git diff --check`：通过，仅 Windows LF/CRLF 提示。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- 已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
+- M141 改动已验证并由本次提交收口。
 
 ## 下一步
 
-- 提交 M140 后等待爸爸复审；外部复审中本批明确问题已收尾。
+- 等待复审，不自动 push。
 
 ## 长期硬规则
 
 - 所有用户可见 UI 必须中文。
+- 软件内不使用私人称呼，面向公开产品统一使用“用户 / 人工批准 / 用户确认”。
 - 不自动 push、release、tag、delete。
 - 不进入未授权 milestone。
 - 不绕过 PermissionGate。
