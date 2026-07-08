@@ -177,7 +177,6 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         fetchTimeline={fetchTimelineAction}
         runReview={runReview}
         changeWorkspace={changeWorkspace}
-        addWorkspaceToHistory={addWorkspaceToHistory}
         loadRecentSessions={loadRecentSessions}
         theme={theme}
         setTheme={setTheme}

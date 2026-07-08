@@ -41,7 +41,9 @@ def test_add_recent_workspace_dedup_and_limit():
         # Fill beyond limit
         for i in range(15):
             service.add_recent_workspace(f"/tmp/ws_{i}")
-        assert len(status["recent_workspaces"]) <= 10
+        # Re-read status to verify the limit is enforced
+        final = service.get_status()
+        assert len(final["recent_workspaces"]) <= 10
 
 
 # --- workspace API via ASGI client ---

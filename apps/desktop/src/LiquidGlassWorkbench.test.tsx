@@ -19,7 +19,6 @@ const baseProps = {
   fetchTimeline: vi.fn(),
   runReview: vi.fn(),
   changeWorkspace: vi.fn(),
-  addWorkspaceToHistory: vi.fn().mockResolvedValue(undefined),
   loadRecentSessions: vi.fn().mockResolvedValue([]),
   theme: 'dark' as const,
   setTheme: vi.fn(),

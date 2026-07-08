@@ -2,7 +2,7 @@
 
 - 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），已 commit 未 push。
 - 最新远端基线：`origin/main = 8036ef8 docs: mark M151 pushed`。
-- 当前本地基线：`HEAD = 1cf744c feat(M152): real workspace and recent sessions`。
+- 当前本地基线：`HEAD = 03543bd feat(M152): real workspace and recent sessions`。
 - 当前本地分支：`main...origin/main [ahead 1]`，本地领先远端 1 个 commit（M152）。
 - 当前工作区：M152 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
@@ -49,7 +49,7 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M152 已完成、已复审，待 commit。未 push。
+- M152 已完成、已 commit，未 push。
 
 ## 下一步
 

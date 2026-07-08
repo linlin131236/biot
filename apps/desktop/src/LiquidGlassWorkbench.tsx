@@ -38,13 +38,6 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
     return () => { active = false; };
   }, [props.hasWorkspace, props.coreUrl, props.loadRecentSessions, props.fetcher]);
 
-  async function handleWorkspaceChange() {
-    await props.changeWorkspace();
-    if (props.workspacePath && props.coreUrl) {
-      props.addWorkspaceToHistory(props.coreUrl, props.workspacePath, props.fetcher).catch(() => {});
-    }
-  }
-
   async function handleThemeChange(next: ThemeMode) {
     props.setTheme(next);
     props.onSaveTheme(next);
@@ -75,9 +68,9 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
         <div className="biotProjectBlock">
           <div className="biotBlockTitle">
             <span>项目</span>
-            <button type="button" onClick={handleWorkspaceChange} aria-label={props.hasWorkspace ? '切换项目' : '添加项目'}>+</button>
+            <button type="button" onClick={props.changeWorkspace} aria-label={props.hasWorkspace ? '切换项目' : '添加项目'}>+</button>
           </div>
-          <button type="button" className="biotProjectButton" onClick={handleWorkspaceChange}>
+          <button type="button" className="biotProjectButton" onClick={props.changeWorkspace}>
             <Folder size={18} /> {props.hasWorkspace ? '更换工作区' : '选择工作区'}
           </button>
           <div className="biotWorkspacePath">{safeWorkspace}</div>

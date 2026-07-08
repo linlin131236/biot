@@ -18,6 +18,21 @@ from bolt_core.goal import GoalStatus
 logger = logging.getLogger(__name__)
 
 
+def _format_time(ts: float) -> str:
+    """Format a unix timestamp as a human-readable relative time string."""
+    import datetime
+    dt = datetime.datetime.fromtimestamp(ts)
+    now = datetime.datetime.now()
+    delta = now - dt
+    if delta.days == 0:
+        return "今天"
+    if delta.days == 1:
+        return "昨天"
+    if delta.days < 7:
+        return f"{delta.days} 天前"
+    return dt.strftime("%Y-%m-%d")
+
+
 def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
     router = APIRouter(tags=["workspace"])
     workspace_root = Path(project_dir or Path.cwd()).resolve()
@@ -51,14 +66,16 @@ def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
             return {"sessions": sessions}
 
         for goal in goals:
+            goal_path = goals_dir / f"{goal.id}.json"
+            mtime = goal_path.stat().st_mtime if goal_path.exists() else 0
             sessions.append({
                 "id": goal.id,
                 "title": goal.objective or "未命名目标",
-                "time": "",
+                "time": _format_time(mtime),
                 "status": goal.status.value,
             })
 
-        sessions.sort(key=lambda s: s["id"], reverse=True)
+        sessions.sort(key=lambda s: s["time"], reverse=True)
         return {"sessions": sessions[:limit]}
 
     return router

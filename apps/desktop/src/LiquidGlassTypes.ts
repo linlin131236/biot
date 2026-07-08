@@ -23,7 +23,6 @@ export interface LiquidGlassWorkbenchProps {
   fetchTimeline: () => void;
   runReview: () => void;
   changeWorkspace: () => void;
-  addWorkspaceToHistory: (baseUrl: string, path: string, fetcher: Fetcher) => Promise<void>;
   loadRecentSessions: (baseUrl: string, limit: number, fetcher: Fetcher) => Promise<RecentSession[]>;
   error?: ReactNode;
   toolFlow?: ReactNode;
