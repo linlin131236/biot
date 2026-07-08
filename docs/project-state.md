@@ -111,9 +111,30 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M154 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M155 当前改动
+
+- M155：补丁预览中文风险解释与测试补齐。`PatchPreviewPanel.tsx` 新增 `RISK_EXPLANATIONS_CN` 映射，在风险标签旁显示中文风险解释。新建 `test_patch_proposal_api.py` 包含 5 个 patch API 集成测试。`PatchPreviewPanel.test.tsx` 新增 4 个前端测试（风险解释/多文件/空 diff/无执行按钮）。
+
+## M155 关键文件
+
+- `apps/desktop/src/PatchPreviewPanel.tsx`（新增 RISK_EXPLANATIONS_CN）
+- `services/agent-core/tests/test_patch_proposal_api.py`（新建，5 个集成测试）
+- `apps/desktop/src/PatchPreviewPanel.test.tsx`（新增 4 个前端测试）
+
+## M155 验证
+
+- Backend targeted tests：5 passed（test_patch_proposal_api.py）
+- Frontend targeted tests：10 passed（PatchPreviewPanel.test.tsx）
+- Desktop tests：42 files / 314 tests passed（+4 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M155 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- M155 — Patch Preview Live：补丁预览真实接入。
+- M156 — Approval Apply Desktop Flow：桌面端批准后应用补丁闭环。
 
 ## 长期硬规则
 

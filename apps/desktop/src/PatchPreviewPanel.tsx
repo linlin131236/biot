@@ -89,6 +89,13 @@ export function PatchPreviewPanel({ fetchPatchList, fetchPatchPreview }: Props) 
     return '#6b7280';
   }
 
+const RISK_EXPLANATIONS_CN: Record<string, string> = {
+  low: '此补丁仅涉及少量文件，风险较低。',
+  medium: '此补丁涉及多个文件或敏感操作，建议仔细审查 diff。',
+  high: '此补丁涉及大量文件变更或危险操作，建议逐行审查后再批准。',
+  critical: '此补丁涉及核心文件或破坏性操作，需极度谨慎。',
+};
+
   // ── Loading ──
   if (state === 'loading') {
     return (
@@ -187,6 +194,11 @@ export function PatchPreviewPanel({ fetchPatchList, fetchPatchPreview }: Props) 
                 ⚠️ 风险：<strong>{selectedPatch.risk_label}</strong>
               </span>
             </div>
+            {RISK_EXPLANATIONS_CN[selectedPatch.risk_level] && (
+              <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>
+                {RISK_EXPLANATIONS_CN[selectedPatch.risk_level]}
+              </div>
+            )}
             <div style={{ marginTop: 8 }}>
               <p style={{ margin: 0, fontSize: 13 }}>{selectedPatch.description}</p>
             </div>

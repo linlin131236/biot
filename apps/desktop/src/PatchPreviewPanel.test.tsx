@@ -1,8 +1,9 @@
 /**
- * PatchPreviewPanel tests (M107).
+ * PatchPreviewPanel tests (M107 + M155).
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { PatchPreviewPanel } from './PatchPreviewPanel';
 
 const makePatchList = () => [
@@ -90,5 +91,79 @@ describe('PatchPreviewPanel', () => {
       />
     );
     expect(await screen.findByText(/此面板仅用于预览/)).toBeDefined();
+  });
+
+  it('shows Chinese risk explanation', async () => {
+    const preview = {
+      ...makePatchPreview(),
+      risk_level: 'high',
+      risk_label: '高',
+    };
+    render(
+      <PatchPreviewPanel
+        fetchPatchList={() => Promise.resolve({ patches: makePatchList() })}
+        fetchPatchPreview={() => Promise.resolve(preview)}
+      />
+    );
+    await waitFor(() => expect(screen.getByText(/添加日志到 main.py/)).toBeDefined());
+    act(() => {
+      fireEvent.click(screen.getByText(/添加日志到 main.py/));
+    });
+    await waitFor(() => expect(screen.getByText(/建议逐行审查/)).toBeDefined());
+  });
+
+  it('renders multi-file patch list', async () => {
+    const multiFilePreview = {
+      ...makePatchPreview(),
+      total_files: 3,
+      total_lines: 25,
+      files: [
+        { path: 'src/main.py', operation: '修改', hunk_count: 2 },
+        { path: 'src/utils.py', operation: '新增', hunk_count: 1 },
+        { path: 'old/config.json', operation: '删除', hunk_count: 1 },
+      ],
+    };
+    render(
+      <PatchPreviewPanel
+        fetchPatchList={() => Promise.resolve({ patches: makePatchList() })}
+        fetchPatchPreview={() => Promise.resolve(multiFilePreview)}
+      />
+    );
+    await waitFor(() => expect(screen.getByText(/添加日志到 main.py/)).toBeDefined());
+    act(() => {
+      fireEvent.click(screen.getByText(/添加日志到 main.py/));
+    });
+    await waitFor(() => {
+      expect(screen.getByText('src/main.py')).toBeDefined();
+      expect(screen.getByText('src/utils.py')).toBeDefined();
+      expect(screen.getByText('old/config.json')).toBeDefined();
+    });
+  });
+
+  it('does not render diff preview when unified_diff is empty', async () => {
+    const emptyDiffPreview = {
+      ...makePatchPreview(),
+      unified_diff: '',
+    };
+    render(
+      <PatchPreviewPanel
+        fetchPatchList={() => Promise.resolve({ patches: makePatchList() })}
+        fetchPatchPreview={() => Promise.resolve(emptyDiffPreview)}
+      />
+    );
+    await waitFor(() => expect(screen.getByText(/添加日志到 main.py/)).toBeDefined());
+    expect(screen.queryByText(/Diff 预览/)).toBeNull();
+  });
+
+  it('has no execute buttons', async () => {
+    render(
+      <PatchPreviewPanel
+        fetchPatchList={() => Promise.resolve({ patches: makePatchList() })}
+        fetchPatchPreview={() => Promise.resolve(makePatchPreview())}
+      />
+    );
+    await waitFor(() => expect(screen.getByText(/添加日志到 main.py/)).toBeDefined());
+    const buttons = document.querySelectorAll('button');
+    expect(buttons.length).toBe(0);
   });
 });
