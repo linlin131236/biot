@@ -336,6 +336,23 @@ export async function fetchSettingsTools(baseUrl: string, fetcher: Fetcher = fet
   return readJson(await fetcher(`${baseUrl}/settings-tools`));
 }
 
+// === Test Runner (M157) ===
+export async function fetchTestRunnerAvailable(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/test-runner/available`));
+}
+
+export async function runTest(baseUrl: string, testId: string, extraArgs: string[] = [], fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/test-runner/run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ test_id: testId, extra_args: extraArgs }),
+  }));
+}
+
+export async function fetchTestRunnerHistory(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/test-runner/history`));
+}
+
 // === Patch Proposal (M107) ===
 export async function fetchPatchList(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
   return readJson(await fetcher(`${baseUrl}/tools/patch/list`));

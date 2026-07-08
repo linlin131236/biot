@@ -1,12 +1,15 @@
 ## 当前稳定基线
 
 - 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），P1/P2 复审修复与安全复审修复均已 push。
-- 最新远端基线：`origin/main` 已同步到 M152 pushed 状态（具体 hash 以 `git log -1` 为准）。
-- 当前本地基线：`HEAD` 已同步到 M152 pushed 状态（具体 hash 以 `git log -1` 为准）。
-- 当前本地分支：`main...origin/main`，本地与远端同步。
-- 当前工作区：M152 与安全复审修复已完成 targeted/quality 验证，`.claude/` 未跟踪、未提交。
+- 最新远端基线：`origin/main` 已同步到 M152 pushed 状态（`7f2567b`）。
+- 当前本地基线：`HEAD` 在 M152 pushed 状态（`7f2567b`），本地 ahead 5 commits（M153–M157 已 push 到本地但远端未同步）。
+  - M153–M156：各有完整 commit（含实现代码、测试、decision、review gate、project-state 更新）。
+  - M157：commit `2dd938d` 仅包含 exec plan 文档，实现代码、测试、decision、review gate、project-state 更新均在**工作区未提交**状态。
+- 当前本地分支：`main...origin/main [ahead 5]`。
+- 当前工作区：M157 实现代码（`TestRunnerPanel.tsx`、`TestRunnerPanel.test.tsx`、`harnessClientAutonomy.ts`、`PanelsSection.tsx`）及 docs（`decision`、`review gate`、`project-state` 更新）均未提交。`.claude/` 未跟踪、未提交。
+- 已清理遗留：`docs/exec-plans/active/154-audit-timeline-live.md`（M154 exec plan 不应在工作区遗留）。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M153。
+- M153–M157 代码已在工作区就绪，待 M157 commit 后同步远端。
 
 ## M151 当前改动
 
@@ -176,9 +179,35 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M156 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M157 当前改动
+
+- M157：安全测试运行器真实接入。新建 `TestRunnerPanel.tsx` 组件，支持白名单测试选择、确认运行、运行中/通过/失败状态展示、脱敏输出和运行历史。`harnessClientAutonomy.ts` 新增 3 个 API 函数（`fetchTestRunnerAvailable`、`runTest`、`fetchTestRunnerHistory`）。`PanelsSection.tsx` 装配 TestRunnerPanel。
+
+## M157 关键文件
+
+- `apps/desktop/src/TestRunnerPanel.tsx`（新建，安全测试运行器面板）
+- `apps/desktop/src/TestRunnerPanel.test.tsx`（新建，8 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 3 个 API 函数）
+- `apps/desktop/src/PanelsSection.tsx`（装配 TestRunnerPanel）
+- `services/agent-core/src/bolt_core/test_runner_integration.py`（已有白名单引擎）
+- `services/agent-core/src/bolt_core/test_runner_integration_api.py`（已有 API 端点）
+
+## M157 验证
+
+- Backend targeted tests：7 passed（test_test_runner_integration.py）
+- Frontend targeted tests：8 passed（TestRunnerPanel.test.tsx）
+- Frontend API tests：22 passed（harnessClientAutonomy.test.ts）
+- Desktop tests：43 files / 325 tests passed（+8 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M157 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- M157 — Safe Test Runner Live：安全测试运行器真实接入。
+- **待完成**：commit M157 完整实现（TestRunnerPanel + 3 API 函数 + 面板装配 + 8 前端测试 + decision + review gate + project-state 更新）。
+- M158 — Task Result Summary：任务结果总结真实接入。
 
 ## 长期硬规则
 

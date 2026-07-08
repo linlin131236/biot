@@ -17,8 +17,9 @@ import { FailureExplanationPanel } from './FailureExplanationPanel';
 import { SessionRecoveryPanel } from './SessionRecoveryPanel';
 import { SettingsToolsPanel } from './SettingsToolsPanel';
 import { PatchPreviewPanel } from './PatchPreviewPanel';
+import { TestRunnerPanel } from './TestRunnerPanel';
 import { ProductWorkbenchPanel } from './ProductWorkbenchPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench } from './harnessClientAutonomy';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -76,6 +77,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
         fetchPatchList={() => fetchPatchList(baseUrl, fetcher) as Promise<{ patches: { patch_id: string; description: string; risk_level: string; risk_label: string; status: string; status_label: string; total_files: number; total_lines: number; audit_hash: string }[] }>}
         fetchPatchPreview={(patchId: string) => fetchPatchPreview(baseUrl, patchId, fetcher) as Promise<{ patch_id: string; description: string; risk_level: string; risk_label: string; total_files: number; total_lines: number; files: { path: string; operation: string; hunk_count: number }[]; unified_diff: string; disclaimer: string }>}
       />
+      <TestRunnerPanel baseUrl={baseUrl} api={{ fetchAvailableTests: fetchTestRunnerAvailable, runTest, fetchTestHistory: fetchTestRunnerHistory }} />
       <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} baseUrl={baseUrl} />
       <GoalConsole workspacePath={workspace} goal={goalInfo} api={api.goal} baseUrl={baseUrl} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
       <SideChatPanel runId={runId} api={api.sideChat} baseUrl={baseUrl} />
