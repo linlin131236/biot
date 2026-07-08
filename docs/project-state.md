@@ -1,9 +1,9 @@
 ## 当前稳定基线
 
-- 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），P1/P2 复审修复与安全复审修复均已 commit，未 push。
-- 最新远端基线：`origin/main = 8036ef8 docs: mark M151 pushed`。
-- 当前本地基线：`HEAD = fix(M152): sort recent sessions by goal mtime`（具体 hash 以 `git log -1` 为准）。
-- 当前本地分支：`main...origin/main [ahead 4]`，本地领先远端 4 个 commit（M152 主提交 + 两轮复审修复 + 安全复审修复）。
+- 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），P1/P2 复审修复与安全复审修复均已 push。
+- 最新远端基线：`origin/main = 302a9bd fix: harden local auth and approval actor boundary`。
+- 当前本地基线：`HEAD = 302a9bd fix: harden local auth and approval actor boundary`。
+- 当前本地分支：`main...origin/main`，本地与远端同步。
 - 当前工作区：M152 与安全复审修复已完成 targeted/quality 验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M153。
@@ -58,7 +58,7 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M152 已完成、已 commit；安全复审修复已 commit，未 push。
+- M152 已完成、已 push。
 
 ## 下一步
 
