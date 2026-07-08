@@ -43,7 +43,7 @@ function checkLayerImports(rel, text) {
 
 function checkPythonBoundaries(rel, text) {
   if (!rel.startsWith('services/agent-core/src/bolt_core/') || !rel.endsWith('.py')) return;
-  if (rel.endsWith('harness.py') || rel.endsWith('file_writer.py') || rel.endsWith('patch_engine.py') || rel.endsWith('shell_executor.py') || rel.endsWith('background_executor.py') || rel.endsWith('goal_persistence.py') || rel.endsWith('checkpoint.py') || rel.endsWith('execution_audit_store.py') || rel.endsWith('release_readiness.py') || rel.endsWith('local_release_checklist.py')) return;
+  if (rel.endsWith('harness.py') || rel.endsWith('file_writer.py') || rel.endsWith('patch_engine.py') || rel.endsWith('atomic_write.py') || rel.endsWith('shell_executor.py') || rel.endsWith('background_executor.py') || rel.endsWith('goal_persistence.py') || rel.endsWith('checkpoint.py') || rel.endsWith('execution_audit_store.py') || rel.endsWith('release_readiness.py') || rel.endsWith('local_release_checklist.py')) return;
   // Pre-existing: subprocess only for read-only git commands (log, status)
   if (rel.endsWith('code_map_index.py') || rel.endsWith('project_profile.py')) return;
   // V6: tool ecosystem – read-only git commands and whitelisted test runner

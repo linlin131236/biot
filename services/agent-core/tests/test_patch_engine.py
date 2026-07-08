@@ -92,3 +92,20 @@ def test_apply_change_set_denies_secret_path(tmp_path):
     assert decision.allowed is False
     assert decision.reason == "secret path denied"
     assert secret.read_text(encoding="utf-8") == "TOKEN=old\n"
+
+
+def test_apply_change_set_keeps_original_when_atomic_replace_fails(tmp_path, monkeypatch):
+    target = tmp_path / "app.ts"
+    target.write_text("old\n", encoding="utf-8")
+    change = build_change_set(str(target), "old\n", "new\n")
+
+    def fail_replace(_src, _dst):
+        raise OSError("replace failed")
+
+    monkeypatch.setattr("os.replace", fail_replace)
+
+    decision = apply_change_set(change, str(tmp_path))
+
+    assert decision.allowed is False
+    assert "replace failed" in decision.reason
+    assert target.read_text(encoding="utf-8") == "old\n"

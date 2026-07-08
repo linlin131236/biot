@@ -309,3 +309,21 @@ class TestApprovalApply:
         # Ensure no cross-contamination
         assert "print('a')" not in a_content
         assert "print('b')" not in b_content
+
+    def test_apply_keeps_original_when_atomic_replace_fails(self, tmp_path, monkeypatch):
+        """If final replace fails, approval apply must not leave a partially written target."""
+        (tmp_path / "src").mkdir(parents=True, exist_ok=True)
+        target = tmp_path / "src" / "main.py"
+        target.write_text("print('hello')\n", encoding="utf-8")
+
+        def fail_replace(_src, _dst):
+            raise OSError("replace failed")
+
+        monkeypatch.setattr("os.replace", fail_replace)
+        store, prop = make_store_with_approved(tmp_path)
+        engine = ApprovalApplyEngine(store=store, project_dir=str(tmp_path))
+        result = engine.apply(prop.proposal_id, {"actor": "human", "scope": prop.proposal_id})
+
+        assert result.success is False
+        assert "replace failed" in result.reason
+        assert target.read_text(encoding="utf-8") == "print('hello')\n"

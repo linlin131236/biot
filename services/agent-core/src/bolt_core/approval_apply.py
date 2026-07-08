@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from bolt_core.atomic_write import atomic_write_text
 from bolt_core.path_guard import PathGuard
 from bolt_core.write_tool_proposal import WriteProposal, WriteProposalStore, STATUS_APPROVED, STATUS_APPLIED
 
@@ -167,12 +168,13 @@ class ApprovalApplyEngine:
             try:
                 if proposal.operation_type == "create":
                     new_content = self._extract_new_content(per_file_diff, tf)
-                    target_path.parent.mkdir(parents=True, exist_ok=True)
-                    target_path.write_text(new_content, encoding="utf-8")
+                    atomic_write_text(target_path, new_content)
                 elif proposal.operation_type == "modify":
-                    old_content = target_path.read_text(encoding="utf-8") if target_path.exists() else ""
+                    if not target_path.exists():
+                        raise FileNotFoundError(tf)
+                    old_content = target_path.read_text(encoding="utf-8")
                     new_content = self._apply_unified_diff(old_content, per_file_diff)
-                    target_path.write_text(new_content, encoding="utf-8")
+                    atomic_write_text(target_path, new_content)
                 else:
                     return ApplyResult(
                         success=False, proposal_id=proposal_id,

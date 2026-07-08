@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from difflib import unified_diff
 from hashlib import sha256
 
+from bolt_core.atomic_write import atomic_write_text
 from bolt_core.path_guard import PathGuard
 
 
@@ -44,7 +45,10 @@ def apply_change_set(change: ChangeSet, workspace: str) -> ApplyDecision:
     decision = can_apply_change(change, current)
     if not decision.allowed:
         return decision
-    check.path.write_text(change.proposed, encoding="utf-8")
+    try:
+        atomic_write_text(check.path, change.proposed)
+    except OSError as exc:
+        return ApplyDecision(False, str(exc))
     return ApplyDecision(True, "change applied")
 
 

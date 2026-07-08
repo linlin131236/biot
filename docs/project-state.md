@@ -2,14 +2,14 @@
 
 ## 当前稳定基线
 
-- 已完成到：M136 Permission Center Real Gate Binding（本地已提交，待 push）。
+- 已完成到：M137 Atomic Write Apply（本地完成，待提交）。
 - 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
 - 最新本地提交：`HEAD feat(M136): bind permission center to real gate decisions`。
 - 当前本地分支：`main...origin/main [ahead 4]`。
 - M133-M136 已本地提交，尚未 push。
-- M136 已通过 targeted tests、full tests、quality 和 build。
+- M137 已通过 targeted tests、full tests、quality 和 build，尚未提交。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M137。
+- 未进入 M138。
 
 ## M135 当前修复
 
@@ -74,14 +74,43 @@
 - renderer 暴露扫描：无 M136 新增暴露。
 - 自动危险操作扫描：无 M136 新增自动 push/release/tag/delete/auto-approve 入口。
 
+## M137 当前修复
+
+- 新增 `atomic_write_text()`。
+- `patch_engine.apply_change_set()` 改用原子写。
+- `approval_apply.py` 的 create/modify 写入改用原子写。
+- modify 目标不存在时仍失败，不被隐式创建。
+
+## M137 关键文件
+
+- `services/agent-core/src/bolt_core/atomic_write.py`
+- `services/agent-core/src/bolt_core/patch_engine.py`
+- `services/agent-core/src/bolt_core/approval_apply.py`
+- `services/agent-core/tests/test_patch_engine.py`
+- `services/agent-core/tests/test_approval_apply.py`
+- `docs/exec-plans/active/137-atomic-write-apply.md`
+- `docs/decisions/137-atomic-write-apply.md`
+- `docs/phase-137-review-gate.md`
+
+## M137 验证
+
+- Targeted tests：25 passed。
+- Full backend tests：1556 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- `as any / unknown as`：无 M137 新增违规。
+- 自动危险操作扫描：无 M137 新增自动 push/release/tag/delete/auto-approve 入口。
+
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- 已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
+- M137 文件有未提交改动；`.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步
 
-- 暂停在 M136，等待爸爸确认是否继续 M137。
+- 提交 M137。
+- 自动继续 M138：Agent Loop messages/tool result 原生循环。
 
 ## 长期硬规则
 
