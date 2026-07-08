@@ -2,12 +2,12 @@
 
 ## 当前稳定基线
 
-- 已完成到：M143 Task Home Cockpit（由本次提交收口，待 push）。
-- 最新远端基线：`origin/main = 6977045 feat(M142): add liquid glass component primitives`。
-- 当前本地基线：M143 主提交 `47a93bb feat(M143): add task home cockpit`，P1 修复提交收口后待 push。
-- 当前本地分支：`main...origin/main`，本地领先远端，待 push。
-- 当前工作区：M143 改动已验证，`.claude/` 未跟踪、未提交。
-- 未 push / 未 release / 未 tag / 未 delete。
+- 已完成到：M143 Task Home Cockpit（已 push）。
+- 最新远端基线：`origin/main = 57d6c04 fix(M143): align verification gate task wording`。
+- 当前本地基线：`57d6c04 fix(M143): align verification gate task wording`。
+- 当前本地分支：`main...origin/main`，本地与远端同步。
+- 当前工作区：M143 改动已验证并推送，`.claude/` 未跟踪、未提交。
+- 已 push / 未 release / 未 tag / 未 delete。
 
 ## M143 当前改动
 
@@ -47,11 +47,11 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M143 改动由本次修复提交收口，待 push。
+- M143 改动已由 `57d6c04` 收口并 push。
 
 ## 下一步
 
-- 复审后由用户决定是否 push。
+- 继续下一阶段前先恢复上下文并确认新的 milestone 范围。
 
 ## 长期硬规则
 
