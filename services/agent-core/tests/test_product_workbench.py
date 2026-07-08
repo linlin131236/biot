@@ -62,6 +62,24 @@ def test_product_workbench_exposes_patch_approval_checklist():
     assert "自动批准" in data["patch_approval"]["warning_cn"]
 
 
+def test_product_workbench_exposes_test_feedback_whitelist():
+    data = ProductWorkbenchService().snapshot().to_dict()
+
+    feedback = data["test_feedback"]
+    assert feedback["label_cn"] == "白名单测试回填"
+    assert feedback["arbitrary_shell_allowed"] is False
+    assert [cmd["test_id"] for cmd in feedback["commands"]] == [
+        "backend_unit",
+        "backend_api",
+        "shared_test",
+        "desktop_test",
+        "desktop_build",
+        "quality_gate",
+    ]
+    assert all(cmd["label_cn"] for cmd in feedback["commands"])
+    assert "任意 shell" in feedback["warning_cn"]
+
+
 def test_product_workbench_api_is_registered():
     client = TestClient(create_app(project_dir="."))
 

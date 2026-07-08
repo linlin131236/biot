@@ -30,6 +30,15 @@ const snapshot = {
       { check_id: 'human_approval_required', label_cn: '必须由爸爸批准', required: true, status: 'blocked' },
     ],
   },
+  test_feedback: {
+    label_cn: '白名单测试回填',
+    warning_cn: '不允许任意 shell。',
+    arbitrary_shell_allowed: false,
+    commands: [
+      { test_id: 'backend_unit', label_cn: '后端单元测试', status: 'ready' },
+      { test_id: 'quality_gate', label_cn: '质量门', status: 'ready' },
+    ],
+  },
   next_actions: ['先确认目标和补丁预览。'],
   updated_at: '2026-07-08T00:00:00Z',
 };
@@ -74,6 +83,20 @@ describe('ProductWorkbenchPanel', () => {
     expect(screen.getByText('必须先看补丁预览')).toBeInTheDocument();
     expect(screen.getByText('必须由爸爸批准')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /批准/ })).toBeNull();
+  });
+
+  it('renders test feedback whitelist without arbitrary command input', async () => {
+    render(
+      <ProductWorkbenchPanel
+        baseUrl="http://core"
+        api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
+      />
+    );
+
+    expect(await screen.findByText('白名单测试回填')).toBeInTheDocument();
+    expect(screen.getByText('后端单元测试')).toBeInTheDocument();
+    expect(screen.getByText('质量门')).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).toBeNull();
   });
 
   it('renders lane summaries and next actions', async () => {

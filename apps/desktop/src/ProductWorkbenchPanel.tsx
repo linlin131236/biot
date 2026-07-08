@@ -33,6 +33,12 @@ interface WorkbenchSnapshot {
     warning_cn: string;
     checks: { check_id: string; label_cn: string; required: boolean; status: string }[];
   };
+  test_feedback?: {
+    label_cn: string;
+    warning_cn: string;
+    arbitrary_shell_allowed: boolean;
+    commands: { test_id: string; label_cn: string; status: string }[];
+  };
   next_actions: string[];
 }
 
@@ -120,6 +126,21 @@ export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
         </div>
       )}
 
+      {data.test_feedback && (
+        <div style={testStyle}>
+          <strong>{data.test_feedback.label_cn}</strong>
+          <p style={{ margin: '4px 0 8px', color: '#164e63' }}>{data.test_feedback.warning_cn}</p>
+          <div style={commandGridStyle}>
+            {data.test_feedback.commands.map((command) => (
+              <div key={command.test_id} style={commandStyle}>
+                <span>{command.label_cn}</span>
+                <span style={laneBadgeStyle(command.status)}>{statusLabel(command.status)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <strong style={{ fontSize: 13 }}>下一步</strong>
         <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
@@ -154,6 +175,9 @@ const laneStyle = { border: '1px solid #e5e7eb', borderRadius: 6, padding: 10, b
 const safetyStyle = { marginTop: 12, padding: 10, border: '1px solid #f59e0b', borderRadius: 6, background: '#fffbeb', fontSize: 12 } satisfies CSSProperties;
 const approvalStyle = { marginTop: 12, padding: 10, border: '1px solid #fed7aa', borderRadius: 6, background: '#fff7ed', fontSize: 12 } satisfies CSSProperties;
 const checkStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderTop: '1px solid #ffedd5' } satisfies CSSProperties;
+const testStyle = { marginTop: 12, padding: 10, border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', fontSize: 12 } satisfies CSSProperties;
+const commandGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 6 } satisfies CSSProperties;
+const commandStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, padding: 6, border: '1px solid #e0f2fe', borderRadius: 4, background: '#fff' } satisfies CSSProperties;
 
 function stageCardStyle(status: string): CSSProperties {
   return {

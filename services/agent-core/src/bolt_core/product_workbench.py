@@ -96,6 +96,36 @@ class PatchApprovalSummary:
 
 
 @dataclass(frozen=True)
+class TestCommandSummary:
+    test_id: str
+    label_cn: str
+    status: str
+
+    def to_dict(self) -> dict:
+        return {
+            "test_id": self.test_id,
+            "label_cn": self.label_cn,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class TestFeedbackSummary:
+    label_cn: str
+    warning_cn: str
+    arbitrary_shell_allowed: bool
+    commands: list[TestCommandSummary]
+
+    def to_dict(self) -> dict:
+        return {
+            "label_cn": self.label_cn,
+            "warning_cn": self.warning_cn,
+            "arbitrary_shell_allowed": self.arbitrary_shell_allowed,
+            "commands": [command.to_dict() for command in self.commands],
+        }
+
+
+@dataclass(frozen=True)
 class WorkbenchSnapshot:
     summary_cn: str
     read_only: bool
@@ -104,6 +134,7 @@ class WorkbenchSnapshot:
     lanes: list[WorkbenchLane]
     safety: WorkbenchSafety
     patch_approval: PatchApprovalSummary
+    test_feedback: TestFeedbackSummary
     next_actions: list[str]
     updated_at: str
 
@@ -116,6 +147,7 @@ class WorkbenchSnapshot:
             "lanes": [lane.to_dict() for lane in self.lanes],
             "safety": self.safety.to_dict(),
             "patch_approval": self.patch_approval.to_dict(),
+            "test_feedback": self.test_feedback.to_dict(),
             "next_actions": self.next_actions,
             "updated_at": self.updated_at,
         }
@@ -142,12 +174,28 @@ class ProductWorkbenchService:
                 summary_cn="工作台只读展示；写入、apply、测试执行和恢复动作必须走权限边界，由爸爸人工批准。",
             ),
             patch_approval=self._patch_approval(),
+            test_feedback=self._test_feedback(),
             next_actions=[
                 "先在目标区确认一句话任务是否明确。",
                 "写入前查看补丁预览和风险标签。",
                 "批准后再查看测试结果、审计记录和恢复建议。",
             ],
             updated_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    def _test_feedback(self) -> TestFeedbackSummary:
+        return TestFeedbackSummary(
+            label_cn="白名单测试回填",
+            warning_cn="这里只展示允许的测试入口和结果摘要；不允许输入任意 shell 命令。",
+            arbitrary_shell_allowed=False,
+            commands=[
+                TestCommandSummary("backend_unit", "后端单元测试", "ready"),
+                TestCommandSummary("backend_api", "后端 API 测试", "ready"),
+                TestCommandSummary("shared_test", "共享模块测试", "ready"),
+                TestCommandSummary("desktop_test", "桌面端测试", "ready"),
+                TestCommandSummary("desktop_build", "桌面端构建", "ready"),
+                TestCommandSummary("quality_gate", "全量质量门", "ready"),
+            ],
         )
 
     def _stages(self) -> list[WorkbenchStage]:
