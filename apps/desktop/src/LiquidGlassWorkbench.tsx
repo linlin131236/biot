@@ -4,6 +4,7 @@ import { LiquidGlassHome } from './LiquidGlassHome';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
 import type { LiquidGlassWorkbenchProps, ThemeMode, ViewMode } from './LiquidGlassTypes';
 import './liquidGlassShell.css';
+import './liquidGlassPrimitives.css';
 import './liquidGlassHome.css';
 import './liquidGlassSettings.css';
 

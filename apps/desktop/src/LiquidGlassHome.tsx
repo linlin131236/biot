@@ -1,5 +1,6 @@
 import { ArrowUp, CheckCircle2, Folder, Mic, ShieldCheck } from 'lucide-react';
 import type { LiquidGlassHomeProps } from './LiquidGlassTypes';
+import { GlassButton, GlassPill, GlassToolbar } from './LiquidGlassPrimitives';
 
 export function LiquidGlassHome(props: LiquidGlassHomeProps) {
   return (
@@ -18,19 +19,19 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
           value={props.goal}
           onChange={(event) => props.setGoal(event.target.value)}
         />
-        <div className="biotComposerBar">
-          <button type="button" className="biotIconButton" aria-label="添加上下文">+</button>
-          <span className="biotChip"><Folder size={17} /> 当前项目</span>
-          <span className="biotChip accent"><ShieldCheck size={17} /> 完全访问</span>
+        <GlassToolbar className="biotComposerBar" ariaLabel="任务操作">
+          <GlassButton className="biotIconButton" aria-label="添加上下文">+</GlassButton>
+          <GlassPill icon={<Folder size={17} />}>当前项目</GlassPill>
+          <GlassPill tone="warning" icon={<ShieldCheck size={17} />}>完全访问</GlassPill>
           <span className="biotSpacer" />
-          <button type="button" onClick={props.createGoal} disabled={!props.hasWorkspace}>目标</button>
-          <button type="button" onClick={props.startRun} disabled={!props.hasWorkspace}>开始</button>
-          <button type="button" onClick={props.runStep} disabled={!props.hasWorkspace}>一步</button>
-          <button type="button" className="biotRoundButton" aria-label="语音输入"><Mic size={18} /></button>
-          <button type="button" className="biotSendButton" aria-label="发送任务" onClick={props.startRun} disabled={!props.hasWorkspace}>
+          <GlassButton onClick={props.createGoal} disabled={!props.hasWorkspace}>目标</GlassButton>
+          <GlassButton onClick={props.startRun} disabled={!props.hasWorkspace}>开始</GlassButton>
+          <GlassButton onClick={props.runStep} disabled={!props.hasWorkspace}>一步</GlassButton>
+          <GlassButton className="biotRoundButton" aria-label="语音输入" icon={<Mic size={18} />} />
+          <GlassButton variant="primary" className="biotSendButton" aria-label="发送任务" onClick={props.startRun} disabled={!props.hasWorkspace}>
             <ArrowUp size={22} />
-          </button>
-        </div>
+          </GlassButton>
+        </GlassToolbar>
       </section>
 
       {props.error}
@@ -89,5 +90,5 @@ function CommandButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
-  return <button type="button" onClick={onClick} disabled={disabled}>{children}</button>;
+  return <GlassButton onClick={onClick} disabled={disabled}>{children}</GlassButton>;
 }
