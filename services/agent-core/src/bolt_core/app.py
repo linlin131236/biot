@@ -89,6 +89,7 @@ from bolt_core.failure_explanation_api import create_failure_explanation_router
 from bolt_core.session_recovery_api import create_session_recovery_router
 from bolt_core.settings_tools_api import create_settings_tools_router
 from bolt_core.desktop_beta_dogfood_api import create_desktop_beta_dogfood_router
+from bolt_core.product_workbench_api import create_product_workbench_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
@@ -196,6 +197,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_session_recovery_router())
     app.include_router(create_settings_tools_router())
     app.include_router(create_desktop_beta_dogfood_router())
+    app.include_router(create_product_workbench_router(str(project_dir or Path.cwd())))
 
     @app.get("/health")
     def health() -> dict[str, str]:

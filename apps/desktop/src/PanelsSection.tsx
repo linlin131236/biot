@@ -17,7 +17,8 @@ import { FailureExplanationPanel } from './FailureExplanationPanel';
 import { SessionRecoveryPanel } from './SessionRecoveryPanel';
 import { SettingsToolsPanel } from './SettingsToolsPanel';
 import { PatchPreviewPanel } from './PatchPreviewPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview } from './harnessClientAutonomy';
+import { ProductWorkbenchPanel } from './ProductWorkbenchPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -53,6 +54,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
   }
   return (
     <>
+      <ProductWorkbenchPanel baseUrl={baseUrl} api={{ fetchProductWorkbench }} />
       <TaskHomePanel baseUrl={baseUrl} api={{ fetchTaskHome }} />
       <PermissionCenterPanel baseUrl={baseUrl} api={{ fetchPermissionCenter }} />
       <AuditTimelinePanel baseUrl={baseUrl} closureId={closureId} api={{ fetchAuditTimeline }} />

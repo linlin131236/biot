@@ -1,88 +1,50 @@
 # Bolt Project State
 
 ## 当前稳定基线
-- 已完成到：M125 Public Beta Readiness（M55-M125 最终 Beta Gate，等待爸爸复审）。
-- V5 中文产品 UI/UX（M91-M100）已完成并 push。
-- V6 工具生态（M101-M110）已完成并 push。
-- V7 智能评估 / Agent Dogfood（M111-M120）已完成并 push。
-- V8 产品级可靠性（M121-M125）已完成并 push。
-- 当前本地分支：`main` 与 `origin/main` 已同步，最新提交以 `git log` 为准。
-- 未 release / 未 tag / 未 delete。
-- 未进入 M126。
+
+- 已完成到：M126 Real Agent Workbench（本地完成，待后续 M127-M130 继续）。
+- 最新远端基线：`origin/main = 6d128b0 docs: mark audit hardening pushed`。
+- 当前本地分支：`main` 基于 `origin/main` 开始 M126。
+- 未 push / 未 release / 未 tag / 未 delete。
+- 未进入 M127。
 
 ## 当前状态
-- 当前阶段：M125 完成并已 push，等待爸爸决定是否进入后续 M126+。
-- 本地状态：M121-M125 已完成并 push；HEAD = origin/main。
-- 工作区：已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
-- 最新已知远端基线：以 `git log` 为准；当前 `HEAD = origin/main`。
-- 最新验证基线：
-  - M121-M125 targeted tests：**29 passed**。
-  - `uv run pytest -q --color=no`（在 `services/agent-core`）：**1511 passed**，2 warnings。
-  - `pnpm --filter @bolt/shared test`：**27 passed**。
-  - `pnpm --filter @bolt/desktop test`：**35 files / 268 tests passed**。
-  - `pnpm --filter @bolt/desktop build`：通过 (286.08 KB)。
-  - `pnpm run quality`：通过。
-  - `git diff --check`：通过。
-  - `node scripts/check-docs.mjs`：通过。
-  - `node scripts/check-chinese-ui.mjs`：通过。
-  - 全量测试基线：**1511 backend + 27 shared + 268 desktop = 1806 passed**。
 
-## V8 里程碑结果
-- M121：Crash Recovery，只读检查检查点、暂停恢复、会话恢复、审计完整性和接手摘要。
-- M122：Data Migration，只读检查 raw/staging/clean/lineage、人工演练和 rollback 计划。
-- M123：Update/Rollback，只读检查发布准备、恢复策略、批准边界和禁止自动发布。
-- M124：Privacy/Security Audit，只读检查脱敏、权限边界、renderer 暴露、类型逃逸、供应链和隐私审计。
-- M125：Public Beta Readiness，聚合最终 Beta 门禁和接手包，完成后停止。
+- M55-M125 已完成并 push。
+- 外部审计硬化已完成并 push。
+- M126 新增只读 Agent 工作台：
+  - 后端：`product_workbench.py`、`product_workbench_api.py`。
+  - 前端：`ProductWorkbenchPanel.tsx`，已接入桌面第一屏。
+  - API：`GET /product-workbench`。
+- 工作区：存在 M126 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
 
-## V8 测试增量
-- `test_beta_reliability_common.py`
-- `test_crash_recovery.py`
-- `test_crash_recovery_api.py`
-- `test_data_migration.py`
-- `test_data_migration_api.py`
-- `test_update_rollback.py`
-- `test_update_rollback_api.py`
-- `test_privacy_security_audit.py`
-- `test_privacy_security_audit_api.py`
-- `test_public_beta_readiness.py`
-- `test_public_beta_readiness_api.py`
-- 当前新增目标测试：**29 tests**。
+## M126 验证
 
-## 安全扫描目标
-- `as any` / `unknown as`：最终验证必须无新增违规。
-- renderer 暴露：最终验证必须无新增 `ipcRenderer` / `fs` / `shell` / `process` 暴露。
-- 自动执行 / 自动 approve / push-release-tag-delete：最终验证必须无新增违规。
-- PermissionGate：不得绕过；M124/M125 只读审计不能替代 PermissionGate。
+- `uv run pytest -q services/agent-core/tests/test_product_workbench.py`：4 passed。
+- `pnpm --filter @bolt/desktop test -- ProductWorkbenchPanel.test.tsx`：36 files / 273 tests passed。
 
-## 外部审计修复（2026-07-08）
-- 当前阶段：M125 后安全审计修复，不是新 milestone，未进入 M126。
-- 已修复：
-  - `shell_executor.py` / `background_executor.py` 不再使用 `shell=True`，统一解析 argv 并拒绝 shell 控制语法。
-  - `patch_engine.py` / `file_writer.py` / `approval_apply.py` 写入路径统一经过 `PathGuard` 后再写。
-  - Electron 主进程阻断新窗口和非预期导航；packaged 模式忽略 `BOLT_AGENT_CORE_PYTHON/ROOT/SRC` 覆盖。
-  - 审计存储损坏时 `/health` 返回 `degraded`，不再静默伪装为完全健康。
-  - `PermissionQueue` 加锁，`Harness` 的提交/批准/拒绝组合入口加锁。
-- 最新验证：
-  - `uv run pytest -q --color=no`：**1524 passed, 2 warnings**。
-  - `pnpm --filter @bolt/shared test`：**27 passed**。
-  - `pnpm --filter @bolt/desktop test`：**35 files / 270 tests passed**。
-  - `pnpm --filter @bolt/desktop build`：通过。
-  - `pnpm run quality`：通过。
-  - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- 已 push 到 `origin/main`；未 release / 未 tag / 未 delete。
+## M126 参考资料
+
+- `Agent产品化流水线.md`：串行契约优先，需求、计划、实现、验证、复盘要形成稳定流水线。
+- `20260628_讨论场到执行系统_ZCode看板法.md`：任务要有状态、验收标准和下一步。
+- `OpenClaw实际场景学习报告.md`：项目状态、心跳、检查清单和恢复路径要可见。
 
 ## 已知风险
-- `harnessClientAutonomy.ts` 超过 300 行（历史豁免）。
-- M61 Task Graph / M81-M89 多 Agent 工作流以纯内存为主，后续如进入 M126+ 可评估持久化。
-- API 测试速度较慢，后续可优化并行执行。
+
+- `harnessClientAutonomy.ts` 超过 300 行，属于历史豁免文件，后续可专项拆分。
+- M61 Task Graph / M81-M89 多 Agent 工作流仍以纯内存为主，后续可评估持久化。
+- M126 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
 - `.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步建议
-- 完成 full tests / quality / docs / Chinese UI / 安全扫描。
-- M121-M125 已 push。
-- 后续如进入 M126+，必须由爸爸明确授权；未授权不进入下一阶段。
+
+- 继续 M127 Patch Approval Lane，把补丁风险、批准边界和 apply 前检查展示得更清楚。
+- M128 再接测试回填。
+- M129 接失败与恢复。
+- M130 做 Product Workbench Dogfood 后停止，等待爸爸复审。
 
 ## 长期硬规则
+
 - 所有用户可见 UI 必须中文。
 - 不自动 push、release、tag、delete。
 - 不进入未授权 milestone。

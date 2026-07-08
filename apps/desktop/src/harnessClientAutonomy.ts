@@ -326,6 +326,11 @@ export async function fetchPatchPreview(baseUrl: string, patchId: string, fetche
   return readJson(await fetcher(`${baseUrl}/tools/patch/${patchId}/preview`));
 }
 
+// === Product Workbench (M126) ===
+export async function fetchProductWorkbench(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/product-workbench`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
