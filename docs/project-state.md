@@ -2,12 +2,12 @@
 
 ## 当前稳定基线
 
-- 已完成到：M150 Liquid Glass UI Dogfood（本地完成，待复审 / 待 push）。
-- 最新远端基线：`origin/main = 61ecee1 docs: mark M143 pushed`。
-- 当前本地基线：M150 本地收口链，最新提交以 `git log --oneline -1` 为准。
-- 当前本地分支：`main...origin/main`，本地领先远端，待 push。
+- 已完成到：M150 Liquid Glass UI Dogfood（已复审、已 push）。
+- 最新远端基线：`origin/main = 0f463b4 fix(M150): resolve liquid glass interaction review`。
+- 当前本地基线：`HEAD = 0f463b4 fix(M150): resolve liquid glass interaction review`。
+- 当前本地分支：`main...origin/main`，本地与远端同步。
 - 当前工作区：M144-M150 改动已完成全量验证，`.claude/` 未跟踪、未提交。
-- 未 push / 未 release / 未 tag / 未 delete。
+- 已 push；未 release / 未 tag / 未 delete。
 
 ## M144-M150 当前改动
 
@@ -59,11 +59,11 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M144-M150 本地完成并通过全量验证，由 M150 收口提交记录。
+- M144-M150 已完成、已复审、已 push，远端 `origin/main` 与本地 HEAD 同步。
 
 ## 下一步
 
-- 复审后由用户决定是否 push。
+- 下一阶段需由用户授权后再规划，不自动进入 M151。
 
 ## 长期硬规则
 
