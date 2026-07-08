@@ -2,14 +2,14 @@
 
 ## 当前稳定基线
 
-- 已完成到：M139 Tool Operation Registry（本地已提交，待 push）。
+- 已完成到：M140 Harness Execution Lock Boundary（本地已提交，待 push）。
 - 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
-- 最新本地提交：`HEAD fix(M139): centralize tool operation mapping`。
-- 当前本地分支：`main...origin/main [ahead 7]`。
-- M133-M139 已本地提交，尚未 push。
-- M139 已通过 targeted tests、full backend、quality 和 build。
+- 最新本地提交：`HEAD fix(M140): release state lock before tool execution`。
+- 当前本地分支：`main...origin/main [ahead 8]`。
+- M133-M140 已本地提交，尚未 push。
+- M140 已通过 targeted tests、full backend、quality 和 build。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M140。
+- 未进入 M141。
 
 ## M135 当前修复
 
@@ -164,6 +164,34 @@
 - renderer 暴露扫描：无 M139 新增暴露。
 - 自动危险操作扫描：无 M139 新增自动 push/release/tag/delete/auto-approve 入口。
 
+## M140 当前修复
+
+- `submit_tool_request()` 不再持有 `_state_lock` 执行 auto-allowed 工具。
+- 权限判断、状态记录、pending 入队仍在锁内完成。
+- 真实 `_execute()` 移到锁外执行。
+- 删除未使用的 `_run_immediate()`。
+- 新增独立锁边界测试，避免 `test_harness.py` 超 size gate。
+
+## M140 关键文件
+
+- `services/agent-core/src/bolt_core/harness.py`
+- `services/agent-core/tests/test_harness_lock_boundary.py`
+- `services/agent-core/tests/test_harness.py`
+- `docs/exec-plans/active/140-harness-execution-lock-boundary.md`
+- `docs/decisions/140-harness-execution-lock-boundary.md`
+- `docs/phase-140-review-gate.md`
+
+## M140 验证
+
+- Targeted harness tests：19 passed。
+- Full backend tests：1564 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `pnpm lint:size`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- renderer 暴露扫描：无 M140 新增暴露。
+- 自动危险操作扫描：无 M140 新增自动 push/release/tag/delete/auto-approve 入口。
+
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
@@ -171,7 +199,7 @@
 
 ## 下一步
 
-- 提交 M139 后继续 M140：缩小 `submit_tool_request` 锁范围。
+- 提交 M140 后等待爸爸复审；外部复审中本批明确问题已收尾。
 
 ## 长期硬规则
 

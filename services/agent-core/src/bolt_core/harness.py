@@ -59,6 +59,7 @@ class Harness:
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:
+        run_immediately = False
         with self._state_lock:
             self._trace_log(run_id).record("tool.requested", {"tool": request.tool})
             decision = PermissionGate(self._workspace(run_id)).evaluate(request)
@@ -66,14 +67,18 @@ class Harness:
             if decision.status == "denied":
                 return self._record_task_closure_tool_result(run_id, self._deny(request, decision.reason))
             if decision.action == "allow":
-                return self._record_task_closure_tool_result(run_id, self._run_immediate(run_id, request))
+                self._trace_log(run_id).record("permission.auto_allowed", {"request_id": request.id})
+                run_immediately = True
             if request.tool == "file.write":
                 return self._record_task_closure_tool_result(run_id, self._queue_file_write(run_id, request, decision))
             if request.tool == "file.patch":
                 return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
-            self.permissions.add(run_id, request, decision)
-            self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
-            return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
+            if not run_immediately:
+                self.permissions.add(run_id, request, decision)
+                self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
+                return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
+        execution = self._execute(run_id, request)
+        return self._record_task_closure_tool_result(run_id, self._result_from_execution(request, execution))
 
     def trace(self, run_id: str) -> list[TraceEvent]:
         return self._trace_log(run_id).events()
@@ -267,11 +272,6 @@ class Harness:
         if decision.allowed:
             return ToolResult.executed(item.request_id, decision.reason)
         return ToolResult.failed(item.request_id, decision.reason)
-
-    def _run_immediate(self, run_id: str, request: ToolRequest) -> ToolResult:
-        self._trace_log(run_id).record("permission.auto_allowed", {"request_id": request.id})
-        execution = self._execute(run_id, request)
-        return self._result_from_execution(request, execution)
 
     def _result_from_execution(self, request: ToolRequest, execution: ToolExecution) -> ToolResult:
         if execution.status == "executed":
