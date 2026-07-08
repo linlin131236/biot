@@ -28,6 +28,11 @@ interface WorkbenchSnapshot {
     dangerous_operations_blocked: boolean;
     summary_cn: string;
   };
+  patch_approval?: {
+    label_cn: string;
+    warning_cn: string;
+    checks: { check_id: string; label_cn: string; required: boolean; status: string }[];
+  };
   next_actions: string[];
 }
 
@@ -100,6 +105,21 @@ export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
         <p style={{ margin: '4px 0 0', color: '#78350f' }}>{data.safety.summary_cn}</p>
       </div>
 
+      {data.patch_approval && (
+        <div style={approvalStyle}>
+          <strong>{data.patch_approval.label_cn}</strong>
+          <p style={{ margin: '4px 0 8px', color: '#7c2d12' }}>{data.patch_approval.warning_cn}</p>
+          <div style={{ display: 'grid', gap: 4 }}>
+            {data.patch_approval.checks.map((check) => (
+              <div key={check.check_id} style={checkStyle}>
+                <span>{check.label_cn}</span>
+                <span style={laneBadgeStyle(check.status)}>{statusLabel(check.status)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <strong style={{ fontSize: 13 }}>下一步</strong>
         <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
@@ -132,6 +152,8 @@ const detailStyle = { margin: '3px 0 0', color: '#6b7280', fontSize: 12, lineHei
 const stepStyle = { width: 22, height: 22, borderRadius: 4, background: '#111827', color: '#fff', display: 'grid', placeItems: 'center', flex: '0 0 auto', fontSize: 12 } satisfies CSSProperties;
 const laneStyle = { border: '1px solid #e5e7eb', borderRadius: 6, padding: 10, background: '#fff' } satisfies CSSProperties;
 const safetyStyle = { marginTop: 12, padding: 10, border: '1px solid #f59e0b', borderRadius: 6, background: '#fffbeb', fontSize: 12 } satisfies CSSProperties;
+const approvalStyle = { marginTop: 12, padding: 10, border: '1px solid #fed7aa', borderRadius: 6, background: '#fff7ed', fontSize: 12 } satisfies CSSProperties;
+const checkStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderTop: '1px solid #ffedd5' } satisfies CSSProperties;
 
 function stageCardStyle(status: string): CSSProperties {
   return {

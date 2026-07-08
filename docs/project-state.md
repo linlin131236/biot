@@ -2,11 +2,11 @@
 
 ## 当前稳定基线
 
-- 已完成到：M126 Real Agent Workbench（本地完成，待后续 M127-M130 继续）。
+- 已完成到：M127 Patch Approval Lane（本地完成，待后续 M128-M130 继续）。
 - 最新远端基线：`origin/main = 6d128b0 docs: mark audit hardening pushed`。
 - 当前本地分支：`main` 基于 `origin/main` 开始 M126。
 - 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M127。
+- 未进入 M128。
 
 ## 当前状态
 
@@ -16,12 +16,16 @@
   - 后端：`product_workbench.py`、`product_workbench_api.py`。
   - 前端：`ProductWorkbenchPanel.tsx`，已接入桌面第一屏。
   - API：`GET /product-workbench`。
+- M127 新增补丁批准检查清单：
+  - 字段：`patch_approval`。
+  - 检查：补丁预览、目标范围锁定、人工批准、过期复查、审计记录。
+  - UI：只读展示“补丁批准检查”，无批准按钮。
 - 工作区：存在 M126 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
 
 ## M126 验证
 
-- `uv run pytest -q services/agent-core/tests/test_product_workbench.py`：4 passed。
-- `pnpm --filter @bolt/desktop test -- ProductWorkbenchPanel.test.tsx`：36 files / 273 tests passed。
+- `uv run pytest -q services/agent-core/tests/test_product_workbench.py`：5 passed。
+- `pnpm --filter @bolt/desktop test -- ProductWorkbenchPanel.test.tsx`：36 files / 274 tests passed。
 
 ## M126 参考资料
 
@@ -33,13 +37,12 @@
 
 - `harnessClientAutonomy.ts` 超过 300 行，属于历史豁免文件，后续可专项拆分。
 - M61 Task Graph / M81-M89 多 Agent 工作流仍以纯内存为主，后续可评估持久化。
-- M126 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
+- M126-M127 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
 - `.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步建议
 
-- 继续 M127 Patch Approval Lane，把补丁风险、批准边界和 apply 前检查展示得更清楚。
-- M128 再接测试回填。
+- 继续 M128 Test Feedback Lane，把白名单测试能力和测试结果回填展示得更清楚。
 - M129 接失败与恢复。
 - M130 做 Product Workbench Dogfood 后停止，等待爸爸复审。
 

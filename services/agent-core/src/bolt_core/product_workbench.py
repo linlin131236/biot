@@ -66,6 +66,36 @@ class WorkbenchSafety:
 
 
 @dataclass(frozen=True)
+class WorkbenchCheck:
+    check_id: str
+    label_cn: str
+    required: bool
+    status: str
+
+    def to_dict(self) -> dict:
+        return {
+            "check_id": self.check_id,
+            "label_cn": self.label_cn,
+            "required": self.required,
+            "status": self.status,
+        }
+
+
+@dataclass(frozen=True)
+class PatchApprovalSummary:
+    label_cn: str
+    warning_cn: str
+    checks: list[WorkbenchCheck]
+
+    def to_dict(self) -> dict:
+        return {
+            "label_cn": self.label_cn,
+            "warning_cn": self.warning_cn,
+            "checks": [check.to_dict() for check in self.checks],
+        }
+
+
+@dataclass(frozen=True)
 class WorkbenchSnapshot:
     summary_cn: str
     read_only: bool
@@ -73,6 +103,7 @@ class WorkbenchSnapshot:
     stages: list[WorkbenchStage]
     lanes: list[WorkbenchLane]
     safety: WorkbenchSafety
+    patch_approval: PatchApprovalSummary
     next_actions: list[str]
     updated_at: str
 
@@ -84,6 +115,7 @@ class WorkbenchSnapshot:
             "stages": [stage.to_dict() for stage in self.stages],
             "lanes": [lane.to_dict() for lane in self.lanes],
             "safety": self.safety.to_dict(),
+            "patch_approval": self.patch_approval.to_dict(),
             "next_actions": self.next_actions,
             "updated_at": self.updated_at,
         }
@@ -109,6 +141,7 @@ class ProductWorkbenchService:
                 dangerous_operations_blocked=True,
                 summary_cn="工作台只读展示；写入、apply、测试执行和恢复动作必须走权限边界，由爸爸人工批准。",
             ),
+            patch_approval=self._patch_approval(),
             next_actions=[
                 "先在目标区确认一句话任务是否明确。",
                 "写入前查看补丁预览和风险标签。",
@@ -128,6 +161,19 @@ class ProductWorkbenchService:
             self._stage("run_tests", "测试验证", "ready", "只允许白名单测试命令，并回填结构化结果。", ["services/agent-core/src/bolt_core/test_runner_integration.py"]),
             self._stage("audit_and_recovery", "审计与恢复", "ready", "失败先解释、再恢复建议，不自动 retry 或 fix。", ["services/agent-core/src/bolt_core/session_recovery_api.py"]),
         ]
+
+    def _patch_approval(self) -> PatchApprovalSummary:
+        return PatchApprovalSummary(
+            label_cn="补丁批准检查",
+            warning_cn="这里不会自动批准；所有写入都必须由爸爸看过补丁、确认范围后批准。",
+            checks=[
+                WorkbenchCheck("preview_required", "必须先查看补丁预览", True, "ready"),
+                WorkbenchCheck("target_scope_locked", "目标文件范围必须和 diff 完全匹配", True, "ready"),
+                WorkbenchCheck("human_approval_required", "必须由爸爸人工批准", True, "blocked"),
+                WorkbenchCheck("stale_recheck_required", "apply 前必须复查提案是否过期", True, "ready"),
+                WorkbenchCheck("audit_required", "成功或失败都必须留下审计记录", True, "ready"),
+            ],
+        )
 
     def _lanes(self) -> list[WorkbenchLane]:
         return [

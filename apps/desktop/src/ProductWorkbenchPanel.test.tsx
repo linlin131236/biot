@@ -22,6 +22,14 @@ const snapshot = {
     dangerous_operations_blocked: true,
     summary_cn: '所有写入必须由爸爸人工批准。',
   },
+  patch_approval: {
+    label_cn: '补丁批准检查',
+    warning_cn: '这里不会自动批准。',
+    checks: [
+      { check_id: 'preview_required', label_cn: '必须先看补丁预览', required: true, status: 'ready' },
+      { check_id: 'human_approval_required', label_cn: '必须由爸爸批准', required: true, status: 'blocked' },
+    ],
+  },
   next_actions: ['先确认目标和补丁预览。'],
   updated_at: '2026-07-08T00:00:00Z',
 };
@@ -52,6 +60,20 @@ describe('ProductWorkbenchPanel', () => {
     expect(screen.getByText('测试验证')).toBeInTheDocument();
     expect(screen.getByText('所有写入必须由爸爸人工批准。')).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('renders patch approval checklist without approval controls', async () => {
+    render(
+      <ProductWorkbenchPanel
+        baseUrl="http://core"
+        api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
+      />
+    );
+
+    expect(await screen.findByText('补丁批准检查')).toBeInTheDocument();
+    expect(screen.getByText('必须先看补丁预览')).toBeInTheDocument();
+    expect(screen.getByText('必须由爸爸批准')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /批准/ })).toBeNull();
   });
 
   it('renders lane summaries and next actions', async () => {
