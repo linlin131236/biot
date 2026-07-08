@@ -9,6 +9,7 @@ from bolt_core.planner import Planner
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceLog
 from bolt_core.verifier import Verifier
+from bolt_core.evidence_redactor import redact
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,9 @@ class AgentLoop:
             trace.record("agent.loop.iteration.started", {"step": index + 1})
             last_step = self.run_step(goal, config, p0_context_fn(), trace, submit, memories_fn())
             trace.record("agent.loop.iteration.completed", {"step": index + 1, "status": last_step.status})
+            if last_step.status == "completed" and last_step.tool_result is None:
+                trace.record("agent.loop.completed", {"step": index + 1})
+                return AgentLoopResult("completed", index + 1, last_step)
             verification = self.verifier.verify(last_step.tool_result)
             if verification.status == "pause_for_permission":
                 trace.record("agent.loop.paused", {"status": last_step.status})
@@ -89,6 +93,7 @@ class AgentLoop:
         operation = _operation_for_tool(call.name)
         request = ToolRequest.create(call.name, operation, call.arguments)
         result = submit(request)
+        trace.record("tool.result.observed", _tool_result_feedback(result))
         verification = self.verifier.verify(result)
         trace.record("verifier.completed", verification.__dict__)
         trace.record("agent.step.completed", {"status": result.status})
@@ -109,3 +114,22 @@ def _operation_for_tool(tool_name: str) -> str:
         "web.extract": "extract",
     }
     return mapping.get(tool_name, "read")
+
+
+def _tool_result_feedback(result: ToolResult) -> dict[str, str | None]:
+    output = _safe_feedback_text(result.output)
+    error = _safe_feedback_text(result.error)
+    return {
+        "request_id": result.request_id,
+        "status": result.status,
+        "reason": _safe_feedback_text(result.reason),
+        "output": output,
+        "error": error,
+    }
+
+
+def _safe_feedback_text(value: str | None, limit: int = 2000) -> str | None:
+    if value is None:
+        return None
+    text = redact(value)
+    return text if len(text) <= limit else text[:limit] + "\n[truncated]"

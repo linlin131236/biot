@@ -2,38 +2,36 @@
 
 ## 当前稳定基线
 
-- 已完成到：M133 Real Model Gateway（本地完成，待提交）。
+- 已完成到：M134 Agent Loop Tool Result Feedback（本地完成，待提交）。
 - 最新远端基线：`origin/main = 2798191 fix(M132): add local api auth and workspace lock`。
-- 最新本地提交：`d52130d docs: mark M132 pushed`。
-- 当前本地分支：`main` 与 `origin/main` 基线同步，存在 M133 未提交修复。
-- M132 已 push / M133 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M134。
+- 最新本地提交：`9efe58e fix(M133): fail closed without real model config`。
+- 当前本地分支：`main` 基于 `origin/main`，本地已提交 M133，并存在 M134 未提交修复。
+- M132 已 push / M133-M134 未 push / 未 release / 未 tag / 未 delete。
+- 未进入 M135。
 
-## M133 当前修复
+## M134 当前修复
 
 - 外部审计中确认成立：
-  - 生产默认仍可能走 `FakeModelGateway`。
+  - Agent Loop 需要把 tool result 回填给下一轮 LLM。
 - 已修复：
-  - 新增 `DefaultModelGateway`。
-  - 默认模型设置改为 `openai-compatible`，缺 key 明确失败。
-  - `provider=fake` 仅作为显式测试/开发选择。
-  - App 层 agent step 缺 key fail closed，不启动工具执行。
+  - 新增 `tool.result.observed` trace。
+  - Planner 注入最近工具结果摘要。
+  - 工具结果回填前脱敏并截断。
+  - 文本完成态可正常结束 loop。
 
-## M133 关键文件
+## M134 关键文件
 
-- `services/agent-core/src/bolt_core/model_gateway.py`
-- `services/agent-core/src/bolt_core/model_settings.py`
 - `services/agent-core/src/bolt_core/agent_loop.py`
-- `services/agent-core/tests/test_model_gateway.py`
-- `services/agent-core/tests/test_model_settings.py`
+- `services/agent-core/src/bolt_core/planner.py`
 - `services/agent-core/tests/test_agent_loop.py`
-- `services/agent-core/tests/test_app.py`
+- `docs/exec-plans/active/134-agent-loop-tool-result-feedback.md`
+- `docs/decisions/134-agent-loop-tool-result-feedback.md`
+- `docs/phase-134-review-gate.md`
 
-## M133 验证
+## M134 验证
 
-- 后端 targeted tests：39 passed。
-- 桌面 targeted tests：39 files / 284 tests passed。
-- 后端 full tests：1545 passed。
+- M134 targeted tests：24 passed。
+- 后端 full tests：1547 passed。
 - `pnpm run quality`：通过。
 - `pnpm --filter @bolt/desktop build`：通过。
 - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
@@ -44,12 +42,12 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- 除 M133 工作文件外无其他已知改动。
+- 除 M133-M134 工作文件外无其他已知改动。
 
 ## 下一步
 
-- 提交 M133。
-- 自动继续 M134：真实 Agent Loop tool-result 消息闭环。
+- 提交 M134。
+- 自动继续 M135：checkpoint / restore 语义收口。
 
 ## 长期硬规则
 

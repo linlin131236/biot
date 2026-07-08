@@ -37,12 +37,14 @@ def _system_prompt() -> str:
 def _user_prompt(context: ContextPacket) -> str:
     failures = context.p0_context.get("hard_constraints", [])
     traces = [event.get("type") for event in context.recent_trace]
+    tool_results = _tool_result_summaries(context.recent_trace)
     memories = [_memory_summary(memory) for memory in context.memory_context]
     return "\n".join([
         f"Goal: {context.goal}",
         f"Token budget: {context.token_budget}",
         f"Hard constraints: {failures}",
         f"Recent trace: {traces}",
+        f"Recent tool results: {tool_results}",
         f"Memories: {memories}",
     ])
 
@@ -53,6 +55,21 @@ def _memory_summary(memory: dict) -> dict:
     if isinstance(metadata, dict):
         summary["metadata"] = _metadata_summary(metadata)
     return summary
+
+
+def _tool_result_summaries(events: list[dict]) -> list[dict]:
+    results = []
+    for event in events:
+        if event.get("type") != "tool.result.observed":
+            continue
+        payload = event.get("payload") if isinstance(event.get("payload"), dict) else {}
+        results.append({
+            "status": payload.get("status"),
+            "reason": payload.get("reason"),
+            "output": payload.get("output"),
+            "error": payload.get("error"),
+        })
+    return results[-5:]
 
 
 def _metadata_summary(metadata: dict) -> dict:

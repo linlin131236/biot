@@ -165,6 +165,68 @@ def test_agent_loop_run_loop_replans_on_unknown_tool_status(tmp_path):
     assert _has_trace(harness, run.id, "agent.loop.replan_requested")
 
 
+def test_agent_loop_feeds_tool_result_back_to_next_model_call(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    readme = workspace / "README.md"
+    readme.write_text("first output", encoding="utf-8")
+
+    class FeedbackGateway:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, request):
+            self.calls += 1
+            if self.calls == 1:
+                return ModelResponse("completed", None, TokenUsage(1, 1, 2), [ToolCall("call_read", "file.read", {"path": str(readme)})], None)
+            prompt = "\n".join(message.content for message in request.messages)
+            assert "first output" in prompt
+            return ModelResponse("completed", "已看到工具结果", TokenUsage(1, 1, 2), [], None)
+
+    gateway = FeedbackGateway()
+    harness = Harness(workspace=str(workspace))
+    harness.agent_loop = AgentLoop(gateway=gateway)
+    harness.model_settings.update({"provider": "fake", "base_url": "http://localhost", "model": "fake-model"})
+    run = harness.create_run("read then summarize")
+
+    result = harness.run_agent_loop(run.id, max_steps=2)
+
+    assert result.status == "completed"
+    assert gateway.calls == 2
+    assert _has_trace(harness, run.id, "tool.result.observed")
+
+
+def test_agent_loop_redacts_tool_result_feedback_before_next_model_call(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    secret_file = workspace / "README.md"
+    secret_file.write_text("API_KEY=secret-value", encoding="utf-8")
+
+    class RedactionGateway:
+        def __init__(self):
+            self.calls = 0
+
+        def complete(self, request):
+            self.calls += 1
+            if self.calls == 1:
+                return ModelResponse("completed", None, TokenUsage(1, 1, 2), [ToolCall("call_read", "file.read", {"path": str(secret_file)})], None)
+            prompt = "\n".join(message.content for message in request.messages)
+            assert "secret-value" not in prompt
+            assert "API_KEY=" in prompt
+            return ModelResponse("completed", "已脱敏", TokenUsage(1, 1, 2), [], None)
+
+    gateway = RedactionGateway()
+    harness = Harness(workspace=str(workspace))
+    harness.agent_loop = AgentLoop(gateway=gateway)
+    harness.model_settings.update({"provider": "fake", "base_url": "http://localhost", "model": "fake-model"})
+    run = harness.create_run("read secret safely")
+
+    result = harness.run_agent_loop(run.id, max_steps=2)
+
+    assert result.status == "completed"
+    assert gateway.calls == 2
+
+
 def test_agent_loop_run_loop_reports_needs_replan_when_budget_exhausted(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()
