@@ -28,7 +28,7 @@ def create_harness_router(harness) -> APIRouter:
 
     @router.post("/harness/runs/{run_id}/agent-loops")
     def run_agent_loop(run_id: str, payload: dict | None = None) -> dict:
-        return agent_loop_dict(harness.run_agent_loop(run_id, int((payload or {}).get("max_steps", 3))))
+        return agent_loop_dict(harness.run_agent_loop(run_id, int((payload or {}).get("max_steps", 50))))
 
     @router.get("/harness/runs/{run_id}/trace")
     def trace(run_id: str) -> list[dict]:

@@ -19,6 +19,8 @@ class ModelConfig:
 class ModelMessage:
     role: str
     content: str
+    tool_call_id: str | None = None
+    tool_calls: list[dict] | None = None
 
 
 @dataclass(frozen=True)
@@ -84,7 +86,7 @@ class OpenAICompatibleGateway:
             api_key=request.config.api_key,
             timeout=request.config.timeout,
         )
-        messages = [msg.__dict__ for msg in request.messages]
+        messages = [_message_to_openai_dict(msg) for msg in request.messages]
         tools = all_tool_schemas()
 
         last_error: str | None = None
@@ -163,6 +165,15 @@ def _parse_openai_response(response) -> ModelResponse:
                 args = {}
             tool_calls.append(ToolCall(tc.id, tc.function.name, args))
     return ModelResponse("completed", content, usage, tool_calls, None)
+
+
+def _message_to_openai_dict(message: ModelMessage) -> dict:
+    data: dict = {"role": message.role, "content": message.content}
+    if message.role == "tool" and message.tool_call_id:
+        data["tool_call_id"] = message.tool_call_id
+    if message.tool_calls:
+        data["tool_calls"] = message.tool_calls
+    return data
 
 
 def _count_tokens(text: str) -> int:

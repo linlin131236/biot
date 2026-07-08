@@ -144,7 +144,7 @@ class Harness:
         memories = self._agent_memories()
         return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories)
 
-    def run_agent_loop(self, run_id: str, max_steps: int = 3) -> AgentLoopResult:
+    def run_agent_loop(self, run_id: str, max_steps: int = 50) -> AgentLoopResult:
         run = self._run(run_id)
         trace = self._trace_log(run_id)
         config = self.model_settings.config()

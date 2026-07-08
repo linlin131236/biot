@@ -2,14 +2,14 @@
 
 ## 当前稳定基线
 
-- 已完成到：M137 Atomic Write Apply（本地完成，待提交）。
+- 已完成到：M138 Agent Loop Tool Message History（本地已提交，待 push）。
 - 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
-- 最新本地提交：`HEAD feat(M136): bind permission center to real gate decisions`。
-- 当前本地分支：`main...origin/main [ahead 4]`。
-- M133-M136 已本地提交，尚未 push。
-- M137 已通过 targeted tests、full tests、quality 和 build，尚未提交。
+- 最新本地提交：`HEAD feat(M138): preserve tool message history in agent loop`。
+- 当前本地分支：`main...origin/main [ahead 6]`。
+- M133-M138 已本地提交，尚未 push。
+- M138 已通过 targeted tests、闭环回归、full tests、quality 和 build。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M138。
+- 未进入 M139。
 
 ## M135 当前修复
 
@@ -102,15 +102,46 @@
 - `as any / unknown as`：无 M137 新增违规。
 - 自动危险操作扫描：无 M137 新增自动 push/release/tag/delete/auto-approve 入口。
 
+## M138 当前修复
+
+- `AgentLoop.run_loop()` 维护 messages 历史。
+- 模型 tool_calls 会追加 assistant tool_calls 消息。
+- 工具结果以 `role="tool"` 消息回灌给下一轮。
+- 同一轮多个 tool_calls 会顺序执行。
+- 默认 loop 上限从 3 提升到 50。
+- LLM 失败立即停止，不消耗 50 步。
+
+## M138 关键文件
+
+- `services/agent-core/src/bolt_core/agent_loop.py`
+- `services/agent-core/src/bolt_core/model_gateway.py`
+- `services/agent-core/src/bolt_core/harness.py`
+- `services/agent-core/src/bolt_core/harness_api.py`
+- `services/agent-core/tests/test_agent_loop.py`
+- `docs/exec-plans/active/138-agent-loop-tool-message-history.md`
+- `docs/decisions/138-agent-loop-tool-message-history.md`
+- `docs/phase-138-review-gate.md`
+
+## M138 验证
+
+- Targeted agent loop/model tests：26 passed。
+- Targeted closure/API regression：35 passed。
+- Full backend tests：1560 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- `as any / unknown as`：无 M138 新增违规。
+- renderer 暴露扫描：无 M138 新增暴露。
+- 自动危险操作扫描：无 M138 新增自动 push/release/tag/delete/auto-approve 入口。
+
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M137 文件有未提交改动；`.claude/` 未跟踪、未提交，按规则保持。
+- 已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步
 
-- 提交 M137。
-- 自动继续 M138：Agent Loop messages/tool result 原生循环。
+- 继续评估剩余未修项：工具定义归一、锁范围缩小。
 
 ## 长期硬规则
 
