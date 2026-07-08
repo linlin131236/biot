@@ -6,6 +6,7 @@ from bolt_core.context_builder import ContextBuilder
 from bolt_core.model_gateway import DefaultModelGateway, ModelConfig, ModelMessage, ModelRequest, ToolCall
 from bolt_core.memory_store import MemoryRecord
 from bolt_core.planner import Planner
+from bolt_core.tool_operations import operation_for_tool
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceLog
 from bolt_core.verifier import Verifier
@@ -117,7 +118,7 @@ class AgentLoop:
         return AgentStepResult("failed", "", None, "empty model response"), []
 
     def _submit_tool_call(self, call: ToolCall, trace: TraceLog, submit) -> AgentStepResult:
-        operation = _operation_for_tool(call.name)
+        operation = operation_for_tool(call.name)
         request = ToolRequest.create(call.name, operation, call.arguments)
         result = submit(request)
         trace.record("tool.result.observed", _tool_result_feedback(result))
@@ -125,22 +126,6 @@ class AgentLoop:
         trace.record("verifier.completed", verification.__dict__)
         trace.record("agent.step.completed", {"status": result.status})
         return AgentStepResult(result.status, json.dumps({"tool": call.name, "arguments": call.arguments}), result, None)
-
-
-def _operation_for_tool(tool_name: str) -> str:
-    mapping = {
-        "file.read": "read",
-        "files.search": "search",
-        "file.write": "write",
-        "file.patch": "patch",
-        "shell.execute": "command",
-        "terminal.spawn": "spawn",
-        "terminal.poll": "poll",
-        "terminal.kill": "kill",
-        "web.search": "search",
-        "web.extract": "extract",
-    }
-    return mapping.get(tool_name, "read")
 
 
 def _tool_result_feedback(result: ToolResult) -> dict[str, str | None]:

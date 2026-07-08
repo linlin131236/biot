@@ -40,6 +40,23 @@ def test_fake_gateway_shell_returns_shell_tool_call():
     assert response.tool_calls[0].name == "shell.execute"
 
 
+def test_fake_gateway_uses_shared_operation_registry_for_patch(monkeypatch):
+    import bolt_core.model_gateway as model_gateway
+
+    def fake_patch_call(prompt):
+        return ToolCall("call_patch", "file.patch", {"path": "README.md", "old_string": "a", "new_string": "b"})
+
+    monkeypatch.setattr(model_gateway, "_fake_tool_call", fake_patch_call)
+    gateway = FakeModelGateway()
+    config = ModelConfig("fake", "http://localhost", None, "fake-model")
+    request = ModelRequest([ModelMessage("user", "patch README")], config)
+
+    response = gateway.complete(request)
+
+    assert response.status == "completed"
+    assert '"operation": "patch"' in response.content
+
+
 def test_real_gateway_fails_without_api_key():
     from bolt_core.model_gateway import OpenAICompatibleGateway
 

@@ -2,14 +2,14 @@
 
 ## 当前稳定基线
 
-- 已完成到：M138 Agent Loop Tool Message History（本地已提交，待 push）。
+- 已完成到：M139 Tool Operation Registry（本地已提交，待 push）。
 - 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
-- 最新本地提交：`HEAD feat(M138): preserve tool message history in agent loop`。
-- 当前本地分支：`main...origin/main [ahead 6]`。
-- M133-M138 已本地提交，尚未 push。
-- M138 已通过 targeted tests、闭环回归、full tests、quality 和 build。
+- 最新本地提交：`HEAD fix(M139): centralize tool operation mapping`。
+- 当前本地分支：`main...origin/main [ahead 7]`。
+- M133-M139 已本地提交，尚未 push。
+- M139 已通过 targeted tests、full backend、quality 和 build。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M139。
+- 未进入 M140。
 
 ## M135 当前修复
 
@@ -134,6 +134,36 @@
 - renderer 暴露扫描：无 M138 新增暴露。
 - 自动危险操作扫描：无 M138 新增自动 push/release/tag/delete/auto-approve 入口。
 
+## M139 当前修复
+
+- 新增 `tool_operations.py` 作为工具名到操作类型的共享入口。
+- `AgentLoop` 提交 tool call 时使用共享映射。
+- `FakeModelGateway` 生成测试内容时使用共享映射。
+- 修复 `file.patch` 在 fake gateway 内容中被误标为 `read` 的问题。
+- 删除 `agent_loop.py` 和 `model_gateway.py` 的重复私有映射。
+
+## M139 关键文件
+
+- `services/agent-core/src/bolt_core/tool_operations.py`
+- `services/agent-core/src/bolt_core/agent_loop.py`
+- `services/agent-core/src/bolt_core/model_gateway.py`
+- `services/agent-core/tests/test_tool_operations.py`
+- `services/agent-core/tests/test_model_gateway.py`
+- `docs/exec-plans/active/139-tool-operation-registry.md`
+- `docs/decisions/139-tool-operation-registry.md`
+- `docs/phase-139-review-gate.md`
+
+## M139 验证
+
+- Targeted tests：14 passed。
+- Full backend tests：1563 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- `as any / unknown as`：无 M139 新增违规。
+- renderer 暴露扫描：无 M139 新增暴露。
+- 自动危险操作扫描：无 M139 新增自动 push/release/tag/delete/auto-approve 入口。
+
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
@@ -141,7 +171,7 @@
 
 ## 下一步
 
-- 继续评估剩余未修项：工具定义归一、锁范围缩小。
+- 提交 M139 后继续 M140：缩小 `submit_tool_request` 锁范围。
 
 ## 长期硬规则
 

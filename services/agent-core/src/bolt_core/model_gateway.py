@@ -4,6 +4,8 @@ import re
 import urllib.request
 from dataclasses import dataclass
 
+from bolt_core.tool_operations import operation_for_tool
+
 
 @dataclass(frozen=True)
 class ModelConfig:
@@ -58,7 +60,7 @@ class FakeModelGateway:
     def complete(self, request: ModelRequest) -> ModelResponse:
         prompt = "\n".join(message.content for message in request.messages)
         call = _fake_tool_call(prompt)
-        content = json.dumps({"tool": call.name, "operation": _operation_for(call.name), "payload": call.arguments})
+        content = json.dumps({"tool": call.name, "operation": operation_for_tool(call.name), "payload": call.arguments})
         usage = TokenUsage(_count_tokens(prompt), _count_tokens(content), _count_tokens(prompt + content))
         return ModelResponse("completed", content, usage, [call], None)
 
@@ -135,11 +137,6 @@ def _fake_tool_call(prompt: str) -> ToolCall:
     if "shell" in normalized or "test" in normalized:
         return ToolCall("call_fake_shell", "shell.execute", {"command": "python --version", "workdir": workspace})
     return ToolCall("call_fake_default", "file.read", {"path": f"{workspace}/README.md"})
-
-
-def _operation_for(tool_name: str) -> str:
-    mapping = {"file.read": "read", "files.search": "search", "file.write": "write", "shell.execute": "command"}
-    return mapping.get(tool_name, "read")
 
 
 def _fake_workspace(prompt: str) -> str:
