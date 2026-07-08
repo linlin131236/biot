@@ -204,10 +204,37 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M157 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M158 当前改动
+
+- M158：任务结果总结结构化接入。新建 `TaskResultSummary` 类型（`protocol-closure-summary.ts`）、`TaskResultSummaryBuilder`（`task_closure_result_summary.py`）、`TaskResultSummaryPanel` 组件。`task_closure_api.py` 新增 `GET /task-closures/{id}/result-summary` 端点。`harnessClientAutonomy.ts` 新增 `fetchTaskResultSummary` 函数。`GoalConsole.tsx` 在循环完成后自动加载并展示结果摘要（状态/步数/耗时/变更文件/命令结果/错误/审查摘要/下一步建议）。
+
+## M158 关键文件
+
+- `packages/shared/src/protocol-closure-summary.ts`（新建，TaskResultSummary 接口）
+- `services/agent-core/src/bolt_core/task_closure_result_summary.py`（新建，Builder）
+- `services/agent-core/src/bolt_core/task_closure_service.py`（新增 result_summary 方法）
+- `services/agent-core/src/bolt_core/task_closure_api.py`（新增 endpoint）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 fetchTaskResultSummary）
+- `apps/desktop/src/TaskResultSummaryPanel.tsx`（新建，结果摘要面板）
+- `apps/desktop/src/GoalConsole.tsx`（装配 TaskResultSummaryPanel）
+- `apps/desktop/src/TaskResultSummaryPanel.test.tsx`（新建，5 个前端测试）
+- `services/agent-core/tests/test_task_closure_service.py`（新增 3 个 result_summary 测试）
+
+## M158 验证
+
+- Backend targeted tests：3 passed（test_task_closure_service.py result_summary）
+- Frontend targeted tests：5 passed（TaskResultSummaryPanel.test.tsx）
+- Desktop tests：44 files / 330 tests passed（+5 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M158 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M157 完整实现（TestRunnerPanel + 3 API 函数 + 面板装配 + 8 前端测试 + decision + review gate + project-state 更新）。
-- M158 — Task Result Summary：任务结果总结真实接入。
+- **待完成**：commit M158 完整实现（TaskResultSummary 类型 + Builder + endpoint + TaskResultSummaryPanel + GoalConsole 装配 + 8 测试 + decision + review gate + project-state 更新）。
+- M159 — Researcher Execution Engine：Researcher 从验证服务升级为能实际读取代码库产生研究摘要的执行引擎。
 
 ## 长期硬规则
 

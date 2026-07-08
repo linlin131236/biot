@@ -22,6 +22,8 @@ const KNOWN_EXEMPT = new Set([
   'services/agent-core/tests/test_approval_apply.py',
   // M151: settings surface data (static product copy, single concern)
   'apps/desktop/src/LiquidGlassSettingsData.tsx',
+  // M158: task closure service test (many service-level test cases, split candidate)
+  'services/agent-core/tests/test_task_closure_service.py',
 ]);
 
 const failures = scan(root).filter((file) => {

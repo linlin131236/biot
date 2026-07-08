@@ -139,6 +139,10 @@ export async function updateTaskClosureAssessment(baseUrl: string, closureId: st
   return readJson(await fetcher(`${baseUrl}/task-closures/${closureId}/assessment`, jsonPost({})));
 }
 
+export async function fetchTaskResultSummary(baseUrl: string, closureId: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/task-closures/${encodeURIComponent(closureId)}/result-summary`));
+}
+
 export async function fetchExecutionQueue(baseUrl: string, closureId?: string, fetcher: Fetcher = fetch): Promise<ExecutionQueueItem[]> {
   const query = closureId ? `?closure_id=${encodeURIComponent(closureId)}` : '';
   return readJson(await fetcher(`${baseUrl}/execution-queue${query}`));

@@ -169,6 +169,11 @@ class TaskClosureService:
         self._record(closure_id).closure.retry_count += 1
         self._save_closures()
 
+    def result_summary(self, closure_id: str) -> dict:
+        """Synthesize a structured result summary from closure data."""
+        from bolt_core.task_closure_result_summary import TaskResultSummaryBuilder
+        return TaskResultSummaryBuilder(self).build(closure_id)
+
     def to_dict(self, closure_id: str) -> dict:
         """Return closure as dict for API response."""
         closure = self._record(closure_id).closure

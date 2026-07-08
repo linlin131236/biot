@@ -69,6 +69,12 @@ def create_task_closure_router(
         _require_closure(service, closure_id)
         return service.assess_completion(closure_id)
 
+    @router.get("/{closure_id}/result-summary")
+    def get_task_closure_result_summary(closure_id: str) -> dict:
+        """Synthesize a structured result summary from closure data."""
+        _require_closure(service, closure_id)
+        return service.result_summary(closure_id)
+
     @router.post("/{closure_id}/assessment")
     def update_task_closure_assessment(closure_id: str) -> dict:
         """Update closure from recorded evidence only."""

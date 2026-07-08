@@ -5,9 +5,10 @@
  * 所有文案中文。
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AgentLoopResult } from '@bolt/shared';
-import type { Goal, GoalStatus, TimelineEvent, GoalEvidence } from '@bolt/shared/autonomy';
+import type { Goal, GoalStatus, TaskClosureEvidence, TimelineEvent, GoalEvidence } from '@bolt/shared/autonomy';
+import { TaskResultSummaryPanel } from './TaskResultSummaryPanel';
 
 interface GoalConsoleApi {
   createGoal: (baseUrl: string, payload: Record<string, unknown>) => Promise<Goal>;
@@ -19,6 +20,8 @@ interface GoalConsoleApi {
   getGoal: (baseUrl: string, goalId: string) => Promise<Goal | null>;
   fetchGoalEvidence: (baseUrl: string, goalId: string) => Promise<GoalEvidence[]>;
   fetchRunTimeline: (baseUrl: string, runId: string) => Promise<TimelineEvent[]>;
+  fetchTaskResultSummary: (baseUrl: string, closureId: string) => Promise<Record<string, unknown>>;
+  getTaskClosureByRun: (baseUrl: string, runId: string) => Promise<TaskClosureEvidence>;
 }
 
 const STATUS_LABEL: Record<GoalStatus | 'rejected', string> = {
@@ -41,6 +44,22 @@ function nextSuggestion(status: GoalStatus | null, isMaxed: boolean): string | n
   return null;
 }
 
+function formatDuration(seconds: number): string {
+  if (seconds <= 0) return '0秒';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  if (m > 0) return `${m}分${s}秒`;
+  return `${s}秒`;
+}
+
+function summaryValue(value: unknown, fallback: string): string {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'string') return value || fallback;
+  if (typeof value === 'number') return String(value);
+  if (Array.isArray(value)) return value.length ? value.join(', ') : fallback;
+  return fallback;
+}
+
 interface GoalConsoleProps {
   workspacePath: string;
   goal: Goal | null;
@@ -59,6 +78,8 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
   const [loopStepCount, setLoopStepCount] = useState(0);
   const [timeline, setTimeline] = useState<TimelineEvent[] | null>(null);
   const [evidence, setEvidence] = useState<GoalEvidence[] | null>(null);
+  const [resultSummary, setResultSummary] = useState<Record<string, unknown> | null>(null);
+  const [resultSummaryLoading, setResultSummaryLoading] = useState(false);
 
   // Notify parent when goal or runId changes (P1: feeds CheckpointPanel + SideChatPanel)
   useEffect(() => { onGoalChange?.(currentGoal, currentRunId); }, [currentGoal?.id, currentGoal?.status, currentRunId, onGoalChange]);
@@ -84,6 +105,44 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     api.fetchRunTimeline(baseUrl, currentRunId).then(t => { if (active) setTimeline(t); }).catch(() => {});
     return () => { active = false; };
   }, [baseUrl, currentRunId, api]);
+
+  // Fetch task result summary after a loop run completes
+  useEffect(() => {
+    if (!api.fetchTaskResultSummary || !currentRunId || !api.getTaskClosureByRun) {
+      setResultSummary(null);
+      setResultSummaryLoading(false);
+      return;
+    }
+    const showResultSummary = loopStepCount > 0 || ['completed', 'failed', 'stopped'].includes(currentGoal?.status ?? '');
+    if (!showResultSummary) {
+      setResultSummary(null);
+      setResultSummaryLoading(false);
+      return;
+    }
+    let active = true;
+    setResultSummaryLoading(true);
+    setResultSummary(null);
+    api.getTaskClosureByRun(baseUrl, currentRunId)
+      .then(closure => {
+        if (!active) return Promise.resolve(null);
+        const cid = typeof closure?.id === 'string' ? closure.id : null;
+        if (!cid) return Promise.resolve(null);
+        return api.fetchTaskResultSummary(baseUrl, cid);
+      })
+      .then(summary => {
+        if (active) {
+          setResultSummary(summary || null);
+          setResultSummaryLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setResultSummary(null);
+          setResultSummaryLoading(false);
+        }
+      });
+    return () => { active = false; };
+  }, [baseUrl, currentRunId, loopStepCount, currentGoal?.status, api]);
 
   async function handleStart() {
     setError('');
@@ -219,6 +278,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
           {evidence[0]?.summary ? <span>{evidence[0].summary}</span> : null}
         </>}
       </div> : null}
+      <TaskResultSummaryPanel summary={resultSummary as TaskResultSummary | null} loading={resultSummaryLoading} />
     </div>
   </section>;
 }

@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GoalConsole } from './GoalConsole';
-import type { Goal, GoalEvidence, TimelineEvent } from '@bolt/shared/autonomy';
+import type { Goal, GoalEvidence, TaskClosureEvidence, TimelineEvent } from '@bolt/shared/autonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 
 const baseGoal: Goal = {
@@ -12,6 +12,25 @@ const baseGoal: Goal = {
   criteria: ['所有拼写已修正'], status: 'pending',
   max_steps: 10, max_cost: 5.0, max_wall_time: 300,
   workspace: 'D:/Projects/Bolt', step_count: 0,
+};
+
+const mockClosure: TaskClosureEvidence = {
+  id: 'closure_1',
+  objective: '修复 README 中的拼写错误',
+  template_id: 'general',
+  run_id: 'run_noop',
+  goal_id: 'goal_test1234',
+  status: 'completed',
+  final_status: 'completed',
+  plan_summary: '',
+  changed_files: ['README.md'],
+  commands: ['pytest'],
+  command_results: ['299 ok'],
+  permission_request_ids: [],
+  retry_count: 0,
+  review_summary: '审查通过',
+  next_action: '建议：部署到生产环境',
+  created_at: Date.now(),
 };
 
 const noopApi = {
@@ -24,6 +43,8 @@ const noopApi = {
   getGoal: vi.fn().mockResolvedValue(baseGoal),
   fetchGoalEvidence: vi.fn().mockResolvedValue([]),
   fetchRunTimeline: vi.fn().mockResolvedValue([]),
+  fetchTaskResultSummary: vi.fn().mockResolvedValue({} as Record<string, unknown>),
+  getTaskClosureByRun: vi.fn().mockResolvedValue(mockClosure),
 };
 
 describe('M37 Goal Console', () => {

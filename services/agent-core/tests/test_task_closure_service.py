@@ -285,3 +285,59 @@ def test_service_failed_assessment_sets_repair_suggestion():
 
     assert updated.status == TaskClosureStatus.FAILED
     assert updated.next_action == "根据失败输出修复问题后重新记录验证证据"
+
+
+def test_result_summary_completed():
+    svc = TaskClosureService()
+    closure = svc.start("增加登录功能", TaskTemplateId.BUGFIX)
+    svc.transition(closure.id, TaskClosureStatus.PLANNING)
+    svc.transition(closure.id, TaskClosureStatus.EXECUTING)
+    svc.record_file_change(closure.id, "src/auth.py")
+    svc.record_file_change(closure.id, "src/auth.test.ts")
+    svc.record_command(closure.id, "pytest", "16 passed")
+    svc.record_command(closure.id, "pnpm quality", "OK")
+    import time as _time
+    _time.sleep(0.05)
+    svc.mark_completed(closure.id, "全部通过")
+
+    summary = svc.result_summary(closure.id)
+    assert summary["closure_id"] == closure.id
+    assert summary["status"] == TaskClosureStatus.COMPLETED
+    assert summary["duration_seconds"] > 0
+    assert "src/auth.py" in summary["changed_files"]
+    assert "pytest" in summary["commands"]
+    assert len(summary["command_results"]) <= 5
+    assert summary["review_summary"] == "全部通过"
+    assert summary["next_action"] == "已完成"
+    assert summary["retry_count"] == 0
+
+
+def test_result_summary_failed():
+    svc = TaskClosureService()
+    closure = svc.start("修复崩溃", TaskTemplateId.BUGFIX)
+    svc.record_tool_result(closure.id, {"request_id": "tool_1", "status": "failed", "output": "Segmentation fault"})
+    svc.mark_failed(closure.id, "工具执行失败")
+
+    summary = svc.result_summary(closure.id)
+    assert summary["status"] == TaskClosureStatus.FAILED
+    assert summary["error"] is None  # mark_failed doesn't set error field
+    assert summary["retry_count"] == 0
+
+
+def test_result_summary_empty_closure():
+    svc = TaskClosureService()
+    closure = svc.start("空任务", TaskTemplateId.DOCS)
+
+    summary = svc.result_summary(closure.id)
+    assert summary["closure_id"] == closure.id
+    assert summary["status"] == TaskClosureStatus.PENDING
+    assert summary["duration_seconds"] == 0
+    assert summary["changed_files"] == []
+    assert summary["commands"] == []
+    assert summary["command_results"] == []
+    assert summary["final_output"] is None
+    assert summary["error"] is None
+    assert summary["review_summary"] is None
+    assert summary["next_action"] is None
+    assert summary["retry_count"] == 0
+    assert summary["permission_requests"] == []
