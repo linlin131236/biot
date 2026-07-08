@@ -113,6 +113,21 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '恢复建议', detail: '只给出可验证下一步，不自动执行修复。', control: '等待确认', tone: 'warning' },
     ],
   },
+  validation: {
+    eyebrow: '只读发布门禁',
+    title: '验证发布',
+    summary: '这里只展示检查结果，不执行推送、发布或打标签。',
+    metrics: [
+      { label: '验证门禁', value: '等待结果', tone: 'warning' },
+      { label: '测试反馈', value: '结构化回填' },
+      { label: '发布准备', value: '只读检查', tone: 'success' },
+    ],
+    rows: [
+      { title: '验证门禁', detail: '汇总测试、构建、文档和中文 UI 检查结果。', control: '只读评估' },
+      { title: '测试反馈', detail: '展示白名单测试回填，不接受任意 shell 命令。', control: '白名单' },
+      { title: '发布准备', detail: '检查发布准备度，但不执行推送、发布或打标签。', control: '人工决定', tone: 'warning' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {

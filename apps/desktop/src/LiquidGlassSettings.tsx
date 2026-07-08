@@ -1,6 +1,7 @@
 import {
   Activity,
   Bot,
+  CheckCircle2,
   Code2,
   Database,
   FileDiff,
@@ -24,6 +25,7 @@ const settingItems = [
   { id: 'permission', label: '权限中心', icon: ShieldCheck },
   { id: 'patch', label: '补丁审查', icon: FileDiff },
   { id: 'audit', label: '审计诊断', icon: Activity },
+  { id: 'validation', label: '验证发布', icon: CheckCircle2 },
   { id: 'skills', label: '技能', icon: Sparkles },
   { id: 'agents', label: '子智能体', icon: Bot },
   { id: 'mcp', label: 'MCP 服务器', icon: Plug },

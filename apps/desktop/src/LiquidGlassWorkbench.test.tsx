@@ -112,6 +112,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('阻断、警告、提示和下一步建议按优先级展示。')).toBeInTheDocument();
   });
 
+  it('renders a validation release surface without publish controls', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '验证发布' }));
+
+    expect(screen.getByRole('heading', { name: '验证发布' })).toBeInTheDocument();
+    expect(screen.getAllByText('验证门禁').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('测试反馈').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('发布准备').length).toBeGreaterThan(0);
+    expect(screen.getByText('这里只展示检查结果，不执行推送、发布或打标签。')).toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 
