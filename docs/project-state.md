@@ -2,56 +2,68 @@
 
 ## 当前稳定基线
 
-- 已完成到：M143 Task Home Cockpit（已 push）。
+- 已完成到：M150 Liquid Glass UI Dogfood（本地完成，待复审 / 待 push）。
 - 最新远端基线：`origin/main = 61ecee1 docs: mark M143 pushed`。
-- 当前本地基线：`61ecee1 docs: mark M143 pushed`。
-- 当前本地分支：`main...origin/main`，本地与远端同步。
-- 当前工作区：M143 改动已验证并推送，`.claude/` 未跟踪、未提交。
-- 已 push / 未 release / 未 tag / 未 delete。
+- 当前本地基线：M150 收口提交（本提交）。
+- 当前本地分支：`main...origin/main [ahead 7]`，M150 提交后将领先 8 个提交。
+- 当前工作区：M144-M150 改动已完成全量验证，`.claude/` 未跟踪、未提交。
+- 未 push / 未 release / 未 tag / 未 delete。
 
-## M143 当前改动
+## M144-M150 当前改动
 
-- 首页新增任务驾驶舱。
-- 首页显示当前项目、权限边界、运行状态、核心服务。
-- 首页新增 6 个安全推荐任务卡片，并修正任务卡片可用性。
-- 推荐任务只复用已有 UI 回调，不新增自动执行能力。
-- 未选择工作区时，工作区相关任务卡片保持禁用；未创建运行时，轨迹、文档整理、时间线任务保持禁用。
-- 复审修复推荐任务文案：验证卡片改为“评估验证门禁”，只评估已回填结果，不声称直接触发测试运行器。
-- 继续保持软件产品源码不出现私人称呼。
-- 未新增自动批准、push、release、tag、delete 入口。
+- M144：设置中心产品化，常规、代码预览、模型设置显示独立内容。
+- M145：新增权限中心，展示待批准请求、写入门禁、审计记录。
+- M146：新增补丁审查页，展示补丁预览、风险摘要、批准写入边界。
+- M147：新增审计诊断页，展示审计时间线、诊断中心、恢复建议。
+- M148：新增验证发布页，展示验证门禁、测试反馈、发布准备，明确不执行推送、发布或打标签。
+- M149：新增智能协作页，展示记忆索引、多 Agent 团队、多任务队列。
+- M150：UI dogfood 大复盘，收口文档链和验证清单。
 
-## M143 关键文件
+## M144-M150 关键文件
 
-- `apps/desktop/src/LiquidGlassHome.tsx`
-- `apps/desktop/src/LiquidGlassHomeInteraction.test.tsx`
-- `apps/desktop/src/liquidGlassHomeInteraction.css`
-- `apps/desktop/src/LiquidGlassWorkbench.tsx`
-- `docs/superpowers/plans/2026-07-09-m143-task-home-cockpit.md`
-- `docs/exec-plans/active/143-task-home-cockpit.md`
-- `docs/decisions/143-task-home-cockpit.md`
-- `docs/phase-143-review-gate.md`
+- `apps/desktop/src/LiquidGlassSettings.tsx`
+- `apps/desktop/src/LiquidGlassSettingsSurfaces.tsx`
+- `apps/desktop/src/LiquidGlassWorkbench.test.tsx`
+- `apps/desktop/src/liquidGlassSettings.css`
+- `docs/superpowers/plans/2026-07-09-m144-m150-liquid-glass-product-surfaces.md`
+- `docs/exec-plans/active/144-settings-productization.md`
+- `docs/exec-plans/active/145-permission-center-surface.md`
+- `docs/exec-plans/active/146-patch-review-surface.md`
+- `docs/exec-plans/active/147-audit-diagnostics-surface.md`
+- `docs/exec-plans/active/148-validation-release-surface.md`
+- `docs/exec-plans/active/149-memory-team-queue-surface.md`
+- `docs/exec-plans/active/150-liquid-glass-ui-dogfood.md`
+- `docs/decisions/144-settings-productization.md`
+- `docs/decisions/145-permission-center-surface.md`
+- `docs/decisions/146-patch-review-surface.md`
+- `docs/decisions/147-audit-diagnostics-surface.md`
+- `docs/decisions/148-validation-release-surface.md`
+- `docs/decisions/149-memory-team-queue-surface.md`
+- `docs/decisions/150-liquid-glass-ui-dogfood.md`
+- `docs/phase-144-review-gate.md` through `docs/phase-150-review-gate.md`
 
-## M143 验证
+## M144-M150 验证
 
-- RED：`pnpm --filter @bolt/desktop test -- LiquidGlassHomeInteraction.test.tsx` 失败，原因是首页尚无“任务驾驶舱”和“推荐任务”区域。
-- GREEN：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassHomeInteraction.test.tsx --reporter verbose`：4 passed。
-- P1 修复 targeted：`LiquidGlassHomeInteraction`、`LiquidGlassWorkbench`、`LiquidGlassPrimitives`：12 passed。
-- `pnpm --filter @bolt/desktop test`：42 files / 295 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
-- `pnpm run quality`：通过。
+- Targeted：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：10 passed。
+- Targeted group：`LiquidGlassWorkbench`、`LiquidGlassPrimitives`、`LiquidGlassHomeInteraction`：18 passed。
+- Desktop build：通过。
+- `pnpm run quality`：通过，shared 27 passed，desktop 42 files / 301 tests passed。
 - `uv run pytest -q`：1564 passed，5 warnings。
-- 浏览器首页实机检查：通过。
+- `node scripts/check-docs.mjs`：通过。
+- `node scripts/check-chinese-ui.mjs`：通过。
+- `node scripts/check-size.mjs`：通过。
+- `git diff --check`：通过，仅 Windows LF/CRLF 提示。
 - 产品源码私人称呼扫描：无命中。
-- 复审修复：修正待批准权限文案、runId 依赖禁用逻辑、本地/远端基线描述，以及验证卡片的误导文案。
+- renderer 安全扫描：本批修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M143 改动已由 `61ecee1` 标记为已 push。
+- M144-M150 本地完成并通过全量验证，由 M150 收口提交记录。
 
 ## 下一步
 
-- 继续下一阶段前先恢复上下文并确认新的 milestone 范围。
+- 复审后由用户决定是否 push。
 
 ## 长期硬规则
 
