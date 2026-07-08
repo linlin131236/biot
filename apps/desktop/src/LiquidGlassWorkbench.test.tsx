@@ -60,6 +60,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('权限模式')).toBeInTheDocument();
   });
 
+  it('renders section-specific product settings for code preview and model setup', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '代码预览' }));
+    expect(screen.getByText('代码预览主题')).toBeInTheDocument();
+    expect(screen.getByText('补丁差异、行号和长行折叠都在这里统一管理。')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '模型设置' }));
+    expect(screen.getByText('模型提供方')).toBeInTheDocument();
+    expect(screen.getByText('API 密钥只显示配置状态，不在界面回显明文。')).toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 

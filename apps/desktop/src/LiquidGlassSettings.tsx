@@ -11,7 +11,8 @@ import {
   Sparkles,
   Terminal,
 } from 'lucide-react';
-import { GlassButton, GlassPanel } from './LiquidGlassPrimitives';
+import { GlassButton } from './LiquidGlassPrimitives';
+import { LiquidGlassSettingsSurface } from './LiquidGlassSettingsSurfaces';
 
 const settingItems = [
   { id: 'general', label: '常规', icon: SlidersHorizontal },
@@ -60,9 +61,7 @@ export function LiquidGlassSettings({
           <GlassButton>浅色</GlassButton>
           <GlassButton>简体中文</GlassButton>
         </div>
-        <GeneralCard />
-        <PermissionCard />
-        <NetworkCard />
+        <LiquidGlassSettingsSurface activeSetting={activeSetting} />
       </section>
     </div>
   );
@@ -81,62 +80,5 @@ function SettingsHeader() {
         <span><i /> 权限安全</span>
       </div>
     </div>
-  );
-}
-
-function GeneralCard() {
-  return (
-    <GlassPanel className="biotGlassCard" flow>
-      <SettingRow title="界面主题" detail="切换应用界面使用的主题外观。" control="深色液态玻璃" />
-      <SettingRow title="界面语言" detail="选择应用 UI 的显示语言。" control="简体中文" />
-      <SettingRow title="启动时打开" detail="选择启动后默认进入的页面。" control="Agent 工作台" />
-    </GlassPanel>
-  );
-}
-
-function PermissionCard() {
-  return (
-    <GlassPanel className="biotGlassCard" flow>
-      <SettingRow title="权限模式" detail="写入、apply、恢复前都需要用户确认。" control="完全访问，写入需批准" />
-      <SettingToggle title="自动执行" detail="不自动执行危险命令。" enabled={false} />
-      <SettingToggle title="人工批准" detail="写入前永远等待用户确认。" enabled />
-    </GlassPanel>
-  );
-}
-
-function NetworkCard() {
-  return (
-    <GlassPanel className="biotGlassCard" flow>
-      <SettingInput title="HTTP 代理" placeholder="留空直连，例如 http://127.0.0.1:7890" />
-      <SettingInput title="No Proxy" placeholder="localhost,127.0.0.1" />
-    </GlassPanel>
-  );
-}
-
-function SettingRow({ title, detail, control }: { title: string; detail: string; control: string }) {
-  return (
-    <div className="biotSettingRow">
-      <div><strong>{title}</strong><span>{detail}</span></div>
-      <GlassButton>{control}</GlassButton>
-    </div>
-  );
-}
-
-function SettingToggle({ title, detail, enabled }: { title: string; detail: string; enabled: boolean }) {
-  return (
-    <div className="biotSettingRow">
-      <div><strong>{title}</strong><span>{detail}</span></div>
-      <button type="button" className={`biotSwitch ${enabled ? 'on' : ''}`} aria-label={title}><i /></button>
-    </div>
-  );
-}
-
-function SettingInput({ title, placeholder }: { title: string; placeholder: string }) {
-  return (
-    <label className="biotSettingInput">
-      <span>{title}</span>
-      <input placeholder={placeholder} />
-      <GlassButton>保存</GlassButton>
-    </label>
   );
 }
