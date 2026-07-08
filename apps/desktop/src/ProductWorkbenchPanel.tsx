@@ -59,10 +59,11 @@ interface Props {
 export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
   const [data, setData] = useState<WorkbenchSnapshot | null>(null);
   const [error, setError] = useState('');
+  const { fetchProductWorkbench } = api;
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchProductWorkbench(baseUrl)
+    fetchProductWorkbench(baseUrl)
       .then((next) => {
         if (!cancelled) setData(next);
       })
@@ -70,7 +71,7 @@ export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       });
     return () => { cancelled = true; };
-  }, [baseUrl, api]);
+  }, [baseUrl, fetchProductWorkbench]);
 
   if (error) {
     return <section style={panelStyle}><p style={{ color: '#b91c1c' }}>加载 Agent 工作台失败：{error}</p></section>;
