@@ -39,6 +39,13 @@ interface WorkbenchSnapshot {
     arbitrary_shell_allowed: boolean;
     commands: { test_id: string; label_cn: string; status: string }[];
   };
+  failure_recovery?: {
+    label_cn: string;
+    warning_cn: string;
+    auto_retry_allowed: boolean;
+    auto_resume_allowed: boolean;
+    checks: { check_id: string; label_cn: string; required: boolean; status: string }[];
+  };
   next_actions: string[];
 }
 
@@ -141,6 +148,21 @@ export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
         </div>
       )}
 
+      {data.failure_recovery && (
+        <div style={recoveryStyle}>
+          <strong>{data.failure_recovery.label_cn}</strong>
+          <p style={{ margin: '4px 0 8px', color: '#7f1d1d' }}>{data.failure_recovery.warning_cn}</p>
+          <div style={{ display: 'grid', gap: 4 }}>
+            {data.failure_recovery.checks.map((check) => (
+              <div key={check.check_id} style={recoveryCheckStyle}>
+                <span>{check.label_cn}</span>
+                <span style={laneBadgeStyle(check.status)}>{statusLabel(check.status)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <strong style={{ fontSize: 13 }}>下一步</strong>
         <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
@@ -178,6 +200,8 @@ const checkStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, p
 const testStyle = { marginTop: 12, padding: 10, border: '1px solid #bae6fd', borderRadius: 6, background: '#f0f9ff', fontSize: 12 } satisfies CSSProperties;
 const commandGridStyle = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 6 } satisfies CSSProperties;
 const commandStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, padding: 6, border: '1px solid #e0f2fe', borderRadius: 4, background: '#fff' } satisfies CSSProperties;
+const recoveryStyle = { marginTop: 12, padding: 10, border: '1px solid #fecaca', borderRadius: 6, background: '#fef2f2', fontSize: 12 } satisfies CSSProperties;
+const recoveryCheckStyle = { display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderTop: '1px solid #fee2e2' } satisfies CSSProperties;
 
 function stageCardStyle(status: string): CSSProperties {
   return {

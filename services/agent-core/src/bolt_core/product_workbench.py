@@ -126,6 +126,24 @@ class TestFeedbackSummary:
 
 
 @dataclass(frozen=True)
+class FailureRecoverySummary:
+    label_cn: str
+    warning_cn: str
+    auto_retry_allowed: bool
+    auto_resume_allowed: bool
+    checks: list[WorkbenchCheck]
+
+    def to_dict(self) -> dict:
+        return {
+            "label_cn": self.label_cn,
+            "warning_cn": self.warning_cn,
+            "auto_retry_allowed": self.auto_retry_allowed,
+            "auto_resume_allowed": self.auto_resume_allowed,
+            "checks": [check.to_dict() for check in self.checks],
+        }
+
+
+@dataclass(frozen=True)
 class WorkbenchSnapshot:
     summary_cn: str
     read_only: bool
@@ -135,6 +153,7 @@ class WorkbenchSnapshot:
     safety: WorkbenchSafety
     patch_approval: PatchApprovalSummary
     test_feedback: TestFeedbackSummary
+    failure_recovery: FailureRecoverySummary
     next_actions: list[str]
     updated_at: str
 
@@ -148,6 +167,7 @@ class WorkbenchSnapshot:
             "safety": self.safety.to_dict(),
             "patch_approval": self.patch_approval.to_dict(),
             "test_feedback": self.test_feedback.to_dict(),
+            "failure_recovery": self.failure_recovery.to_dict(),
             "next_actions": self.next_actions,
             "updated_at": self.updated_at,
         }
@@ -175,12 +195,28 @@ class ProductWorkbenchService:
             ),
             patch_approval=self._patch_approval(),
             test_feedback=self._test_feedback(),
+            failure_recovery=self._failure_recovery(),
             next_actions=[
                 "先在目标区确认一句话任务是否明确。",
                 "写入前查看补丁预览和风险标签。",
                 "批准后再查看测试结果、审计记录和恢复建议。",
             ],
             updated_at=datetime.now(timezone.utc).isoformat(),
+        )
+
+    def _failure_recovery(self) -> FailureRecoverySummary:
+        return FailureRecoverySummary(
+            label_cn="失败与恢复检查",
+            warning_cn="这里只解释失败和恢复前条件；不自动 retry，不自动 resume。",
+            auto_retry_allowed=False,
+            auto_resume_allowed=False,
+            checks=[
+                WorkbenchCheck("failure_classified", "失败必须先分类并说明原因", True, "ready"),
+                WorkbenchCheck("retry_risk_reviewed", "重试风险必须先评估", True, "ready"),
+                WorkbenchCheck("permission_reverified", "恢复前必须重新验证权限", True, "ready"),
+                WorkbenchCheck("state_reverified", "恢复前必须重新验证状态", True, "ready"),
+                WorkbenchCheck("manual_resume_required", "恢复必须由爸爸人工确认", True, "blocked"),
+            ],
         )
 
     def _test_feedback(self) -> TestFeedbackSummary:

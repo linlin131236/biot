@@ -80,6 +80,23 @@ def test_product_workbench_exposes_test_feedback_whitelist():
     assert "任意 shell" in feedback["warning_cn"]
 
 
+def test_product_workbench_exposes_failure_recovery_checks():
+    data = ProductWorkbenchService().snapshot().to_dict()
+
+    recovery = data["failure_recovery"]
+    assert recovery["label_cn"] == "失败与恢复检查"
+    assert recovery["auto_retry_allowed"] is False
+    assert recovery["auto_resume_allowed"] is False
+    assert [item["check_id"] for item in recovery["checks"]] == [
+        "failure_classified",
+        "retry_risk_reviewed",
+        "permission_reverified",
+        "state_reverified",
+        "manual_resume_required",
+    ]
+    assert "不自动" in recovery["warning_cn"]
+
+
 def test_product_workbench_api_is_registered():
     client = TestClient(create_app(project_dir="."))
 

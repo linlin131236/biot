@@ -39,6 +39,16 @@ const snapshot = {
       { test_id: 'quality_gate', label_cn: '质量门', status: 'ready' },
     ],
   },
+  failure_recovery: {
+    label_cn: '失败与恢复检查',
+    warning_cn: '不自动 retry，不自动 resume。',
+    auto_retry_allowed: false,
+    auto_resume_allowed: false,
+    checks: [
+      { check_id: 'failure_classified', label_cn: '失败已分类', required: true, status: 'ready' },
+      { check_id: 'manual_resume_required', label_cn: '恢复必须人工确认', required: true, status: 'blocked' },
+    ],
+  },
   next_actions: ['先确认目标和补丁预览。'],
   updated_at: '2026-07-08T00:00:00Z',
 };
@@ -97,6 +107,20 @@ describe('ProductWorkbenchPanel', () => {
     expect(screen.getByText('后端单元测试')).toBeInTheDocument();
     expect(screen.getByText('质量门')).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).toBeNull();
+  });
+
+  it('renders failure recovery checks without retry controls', async () => {
+    render(
+      <ProductWorkbenchPanel
+        baseUrl="http://core"
+        api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
+      />
+    );
+
+    expect(await screen.findByText('失败与恢复检查')).toBeInTheDocument();
+    expect(screen.getByText('失败已分类')).toBeInTheDocument();
+    expect(screen.getByText('恢复必须人工确认')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /重试|恢复/ })).toBeNull();
   });
 
   it('renders lane summaries and next actions', async () => {
