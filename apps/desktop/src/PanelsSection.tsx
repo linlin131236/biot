@@ -24,7 +24,8 @@ import { BuilderPanel } from './BuilderPanel';
 import { ReviewerPanel } from './ReviewerPanel';
 import { SkillLearnerPanel } from './SkillLearnerPanel';
 import { OrchestratorPanel } from './OrchestratorPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles } from './harnessClientAutonomy';
+import { SleepWakePanel } from './SleepWakePanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -51,6 +52,7 @@ export interface PanelsProps {
     reviewer: { reviewOutput: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (b: string, verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
     skilllearner: { autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
     orchestrator: { runOrchestration: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchRoles: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    sleepWake: { sleep: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; wake: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -111,6 +113,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <ReviewerPanel baseUrl={baseUrl} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
       <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
       <OrchestratorPanel baseUrl={baseUrl} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
+      <SleepWakePanel baseUrl={baseUrl} api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
     </>
   );
 }

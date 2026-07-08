@@ -420,6 +420,19 @@ export async function fetchOrchestratorRoles(baseUrl: string, fetcher: Fetcher =
   return readJson(await fetcher(`${baseUrl}/orchestrator/roles`));
 }
 
+// === Sleep/Wake (M164) ===
+export async function sleepAgent(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/sleep-wake/sleep`, jsonPost(payload)));
+}
+
+export async function wakeAgent(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/sleep-wake/wake`, jsonPost(payload)));
+}
+
+export async function fetchSleepWakeStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/sleep-wake/status`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

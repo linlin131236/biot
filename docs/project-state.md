@@ -365,10 +365,21 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M163 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M164 当前改动
+
+- M164：Sleep/Wake 模式。新建 `SleepWakeEngine`（`sleep_wake_engine.py`）管理 Agent 待机/唤醒生命周期，支持 sleep/wake/get_status 操作。`sleep_wake_api.py` 新增 `POST /sleep-wake/sleep`、`POST /sleep-wake/wake`、`GET /sleep-wake/status` 端点。前端新建 `SleepWakePanel` 组件展示状态和操作历史。
+
+## M164 验证
+
+- Backend targeted tests：6 passed（test_sleep_wake_engine.py）
+- Frontend targeted tests：6 passed（SleepWakePanel.test.tsx）
+- Desktop tests：50 files / 367 tests passed（+6 新增测试）
+- `pnpm run quality`：通过。
+
 ## 下一步
 
-- **待完成**：commit M163 完整实现（OrchestratorEngine + run/roles 端点 + OrchestratorPanel + 12 测试 + decision + review gate + project-state 更新）。
-- M164 — Sleep/Wake mode：空闲循环 + 目标唤醒。
+- **待完成**：commit M164 完整实现（SleepWakeEngine + sleep/wake/status 端点 + SleepWakePanel + 12 测试 + decision + review gate + project-state 更新）。
+- M165 — Gate Freeze：生产级 Gate。
 
 ## 长期硬规则
 
