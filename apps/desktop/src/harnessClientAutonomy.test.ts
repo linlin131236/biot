@@ -1,9 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, approvePermissionFromCenter, rejectPermissionFromCenter } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
 describe('harness autonomy client', () => {
+  it('calls permission center decision endpoints through PermissionGate routes', async () => {
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ status: 'executed' }))));
+
+    await approvePermissionFromCenter('http://core', 'tool_1', fetcher);
+    await rejectPermissionFromCenter('http://core', 'tool_2', fetcher);
+
+    expect(fetcher).toHaveBeenCalledWith('http://core/permissions/tool_1/approve', { method: 'POST' });
+    expect(fetcher).toHaveBeenCalledWith('http://core/permissions/tool_2/reject', { method: 'POST' });
+  });
+
   it('calls checkpoint endpoints', async () => {
     const checkpoint = {
       id: 'cp_1234abcd',

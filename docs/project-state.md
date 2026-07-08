@@ -2,14 +2,14 @@
 
 ## 当前稳定基线
 
-- 已完成到：M135 Checkpoint Restore Semantics（本地完成，待提交）。
+- 已完成到：M136 Permission Center Real Gate Binding（本地已提交，待 push）。
 - 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
-- 最新本地提交：`068c0bd feat(M134): feed tool results back into agent loop`。
-- 当前本地分支：`main...origin/main [ahead 2]`。
-- M133-M134 已本地提交，尚未 push。
-- M135 已通过 targeted tests、full tests、quality 和 build，尚未提交。
+- 最新本地提交：`HEAD feat(M136): bind permission center to real gate decisions`。
+- 当前本地分支：`main...origin/main [ahead 4]`。
+- M133-M136 已本地提交，尚未 push。
+- M136 已通过 targeted tests、full tests、quality 和 build。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M136。
+- 未进入 M137。
 
 ## M135 当前修复
 
@@ -41,15 +41,47 @@
 - renderer 暴露扫描：无 M135 新增暴露。
 - 自动危险操作扫描：无 M135 新增自动 push/release/tag/delete/approve 入口。
 
+## M136 当前修复
+
+- 权限中心返回真实 `request_id`。
+- 桌面权限中心新增“批准并执行”和“拒绝”按钮。
+- 按钮复用既有 `/permissions/{request_id}/approve` 与 `/reject`。
+- 操作必须由爸爸点击触发，不自动 approve。
+- 操作后刷新权限中心列表并显示中文结果。
+
+## M136 关键文件
+
+- `services/agent-core/src/bolt_core/permission_center.py`
+- `services/agent-core/tests/test_permission_center_api.py`
+- `apps/desktop/src/PermissionCenterPanel.tsx`
+- `apps/desktop/src/PermissionCenterPanel.test.tsx`
+- `apps/desktop/src/harnessClientAutonomy.ts`
+- `apps/desktop/src/harnessClientAutonomy.test.ts`
+- `apps/desktop/src/PanelsSection.tsx`
+- `docs/exec-plans/active/136-permission-center-real-gate-binding.md`
+- `docs/decisions/136-permission-center-real-gate-binding.md`
+- `docs/phase-136-review-gate.md`
+
+## M136 验证
+
+- Targeted desktop tests：39 files / 286 tests passed。
+- Targeted backend tests：15 passed（含 M100 dogfood 回归）。
+- Full backend tests：1554 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 286 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
+- `as any / unknown as`：无 M136 新增违规。
+- renderer 暴露扫描：无 M136 新增暴露。
+- 自动危险操作扫描：无 M136 新增自动 push/release/tag/delete/auto-approve 入口。
+
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M135 文件有未提交改动。
+- 已跟踪文件干净；`.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步
 
-- 提交 M135。
-- 自动继续 M136：权限中心到真实执行链路的 UI/API 绑定收口。
+- 暂停在 M136，等待爸爸确认是否继续 M137。
 
 ## 长期硬规则
 

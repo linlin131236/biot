@@ -63,6 +63,7 @@ def _risk_label(risk: str) -> str:
 @dataclass
 class PermissionCenterItem:
     id: str
+    request_id: str
     run_id: str
     tool: str
     tool_cn: str
@@ -81,6 +82,7 @@ class PermissionCenterItem:
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "request_id": self.request_id,
             "run_id": self.run_id,
             "tool": self.tool,
             "tool_cn": self.tool_cn,
@@ -167,6 +169,7 @@ class PermissionCenterService:
 
             items.append(PermissionCenterItem(
                 id=p.id,
+                request_id=getattr(p, "request_id", p.id),
                 run_id=p.run_id,
                 tool=p.tool,
                 tool_cn=tool_cn,
