@@ -2,11 +2,11 @@
 
 ## 当前稳定基线
 
-- 已完成到：M140 Harness Execution Lock Boundary（本地已提交，待 push）。
-- 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
-- 最新本地提交：`HEAD fix(M140): release state lock before tool execution`。
-- 当前本地分支：`main...origin/main [ahead 8]`。
-- M133-M140 已本地提交，尚未 push。
+- 已完成到：M140 Harness Execution Lock Boundary（已 push）。
+- 最新远端基线：`origin/main = main = HEAD`。
+- 最新本地提交：`HEAD docs: mark M140 fixes pushed`。
+- 当前本地分支：`main...origin/main`（无 ahead / 无 behind）。
+- M133-M140 已提交并 push。
 - M140 已通过 targeted tests、full backend、quality 和 build。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M141。
