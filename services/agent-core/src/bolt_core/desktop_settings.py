@@ -108,7 +108,7 @@ class DesktopSettingsService:
             "default_workspace": self._settings.default_workspace,
         }
         self._settings_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
-        logger.info("desktop settings saved: %s", data)
+        logger.info("desktop settings saved: theme=%s language=%s has_workspace=%s", data["theme"], data["language"], bool(data["default_workspace"]))
 
     def _ensure_bolt_dir(self) -> None:
         self._bolt_dir.mkdir(parents=True, exist_ok=True)

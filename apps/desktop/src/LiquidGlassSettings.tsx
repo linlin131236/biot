@@ -1,22 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GlassPanel, GlassPill } from './LiquidGlassPrimitives';
 import { settingItems, surfaces, type DesktopSettingsStatus, type LiquidGlassSettingsProps } from './LiquidGlassSettingsData';
 
-export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, coreUrl, settings, onSaveTheme }: LiquidGlassSettingsProps) {
+export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, settings, onSaveTheme }: LiquidGlassSettingsProps) {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    fetch(`${coreUrl}/desktop/settings`).then((r) => {
-      if (!r.ok) throw new Error(String(r.status));
-      return r.json() as Promise<DesktopSettingsStatus>;
-    }).then((data) => {
-      if (active) onSaveTheme(data.theme);
-    }).catch(() => {
-      if (active) onSaveTheme('dark');
-    });
-    return () => { active = false; };
-  }, [coreUrl, onSaveTheme]);
+  async function handleSaveTheme(nextTheme: string) {
+    // Delegate to parent which uses authenticated fetcher
+    await onSaveTheme(nextTheme);
+    setSaveMessage('设置已保存');
+    setTimeout(() => setSaveMessage(null), 2000);
+  }
 
   const surface = surfaces[activeSetting] ?? surfaces.general;
   const realThemeLabel = settings?.theme === 'light' ? '浅色' : '深色';

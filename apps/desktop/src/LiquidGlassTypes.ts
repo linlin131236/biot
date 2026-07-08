@@ -29,7 +29,6 @@ export interface LiquidGlassWorkbenchProps {
   setTheme: (value: ThemeMode) => void;
   onSaveTheme: (next: ThemeMode) => void;
   settings: DesktopSettingsStatus | null;
-  coreUrl: string;
 }
 
 export interface LiquidGlassHomeProps {

@@ -105,7 +105,6 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
             activeSetting={activeSetting}
             onBack={() => setView('home')}
             setActiveSetting={setActiveSetting}
-            coreUrl={props.coreUrl}
             settings={props.settings}
             onSaveTheme={props.onSaveTheme}
           />

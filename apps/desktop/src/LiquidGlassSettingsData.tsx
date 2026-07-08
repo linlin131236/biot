@@ -32,9 +32,8 @@ export type LiquidGlassSettingsProps = {
   activeSetting: string;
   onBack: () => void;
   setActiveSetting: (value: string) => void;
-  coreUrl: string;
   settings: DesktopSettingsStatus | null;
-  onSaveTheme: (theme: string) => void;
+  onSaveTheme: (theme: string) => Promise<void>;
 };
 
 export const settingItems = [

@@ -2,10 +2,10 @@
 
 ## 当前稳定基线
 
-- 已完成到：M151 Settings Persistence（真实设置持久化）。
+- 已完成到：M151 Settings Persistence（真实设置持久化），已 commit 未 push。
 - 最新远端基线：`origin/main = 51e2502 docs: mark M150 pushed`。
-- 当前本地基线：`HEAD = 51e2502 docs: mark M150 pushed`（M151 改动未 commit）。
-- 当前本地分支：`main...origin/main`，本地与远端同步。
+- 当前本地基线：`HEAD = 3ad65c0 feat(M151): real settings persistence for desktop`。
+- 当前本地分支：`main...origin/main [ahead 1]`，本地领先远端 1 个 commit（M151）。
 - 当前工作区：M151 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M152。
@@ -50,7 +50,7 @@
 
 ## 下一步
 
-- M152 — Workspace & Recent Sessions：真实工作区和最近会话。
+- M151 复审 FAIL，修复 P1/P2 后重新复审。不进入 M152。
 
 ## 长期硬规则
 

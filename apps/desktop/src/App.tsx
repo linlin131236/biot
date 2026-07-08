@@ -173,7 +173,6 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         setTheme={setTheme}
         onSaveTheme={handleSaveTheme}
         settings={settings}
-        coreUrl={session.coreUrl}
         error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
         toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
         modelPanel={<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} />}
