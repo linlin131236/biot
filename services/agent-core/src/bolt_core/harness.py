@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -11,7 +10,6 @@ from bolt_core.memory_consolidator import MemoryConsolidationResult, MemoryConso
 from bolt_core.memory_store import MemoryRecord, MemoryStore
 from bolt_core.model_settings import ModelSettingsStatus, ModelSettingsStore
 from bolt_core.patch_engine import build_change_set, apply_change_set
-from bolt_core.evidence import EvidenceLog
 from bolt_core.goal_service import GoalService
 from bolt_core.harness_state import HarnessRun, HarnessState
 from bolt_core.permission_gate import PermissionGate
@@ -24,35 +22,38 @@ from bolt_core.task_closure_service import TaskClosureService
 from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
+from bolt_core.workspace_lock import resolve_run_workspace
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
                  memory_db_path: str | None = None,
-                 task_closure_service: TaskClosureService | None = None) -> None:
-        self.workspace = workspace
+                 task_closure_service: TaskClosureService | None = None,
+                 locked_workspace: str | None = None) -> None:
+        self.workspace = str(Path(workspace).resolve())
+        self.locked_workspace = str(Path(locked_workspace).resolve()) if locked_workspace else None
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
         self.model_settings = ModelSettingsStore()
         self.agent_loop = AgentLoop()
         self.consolidator = MemoryConsolidator()
-        self.terminal = TerminalService(workspace)
-        self.goal_service = GoalService(workspace)
+        self.terminal = TerminalService(self.workspace)
+        self.goal_service = GoalService(self.workspace)
         self.task_closure_service = task_closure_service
         self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
-        self.conversation_store = ConversationStore(str(Path(workspace) / ".bolt" / "conversations.db"))
+        self.conversation_store = ConversationStore(str(Path(self.workspace) / ".bolt" / "conversations.db"))
         self._state = HarnessState()
         self.runs = self._state.runs
         self.traces = self._state.traces
         self._state_lock = self._state.lock
 
     def create_run(self, goal: str, workspace: str | None = None) -> HarnessRun:
-        run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=workspace or self.workspace)
+        run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=resolve_run_workspace(workspace, self.workspace, self.locked_workspace))
         trace = self._state.register(run)
         trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         self._capture_perception(run)
         return run
 
     def register_internal_run(self, run_id: str, goal: str, workspace: str | None = None) -> HarnessRun:
-        run = HarnessRun(id=run_id, goal=goal, workspace=workspace or self.workspace)
+        run = HarnessRun(id=run_id, goal=goal, workspace=resolve_run_workspace(workspace, self.workspace, self.locked_workspace))
         trace = self._state.register(run)
         trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         return run

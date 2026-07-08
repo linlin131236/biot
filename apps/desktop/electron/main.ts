@@ -40,6 +40,8 @@ async function startAgentCore() {
     env: process.env,
     exists: existsSync
   });
+  process.env.BOLT_AGENT_CORE_TOKEN = runtime.authToken;
+  process.env.BOLT_WORKSPACE = runtime.env.BOLT_WORKSPACE;
   agentCore = new AgentCoreSupervisor({ runtime });
   const status = await agentCore.ensureStarted();
   if (status.status === 'down') console.error(status.error);

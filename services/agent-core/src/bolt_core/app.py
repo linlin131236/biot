@@ -1,6 +1,7 @@
+import os
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, Query
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
@@ -8,13 +9,15 @@ from bolt_core.execution_permission_bridge import ExecutionPermissionBridgeServi
 from bolt_core.execution_queue import ExecutionQueueService
 from bolt_core.execution_queue_api import create_execution_queue_router
 from bolt_core.execution_result_ingestion import ExecutionResultIngestionService
-from bolt_core.app_helpers import agent_loop_dict, agent_step_dict, checkpoint_workspace, goal_exists, permission_bridge_target, string_list
+from bolt_core.app_helpers import goal_exists, permission_bridge_target
 from bolt_core.harness import Harness
-from bolt_core.review_gate import ReviewChecklist, ReviewGate
+from bolt_core.harness_api import create_harness_router
+from bolt_core.local_api_auth import install_local_api_auth
+from bolt_core.review_gate import ReviewGate
 from bolt_core.task_closure_api import create_task_closure_router
 from bolt_core.task_closure_service import TaskClosureService
-from bolt_core.tool_protocol import ToolRequest
 from bolt_core.tool_result_api import tool_result_dict
+from bolt_core.workspace_lock import resolve_app_workspace
 
 from bolt_core.execution_audit_store import ExecutionAuditStore, ExecutionAuditStoreError, execution_audit_path as resolve_execution_audit_path
 from bolt_core.execution_audit_diagnostics import ExecutionAuditDiagnosticsService
@@ -93,9 +96,11 @@ from bolt_core.product_workbench_dogfood_api import create_product_workbench_dog
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
-def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None) -> FastAPI:
+def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None, local_api_token: str | None = None) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
-    audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, Path.cwd()))
+    install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"))
+    workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"))
+    audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))
     audit_store_status = "ok"
     audit_store_error = ""
     try:
@@ -108,7 +113,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
         task_closure_service = TaskClosureService(None)
         execution_queue_service = ExecutionQueueService(None)
         execution_handoff_service = ExecutionHandoffService(None)
-    harness = Harness(workspace=str(Path.cwd()), task_closure_service=task_closure_service)
+    harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace)
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
@@ -198,6 +203,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_desktop_beta_dogfood_router())
     app.include_router(create_product_workbench_router(str(project_dir or Path.cwd())))
     app.include_router(create_product_workbench_dogfood_router(str(project_dir or Path.cwd())))
+    app.include_router(create_harness_router(harness))
 
     @app.get("/health")
     def health() -> dict[str, str]:
@@ -212,32 +218,6 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
 
     @app.get("/context/p0")
     def p0_context() -> dict[str, list]: return harness.p0_context()
-
-    @app.post("/harness/runs")
-    def create_run(payload: dict) -> dict[str, str]:
-        workspace = payload.get("workspace")
-        run = harness.create_run(goal=str(payload.get("goal", "")), workspace=workspace if isinstance(workspace, str) and workspace else None)
-        return {"id": run.id, "goal": run.goal, "workspace": run.workspace}
-
-    @app.post("/harness/runs/{run_id}/tool-requests")
-    def submit_tool(run_id: str, payload: dict) -> dict[str, str | None]:
-        request = ToolRequest.create(payload["tool"], payload["operation"], payload.get("payload", {}))
-        result = harness.submit_tool_request(run_id, request)
-        return tool_result_dict(result)
-
-    @app.post("/harness/runs/{run_id}/agent-steps")
-    def run_agent_step(run_id: str) -> dict:
-        result = harness.run_agent_step(run_id)
-        return agent_step_dict(result)
-
-    @app.post("/harness/runs/{run_id}/agent-loops")
-    def run_agent_loop(run_id: str, payload: dict | None = None) -> dict:
-        result = harness.run_agent_loop(run_id, int((payload or {}).get("max_steps", 3)))
-        return agent_loop_dict(result)
-
-    @app.get("/harness/runs/{run_id}/trace")
-    def trace(run_id: str) -> list[dict]:
-        return [event.__dict__ for event in harness.trace(run_id)]
 
     @app.get("/memory")
     def memory() -> dict:

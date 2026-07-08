@@ -2,57 +2,53 @@
 
 ## 当前稳定基线
 
-- 已完成到：M131 Liquid Glass Desktop Shell（本地完成，等待爸爸复审）。
+- 已完成到：M132 Local API Auth + Workspace Lock（本地已提交，待爸爸复审）。
 - 最新远端基线：`origin/main = 16d7e9d fix(P2): stabilize workbench fetch effect`。
-- 最新本地提交：以 `git log -1` 为准，本地提交说明为 `feat(M131): add liquid glass desktop shell`。
-- 当前本地分支：`main` 基于 `origin/main` 完成 M131 本地改动。
+- 最新本地提交：`c4d9aa3 fix(M132): add local api auth and workspace lock`。
+- 当前本地分支：`main` 基于 `origin/main`，本地 ahead 2（M131 + M132）。
 - 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M132。
+- 未进入 M133。
 
-## 当前状态
+## M132 当前修复
 
-- M55-M125 已完成并 push。
-- 外部审计硬化已完成并 push。
-- M126-M130 Product Workbench 批次已完成并 push。
-- M131 新增液态玻璃桌面壳层：
-  - 主壳层：`LiquidGlassWorkbench.tsx`。
-  - 首页：`LiquidGlassHome.tsx`。
-  - 设置中心：`LiquidGlassSettings.tsx`。
-  - 类型：`LiquidGlassTypes.ts`。
-  - 样式：`liquidGlassShell.css`、`liquidGlassHome.css`、`liquidGlassSettings.css`。
-  - 测试：`LiquidGlassWorkbench.test.tsx`。
-- 工作区：存在 M131 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
+- 外部审计中确认成立：
+  - 本地 FastAPI 缺少 token 门禁。
+  - 桌面选择工作区没有成为后端硬边界。
+- 外部审计中当前不成立：
+  - `needs_replan` 未处理：当前 `AgentLoop.run_loop()` 已继续下一轮。
+  - `risk.py` 纯黑名单：当前已覆盖危险命令变体与 pipe-to-interpreter 拦截。
 
-## M131 验证
+## M132 关键文件
 
-- `pnpm lint:size`：通过。
-- `pnpm --filter @bolt/desktop test`：37 files / 280 tests passed。
-- `pnpm --filter @bolt/desktop build`：通过。
+- `services/agent-core/src/bolt_core/local_api_auth.py`
+- `services/agent-core/src/bolt_core/app.py`
+- `services/agent-core/src/bolt_core/harness.py`
+- `apps/desktop/electron/agentCoreRuntime.ts`
+- `apps/desktop/electron/main.ts`
+- `apps/desktop/electron/preload.ts`
+- `apps/desktop/src/agentCoreAuth.ts`
+- `apps/desktop/src/App.tsx`
+
+## M132 验证
+
+- 后端 targeted tests：20 passed。
+- 桌面 targeted tests：39 files / 284 tests passed。
+- 后端 full tests：1539 passed。
 - `pnpm run quality`：通过。
+- `pnpm --filter @bolt/desktop build`：通过。
 - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `node scripts/check-chinese-ui.mjs`：通过。
-- renderer 暴露扫描：无新增 ipcRenderer / fs / shell / process 暴露。
-- 自动执行 / 自动批准 / push-release-tag-delete：无新增入口。
+- `as any / unknown as`：无新增违规，命中均为规则文本、测试样例或扫描器字符串。
+- renderer 暴露扫描：无实际 `ipcRenderer` / `node:fs` / `child_process` / `process.` 引用，命中均为注释。
 
-## M131 产出
+## 工作区状态
 
-- `docs/exec-plans/active/131-liquid-glass-desktop-shell.md`
-- `docs/decisions/131-liquid-glass-desktop-shell.md`
-- `docs/phase-131-review-gate.md`
-- `docs/project-state.md`
-
-## 已知风险
-
-- M131 仍保留旧工程面板在折叠区，后续需要继续把权限、补丁、测试、恢复等面板产品化到主工作流。
-- `harnessClientAutonomy.ts` 仍是历史豁免的大文件，后续可专项拆分。
-- M61 Task Graph / M81-M89 多 Agent 工作流仍以纯内存为主，后续可评估持久化。
 - `.claude/` 未跟踪、未提交，按规则保持。
+- 除 M132 工作文件外无其他已知改动。
 
-## 下一步建议
+## 下一步
 
-- 爸爸复审 M131 液态玻璃桌面壳层。
-- 复审通过后可提交 M131。
-- 下一步 M132 建议做真实任务输入体验：意图确认、文件范围选择、权限预检和补丁预览前置。
+- 爸爸复审 M132。
+- 复审通过后再决定是否 push。
 
 ## 长期硬规则
 

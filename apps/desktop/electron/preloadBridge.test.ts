@@ -25,15 +25,15 @@ describe('preload bridge', () => {
 
   it('does not expose raw ipcRenderer', () => {
     const ipcRenderer = { invoke: vi.fn() };
-    const bridge = { selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL) };
+    const bridge = { selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL), agentCoreAuth: () => 'token' };
     const keys = Object.keys(bridge);
-    expect(keys).toEqual(['selectWorkspace']);
+    expect(keys).toEqual(['selectWorkspace', 'agentCoreAuth']);
     expect((bridge as Record<string, unknown>).ipcRenderer).toBeUndefined();
   });
 
   it('does not expose generic invoke method', () => {
     const ipcRenderer = { invoke: vi.fn() };
-    const bridge = { selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL) };
+    const bridge = { selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL), agentCoreAuth: () => 'token' };
     expect((bridge as Record<string, unknown>).invoke).toBeUndefined();
   });
 });

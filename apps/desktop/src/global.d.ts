@@ -5,6 +5,7 @@
 
 interface BoltBridge {
   selectWorkspace: () => Promise<string | null>;
+  agentCoreAuth?: () => Promise<string | null> | string | null;
 }
 
 declare global {

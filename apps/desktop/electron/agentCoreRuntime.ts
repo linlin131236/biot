@@ -1,4 +1,5 @@
 import { spawn as nodeSpawn, type ChildProcess } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 export interface AgentCoreRuntimeOptions {
@@ -7,6 +8,7 @@ export interface AgentCoreRuntimeOptions {
   packaged?: boolean;
   env?: NodeJS.ProcessEnv;
   exists?: (path: string) => boolean;
+  tokenFactory?: () => string;
 }
 
 export interface AgentCoreRuntime {
@@ -15,6 +17,7 @@ export interface AgentCoreRuntime {
   args: string[];
   cwd: string;
   env: NodeJS.ProcessEnv;
+  authToken: string;
   validationError?: string;
 }
 
@@ -36,12 +39,14 @@ export function resolveAgentCoreRuntime(options: AgentCoreRuntimeOptions): Agent
   const venvPython = joinPath(coreRoot, '.venv', 'Scripts', 'python.exe');
   const command = options.packaged ? venvPython : env.BOLT_AGENT_CORE_PYTHON || ((options.exists ?? (() => false))(venvPython) ? venvPython : 'python');
   const validationError = packagedResourceError(options, coreRoot, sourceRoot);
+  const authToken = env.BOLT_AGENT_CORE_TOKEN || (options.tokenFactory ?? randomUUID)();
   return {
     baseUrl: `http://127.0.0.1:${port}`,
     command,
     args: ['-m', 'uvicorn', 'bolt_core.app:create_app', '--factory', '--host', '127.0.0.1', '--port', String(port)],
     cwd: coreRoot,
-    env: { ...env, PYTHONPATH: prependPath(sourceRoot, env.PYTHONPATH) },
+    env: { ...env, BOLT_AGENT_CORE_TOKEN: authToken, BOLT_WORKSPACE: env.BOLT_WORKSPACE || options.repoRoot, PYTHONPATH: prependPath(sourceRoot, env.PYTHONPATH) },
+    authToken,
     validationError
   };
 }

@@ -6,6 +6,7 @@ import { fetchHarnessTrace, fetchMemorySnapshot, fetchPendingPermissions, submit
 import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
+import { createAgentCoreFetcher } from './agentCoreAuth';
 import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline } from './workflowClient';
 import { PanelsSection } from './PanelsSection';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
@@ -30,7 +31,8 @@ interface AppProps {
   selectWorkspace?: () => Promise<string | null>;
 }
 
-export function App({ fetcher = fetch, initialMemorySnapshot, initialPendingPermissions = [], selectWorkspace = defaultSelectWorkspace }: AppProps) {
+export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPendingPermissions = [], selectWorkspace = defaultSelectWorkspace }: AppProps) {
+  const fetcher = useMemo(() => providedFetcher ?? createAgentCoreFetcher(fetch), [providedFetcher]);
   const [session, setSession] = useState<DesktopSession>(() => loadDesktopSession());
   const [goal, setGoal] = useState('');
   const [error, setError] = useState<string | null>(null);
