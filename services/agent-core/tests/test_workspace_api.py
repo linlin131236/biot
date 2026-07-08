@@ -2,6 +2,7 @@
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import pytest
@@ -97,6 +98,25 @@ async def test_workspace_recent_sessions_respects_limit(app):
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["sessions"]) <= 1
+
+
+@pytest.mark.anyio
+async def test_workspace_recent_sessions_orders_by_file_mtime(tmp_path):
+    goals_dir = tmp_path / ".bolt" / "goals"
+    today = Goal(objective="今天目标", status=GoalStatus.RUNNING, workspace=str(tmp_path))
+    yesterday = Goal(objective="昨天目标", status=GoalStatus.PENDING, workspace=str(tmp_path))
+    _write_goal(goals_dir, today)
+    _write_goal(goals_dir, yesterday)
+    now = time.time()
+    os.utime(goals_dir / f"{today.id}.json", (now, now))
+    os.utime(goals_dir / f"{yesterday.id}.json", (now - 86400, now - 86400))
+
+    transport = ASGITransport(app=create_app(project_dir=str(tmp_path)))
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/workspace/recent-sessions")
+        assert resp.status_code == 200
+        sessions = resp.json()["sessions"]
+        assert [s["title"] for s in sessions] == ["今天目标", "昨天目标"]
 
 
 @pytest.mark.anyio

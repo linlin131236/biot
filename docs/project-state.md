@@ -1,9 +1,9 @@
 ## 当前稳定基线
 
-- 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），已 commit 未 push。
+- 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），P1/P2 复审修复已 commit，未 push。
 - 最新远端基线：`origin/main = 8036ef8 docs: mark M151 pushed`。
-- 当前本地基线：`HEAD = 03543bd feat(M152): real workspace and recent sessions`。
-- 当前本地分支：`main...origin/main [ahead 1]`，本地领先远端 1 个 commit（M152）。
+- 当前本地基线：`HEAD = fix(M152): sort recent sessions by goal mtime`（具体 hash 以 `git log -1` 为准）。
+- 当前本地分支：`main...origin/main [ahead 3]`，本地领先远端 3 个 commit（M152 主提交 + 两轮复审修复）。
 - 当前工作区：M152 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M153。
@@ -18,6 +18,7 @@
 - M152：真实工作区和最近会话。新增 `workspace_api.py`，扩展 `desktop_settings.py` 添加 `recent_workspaces` 字段。最近会话来自 `.bolt/goals/goal_*.json` 真实数据。
 - 切换工作区后自动添加到最近工作区列表（去重、最多 10 个）。
 - 最近会话空状态中文展示：”暂无最近会话”。
+- M152 P1/P2 修复：工作区历史由 `App.tsx` 单点写入；最近会话按 goal 文件 mtime 倒序排序；补充 mtime 排序回归测试。
 
 ## M152 关键文件
 
@@ -40,7 +41,7 @@
 
 - Desktop build：通过。
 - Desktop tests：42 files / 306 tests passed。
-- Backend targeted tests：`test_workspace_api.py` 6 passed，`test_desktop_settings.py` 7 passed。
+- Backend targeted tests：`test_workspace_api.py` 7 passed，`test_desktop_settings.py` 7 passed。
 - `pnpm run quality`：通过。
 - `git diff --check`：通过。
 - 产品源码私人称呼扫描：无命中。

@@ -13,7 +13,6 @@ from typing import Any
 from fastapi import APIRouter
 
 from bolt_core.goal_persistence import GoalPersistence
-from bolt_core.goal import GoalStatus
 
 logger = logging.getLogger(__name__)
 
@@ -73,9 +72,14 @@ def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
                 "title": goal.objective or "未命名目标",
                 "time": _format_time(mtime),
                 "status": goal.status.value,
+                "_mtime": mtime,
             })
 
-        sessions.sort(key=lambda s: s["time"], reverse=True)
-        return {"sessions": sessions[:limit]}
+        sessions.sort(key=lambda s: s["_mtime"], reverse=True)
+        visible_sessions = [
+            {key: value for key, value in session.items() if key != "_mtime"}
+            for session in sessions[:limit]
+        ]
+        return {"sessions": visible_sessions}
 
     return router
