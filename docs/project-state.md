@@ -2,11 +2,11 @@
 
 ## 当前稳定基线
 
-- 已完成到：M132 Local API Auth + Workspace Lock（本地已提交，待爸爸复审）。
-- 最新远端基线：`origin/main = 16d7e9d fix(P2): stabilize workbench fetch effect`。
-- 最新本地提交：`c4d9aa3 fix(M132): add local api auth and workspace lock`。
-- 当前本地分支：`main` 基于 `origin/main`，本地 ahead 2（M131 + M132）。
-- 未 push / 未 release / 未 tag / 未 delete。
+- 已完成到：M132 Local API Auth + Workspace Lock（已 push）。
+- 最新远端基线：`origin/main = 2798191 fix(M132): add local api auth and workspace lock`。
+- 最新本地提交：`2798191 fix(M132): add local api auth and workspace lock`。
+- 当前本地分支：`main` 与 `origin/main` 已同步。
+- 已 push / 未 release / 未 tag / 未 delete。
 - 未进入 M133。
 
 ## M132 当前修复
@@ -47,8 +47,7 @@
 
 ## 下一步
 
-- 爸爸复审 M132。
-- 复审通过后再决定是否 push。
+- 等待爸爸决定下一步是否进入 M133。
 
 ## 长期硬规则
 
