@@ -285,10 +285,37 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M160 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M161 当前改动
+
+- M161：Reviewer 执行引擎 + strict Gate。新建 `ReviewerEngine`（`reviewer_engine.py`）读取 Builder 输出扫描风险模式（ipcRenderer/process/eval/subprocess 等），strict Gate：P0/P1 → blocked，P2 → changes_requested，无发现 → approved。`reviewer_api.py` 新增 `POST /reviewer/review` 端点。前端新建 `ReviewerPanel` 组件展示 verdict badge + findings 列表。
+
+## M161 关键文件
+
+- `services/agent-core/src/bolt_core/reviewer_engine.py`（新建，ReviewerEngine + strict Gate）
+- `services/agent-core/src/bolt_core/reviewer_api.py`（新建，review + verdict 端点）
+- `services/agent-core/src/bolt_core/app.py`（注册 reviewer router）
+- `apps/desktop/src/ReviewerPanel.tsx`（新建，审查引擎面板）
+- `apps/desktop/src/ReviewerPanel.test.tsx`（新建，6 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 2 个 API 函数）
+- `apps/desktop/src/panelsApi.ts`（新增 reviewer namespace）
+- `apps/desktop/src/PanelsSection.tsx`（装配 ReviewerPanel）
+- `services/agent-core/tests/test_reviewer_engine.py`（新建，7 个后端测试）
+
+## M161 验证
+
+- Backend targeted tests：7 passed（test_reviewer_engine.py）
+- Frontend targeted tests：6 passed（ReviewerPanel.test.tsx）
+- Desktop tests：47 files / 347 tests passed（+6 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M161 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M160 完整实现（BuilderEngine + execute 端点 + BuilderPanel + 11 测试 + decision + review gate + project-state 更新）。
-- M161 — Reviewer Execution Engine + strict Gate：Reviewer 从 gate 逻辑升级为能实际读取 Builder 输出产生审查发现的执行引擎。
+- **待完成**：commit M161 完整实现（ReviewerEngine + strict Gate + review 端点 + ReviewerPanel + 13 测试 + decision + review gate + project-state 更新）。
+- M162 — SkillLearner Auto-Trigger：SkillLearner 从被动触发升级为主动扫描失败模式。
 
 ## 长期硬规则
 

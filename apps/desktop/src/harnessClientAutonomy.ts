@@ -393,6 +393,15 @@ export async function fetchBuilderProposals(baseUrl: string, fetcher: Fetcher = 
   return readJson(await fetcher(`${baseUrl}/builder/proposals`));
 }
 
+// === Reviewer (M161) ===
+export async function reviewBuilderOutput(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/reviewer/review`, jsonPost(payload)));
+}
+
+export async function fetchReviewVerdictLabel(baseUrl: string, verdict: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/reviewer/verdict/${encodeURIComponent(verdict)}`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

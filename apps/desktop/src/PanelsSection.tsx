@@ -21,7 +21,8 @@ import { TestRunnerPanel } from './TestRunnerPanel';
 import { ProductWorkbenchPanel } from './ProductWorkbenchPanel';
 import { ResearcherPanel } from './ResearcherPanel';
 import { BuilderPanel } from './BuilderPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals } from './harnessClientAutonomy';
+import { ReviewerPanel } from './ReviewerPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -45,6 +46,7 @@ export interface PanelsProps {
     executionHandoff: { fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>; fetchExecutionAuditTimeline: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>; fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>; fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>; fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>; fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>; fetchRecoveryPolicy: (b: string, f?: Fetcher) => Promise<RecoveryPolicy>; fetchPlannerGraphs: (b: string, f?: Fetcher) => Promise<TaskGraphSummary[]>; createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; requestExecutionHandoffPermission: (b: string, handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord> };
     researcher: { createBrief: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; executeResearch: (b: string, briefId: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchScopes: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     builder: { executeTask: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchProposals: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    reviewer: { reviewOutput: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (b: string, verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -102,6 +104,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       }} />
       <ResearcherPanel baseUrl={baseUrl} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
       <BuilderPanel baseUrl={baseUrl} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
+      <ReviewerPanel baseUrl={baseUrl} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
     </>
   );
 }

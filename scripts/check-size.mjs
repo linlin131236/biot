@@ -24,6 +24,8 @@ const KNOWN_EXEMPT = new Set([
   'apps/desktop/src/LiquidGlassSettingsData.tsx',
   // M158: task closure service test (many service-level test cases, split candidate)
   'services/agent-core/tests/test_task_closure_service.py',
+  // M161: project-state.md grows with each milestone (accumulated state record)
+  'docs/project-state.md',
 ]);
 
 const failures = scan(root).filter((file) => {

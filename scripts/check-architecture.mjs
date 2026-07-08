@@ -56,6 +56,8 @@ function checkPythonBoundaries(rel, text) {
   if (rel.endsWith('e2e_task_dogfood.py')) return;
   // M159: researcher_engine.py mentions "subprocess" only as a risk keyword string
   if (rel.endsWith('researcher_engine.py')) return;
+  // M161: reviewer_engine.py mentions "subprocess" only as a risk keyword string
+  if (rel.endsWith('reviewer_engine.py')) return;
   // M160: builder_engine.py imports file_writer to produce proposals (not direct writes)
   if (rel.endsWith('builder_engine.py')) return;
   // M151: desktop_settings.py writes to .bolt/ user config (settings + API key file)
