@@ -3,8 +3,8 @@
 ## 当前稳定基线
 
 - 已完成到：M143 Task Home Cockpit（已 push）。
-- 最新远端基线：`origin/main = 57d6c04 fix(M143): align verification gate task wording`。
-- 当前本地基线：`57d6c04 fix(M143): align verification gate task wording`。
+- 最新远端基线：`origin/main = 61ecee1 docs: mark M143 pushed`。
+- 当前本地基线：`61ecee1 docs: mark M143 pushed`。
 - 当前本地分支：`main...origin/main`，本地与远端同步。
 - 当前工作区：M143 改动已验证并推送，`.claude/` 未跟踪、未提交。
 - 已 push / 未 release / 未 tag / 未 delete。
@@ -47,7 +47,7 @@
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M143 改动已由 `57d6c04` 收口并 push。
+- M143 改动已由 `61ecee1` 标记为已 push。
 
 ## 下一步
 
