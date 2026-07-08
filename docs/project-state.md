@@ -69,7 +69,7 @@
   - `pnpm --filter @bolt/desktop build`：通过。
   - `pnpm run quality`：通过。
   - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- 未 push / 未 release / 未 tag / 未 delete。
+- 已 push 到 `origin/main`；未 release / 未 tag / 未 delete。
 
 ## 已知风险
 - `harnessClientAutonomy.ts` 超过 300 行（历史豁免）。
