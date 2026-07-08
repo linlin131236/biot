@@ -181,3 +181,115 @@ def test_scope_options():
     options = svc.scope_options()
     assert len(options) == 5
     assert any(o["scope"] == "project_docs" for o in options)
+
+
+# ── ResearcherEngine.execute_brief (M159) ────────────────────────────────
+
+def test_execute_brief_unknown_brief_returns_validation_error():
+    from bolt_core.researcher_integration import ResearcherEngine
+    svc = ResearcherIntegrationService()
+    engine = ResearcherEngine(svc)
+    result = engine.execute_brief("nonexistent")
+    assert hasattr(result, 'valid')
+    assert result.valid is False
+    assert "未找到研究摘要" in result.message_cn
+
+
+def test_execute_brief_code_map_scope():
+    from bolt_core.researcher_integration import ResearcherEngine
+
+    class FakeCodeMap:
+        def query(self, keyword):
+            return [{"path": "services/agent-core/src/bolt_core/permission_center.py", "risk": "permission"}]
+
+    svc = ResearcherIntegrationService()
+    brief = svc.create_brief(
+        title_cn="权限中心研究",
+        question_cn="权限中心如何工作",
+        allowed_sources=["code_map"],
+        scope="code_map",
+    )
+    engine = ResearcherEngine(svc, code_map=FakeCodeMap())
+    result = engine.execute_brief(brief.brief_id)
+    assert hasattr(result, 'source_refs')
+    assert len(result.source_refs) > 0
+    assert result.findings_count > 0
+
+
+def test_execute_brief_decision_memory_scope():
+    from bolt_core.researcher_integration import ResearcherEngine
+
+    class FakeDecisionMemory:
+        def query_by_keyword(self, keyword):
+            return [type("Record", (), {"milestone": "M92"})(), type("Record", (), {"milestone": "M92"})()]
+
+    svc = ResearcherIntegrationService()
+    brief = svc.create_brief(
+        title_cn="决策记忆研究",
+        question_cn="权限中心相关决策",
+        allowed_sources=["decision_memory"],
+        scope="decision_memory",
+    )
+    engine = ResearcherEngine(svc, decision_memory=FakeDecisionMemory())
+    result = engine.execute_brief(brief.brief_id)
+    assert hasattr(result, 'source_refs')
+    assert any("decision" in ref for ref in result.source_refs)
+
+
+def test_execute_brief_failure_memory_scope():
+    from bolt_core.researcher_integration import ResearcherEngine
+
+    class FakeFailureMemory:
+        def query_by_keyword(self, keyword):
+            return [type("Record", (), {"category": "permission"})(), type("Record", (), {"category": "shell"})()]
+
+    svc = ResearcherIntegrationService()
+    brief = svc.create_brief(
+        title_cn="失败模式研究",
+        question_cn="权限相关失败",
+        allowed_sources=["failure_memory"],
+        scope="failure_memory",
+    )
+    engine = ResearcherEngine(svc, failure_memory=FakeFailureMemory())
+    result = engine.execute_brief(brief.brief_id)
+    assert hasattr(result, 'source_refs')
+    assert any("failure" in ref for ref in result.source_refs)
+
+
+def test_execute_brief_respects_max_sources():
+    from bolt_core.researcher_integration import ResearcherEngine
+
+    class FakeCodeMap:
+        def query(self, keyword):
+            return [{"path": f"file_{i}.py"} for i in range(10)]
+
+    svc = ResearcherIntegrationService()
+    brief = svc.create_brief(
+        title_cn="代码研究",
+        question_cn="权限相关代码",
+        allowed_sources=["code_map"],
+        scope="code_map",
+    )
+    engine = ResearcherEngine(svc, code_map=FakeCodeMap())
+    result = engine.execute_brief(brief.brief_id)
+    assert len(result.source_refs) <= 4
+
+
+def test_execute_brief_synthesizes_risks():
+    from bolt_core.researcher_integration import ResearcherEngine
+
+    class FakeFailureMemory:
+        def query_by_keyword(self, keyword):
+            return [type("Record", (), {"category": "permission"})(), type("Record", (), {"category": "ipcRenderer"})(), type("Record", (), {"category": "push"})()]
+
+    svc = ResearcherIntegrationService()
+    brief = svc.create_brief(
+        title_cn="风险研究",
+        question_cn="安全风险",
+        allowed_sources=["failure_memory"],
+        scope="failure_memory",
+    )
+    engine = ResearcherEngine(svc, failure_memory=FakeFailureMemory())
+    result = engine.execute_brief(brief.brief_id)
+    assert hasattr(result, 'risks_cn')
+    assert len(result.risks_cn) > 0

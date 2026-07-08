@@ -53,6 +53,22 @@ def create_researcher_integration_router() -> APIRouter:
             raise HTTPException(status_code=404, detail=f"未找到研究摘要：{brief_id}。")
         return brief.to_dict()
 
+    @router.post("/research/execute")
+    def execute_brief(payload: dict) -> dict:
+        """执行研究摘要，查询数据源并产生结构化摘要。只读，不修改文件。
+
+        payload: { brief_id }
+        """
+        brief_id = str(payload.get("brief_id", "")).strip()
+        if not brief_id:
+            raise HTTPException(status_code=400, detail="brief_id 不能为空")
+        result = service.execute_brief(brief_id)
+        if hasattr(result, 'blocked') and result.blocked:
+            raise HTTPException(status_code=400, detail=result.message_cn)
+        if hasattr(result, 'valid') and not result.valid:
+            raise HTTPException(status_code=400, detail=result.message_cn)
+        return result.to_dict()
+
     @router.post("/research/summaries")
     def produce_summary(payload: dict) -> dict:
         """提交研究摘要输出。必须有 source_refs。

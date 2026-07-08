@@ -12,6 +12,7 @@ import {
   createCheckpoint,
   createExecutionHandoff,
   createGoal,
+  createResearchBrief,
   createTaskClosure,
   failExecutionHandoff,
   failExecutionQueueItem,
@@ -41,6 +42,8 @@ import {
   runAgentLoop,
   steerRun,
   updateTaskClosureAssessment,
+  executeResearch,
+  fetchResearchScopes,
 } from './harnessClientAutonomy';
 import { startWorkflowRun } from './workflowClient';
 
@@ -99,6 +102,11 @@ export function createPanelsApi(fetcher: Fetcher, goalInfo: Goal | null): Panels
       completeExecutionHandoff,
       failExecutionHandoff,
       requestExecutionHandoffPermission,
+    },
+    researcher: {
+      createBrief: createResearchBrief,
+      executeResearch,
+      fetchScopes: fetchResearchScopes,
     },
   };
 }

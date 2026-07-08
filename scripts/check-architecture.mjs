@@ -54,6 +54,8 @@ function checkPythonBoundaries(rel, text) {
   if (rel.endsWith('patch_apply_eval.py')) return;
   // V7 M118: e2e_task_dogfood.py writes in temp directories for dogfood (not real project files)
   if (rel.endsWith('e2e_task_dogfood.py')) return;
+  // M159: researcher_engine.py mentions "subprocess" only as a risk keyword string
+  if (rel.endsWith('researcher_engine.py')) return;
   // M151: desktop_settings.py writes to .bolt/ user config (settings + API key file)
   if (rel.endsWith('desktop_settings.py')) return;
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');

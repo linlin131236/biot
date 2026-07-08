@@ -231,10 +231,37 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M158 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M159 当前改动
+
+- M159：Researcher 执行引擎。新建 `ResearcherEngine`（`researcher_engine.py`）支持按 scope 查询代码地图、决策记忆、失败记忆、项目文档，自动合成原则/风险/source_refs。`researcher_integration_api.py` 新增 `POST /research/execute` 端点。前端新建 `ResearcherPanel` 组件支持创建 brief、执行研究、展示结果。
+
+## M159 关键文件
+
+- `services/agent-core/src/bolt_core/researcher_engine.py`（新建，ResearcherEngine）
+- `services/agent-core/src/bolt_core/researcher_integration.py`（保留数据模型）
+- `services/agent-core/src/bolt_core/researcher_integration_api.py`（新增 execute 端点）
+- `apps/desktop/src/ResearcherPanel.tsx`（新建，研究员面板）
+- `apps/desktop/src/ResearcherPanel.test.tsx`（新建，6 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 3 个 API 函数）
+- `apps/desktop/src/panelsApi.ts`（新增 researcher namespace）
+- `apps/desktop/src/PanelsSection.tsx`（装配 ResearcherPanel）
+- `services/agent-core/tests/test_researcher_integration.py`（新增 6 个 execute_brief 测试）
+
+## M159 验证
+
+- Backend targeted tests：6 passed（execute_brief 系列）
+- Frontend targeted tests：6 passed（ResearcherPanel.test.tsx）
+- Desktop tests：45 files / 336 tests passed（+6 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M159 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M158 完整实现（TaskResultSummary 类型 + Builder + endpoint + TaskResultSummaryPanel + GoalConsole 装配 + 8 测试 + decision + review gate + project-state 更新）。
-- M159 — Researcher Execution Engine：Researcher 从验证服务升级为能实际读取代码库产生研究摘要的执行引擎。
+- **待完成**：commit M159 完整实现（ResearcherEngine + execute 端点 + ResearcherPanel + 12 测试 + decision + review gate + project-state 更新）。
+- M160 — Builder Execution Engine：Builder 从协议契约升级为能实际修改文件的执行引擎。
 
 ## 长期硬规则
 

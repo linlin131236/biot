@@ -371,6 +371,19 @@ export async function fetchProductWorkbench(baseUrl: string, fetcher: Fetcher = 
   return readJson(await fetcher(`${baseUrl}/product-workbench`));
 }
 
+// === Researcher (M159) ===
+export async function createResearchBrief(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/research/briefs`, jsonPost(payload)));
+}
+
+export async function executeResearch(baseUrl: string, briefId: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/research/execute`, jsonPost({ brief_id: briefId })));
+}
+
+export async function fetchResearchScopes(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/research/scopes`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

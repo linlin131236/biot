@@ -2,6 +2,8 @@
 summaries with source_refs. Enforces 2-4 relevant docs rule.
 
 References M71-M75 memory layers for research scope classification.
+
+M159: ResearcherEngine moved to researcher_engine.py.
 """
 from __future__ import annotations
 
@@ -288,3 +290,7 @@ class ResearcherIntegrationService:
             {"scope": s.value, "label_cn": s.label_cn}
             for s in ResearchScope
         ]
+
+
+# ResearcherEngine moved to researcher_engine.py (M159)
+from bolt_core.researcher_engine import ResearcherEngine
