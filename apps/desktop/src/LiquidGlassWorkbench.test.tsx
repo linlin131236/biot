@@ -73,6 +73,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('API 密钥只显示配置状态，不在界面回显明文。')).toBeInTheDocument();
   });
 
+  it('renders a permission center surface without auto approval controls', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '权限中心' }));
+
+    expect(screen.getByRole('heading', { name: '权限中心' })).toBeInTheDocument();
+    expect(screen.getAllByText('待批准请求').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('写入门禁').length).toBeGreaterThan(0);
+    expect(screen.getByText('所有写入、apply 和恢复动作都必须等待用户确认。')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '自动批准' })).not.toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 

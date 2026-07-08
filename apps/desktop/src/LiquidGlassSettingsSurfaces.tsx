@@ -68,6 +68,21 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '模型选择', detail: '聊天时使用当前选择的模型，不自动切换到未知供应商。', control: '手动选择' },
     ],
   },
+  permission: {
+    eyebrow: '安全批准链路',
+    title: '权限中心',
+    summary: '集中查看待批准请求、写入门禁和审计记录，不提供越权入口。',
+    metrics: [
+      { label: '待批准请求', value: '人工处理', tone: 'warning' },
+      { label: '写入门禁', value: '强制开启', tone: 'success' },
+      { label: '审计记录', value: '全程保留' },
+    ],
+    rows: [
+      { title: '待批准请求', detail: '工具写入、补丁 apply 和恢复动作进入队列后等待用户确认。', control: '查看队列', tone: 'warning' },
+      { title: '写入门禁', detail: '所有写入、apply 和恢复动作都必须等待用户确认。', control: '不可绕过', tone: 'success' },
+      { title: '审计记录', detail: '每次批准、拒绝和执行结果都进入审计链路。', control: '只读追踪' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {
