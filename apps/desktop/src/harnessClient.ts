@@ -68,6 +68,27 @@ export async function runDocumentGardener(baseUrl: string, runId: string, fetche
   return readJson(await fetcher(`${baseUrl}/maintenance/document-gardener/runs/${runId}`, { method: 'POST' }));
 }
 
+export async function fetchDesktopSettings(baseUrl: string, fetcher: Fetcher = fetch): Promise<{
+  theme: string;
+  language: string;
+  default_workspace: string;
+  has_api_key: boolean;
+}> {
+  return readJson(await fetcher(`${baseUrl}/desktop/settings`));
+}
+
+export async function saveDesktopSettings(baseUrl: string, settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher = fetch): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
+  return readJson(await fetcher(`${baseUrl}/desktop/settings`, jsonPost(settings)));
+}
+
+export async function saveDesktopApiKey(baseUrl: string, apiKey: string, fetcher: Fetcher = fetch): Promise<{ status: string; has_api_key: boolean }> {
+  return readJson(await fetcher(`${baseUrl}/desktop/settings/api-key`, jsonPost({ api_key: apiKey })));
+}
+
+export async function deleteDesktopApiKey(baseUrl: string, fetcher: Fetcher = fetch): Promise<{ status: string; has_api_key: boolean }> {
+  return readJson(await fetcher(`${baseUrl}/desktop/settings/api-key`, { method: 'DELETE' }));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

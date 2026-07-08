@@ -2,12 +2,13 @@ import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { AlertTriangle, CheckCircle2, FolderOpen, RefreshCw, ShieldCheck } from 'lucide-react';
 import type { MemorySnapshot, ModelSettings, PendingPermission, ToolResult } from '@bolt/shared';
 import type { Goal } from '@bolt/shared/autonomy';
+import type { DesktopSettingsStatus } from './LiquidGlassSettingsData';
 import { fetchHarnessTrace, fetchMemorySnapshot, fetchPendingPermissions, submitToolRequest } from './harnessClient';
 import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
 import { createAgentCoreFetcher } from './agentCoreAuth';
-import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline } from './workflowClient';
+import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline, loadDesktopSettings, storeDesktopSettings } from './workflowClient';
 import { PanelsSection } from './PanelsSection';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
 import { fetchUnfinishedGoals } from './harnessClientAutonomy';
@@ -38,6 +39,8 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   const [error, setError] = useState<string | null>(null);
   const [model, setModel] = useState<ModelSettings>({ provider: 'openai-compatible', base_url: 'http://localhost:11434/v1', model: 'fake-model', temperature: 0.2 });
   const [apiKey, setApiKey] = useState('');
+  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [settings, setSettings] = useState<DesktopSettingsStatus | null>(null);
   const [state, dispatch] = useReducer(reduceBoltState, createInitialState(session, initialMemorySnapshot, initialPendingPermissions));
   const [goalInfo, setGoalInfo] = useState<Goal | null>(null);
   const [reviewResult, setReviewResult] = useState<{ passed: boolean; failures: string[] } | null>(null);
@@ -56,6 +59,25 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
     fetchUnfinishedGoals(session.coreUrl, fetcher).then((goals) => { if (active) setUnfinishedGoals(goals); }).catch(() => {});
     return () => { active = false; };
   }, [fetcher, session.completed, session.coreUrl]);
+
+  useEffect(() => {
+    if (!session.completed) return;
+    let active = true;
+    loadDesktopSettings(session.coreUrl, fetcher).then((s) => {
+      if (active) { setTheme(s.theme as ThemeMode); setSettings(s); }
+    }).catch(() => setSettings({ theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false }));
+    return () => { active = false; };
+  }, [fetcher, session.completed, session.coreUrl]);
+
+  async function handleSaveTheme(nextTheme: ThemeMode) {
+    setTheme(nextTheme);
+    await saveDesktopSettings({ theme: nextTheme });
+    // Refresh full settings from server
+    try {
+      const s = await loadDesktopSettings(session.coreUrl, fetcher);
+      setSettings(s);
+    } catch { /* non-blocking */ }
+  }
 
   function completeFirstRun(next: DesktopSession) { saveSession(next); dispatch({ type: 'workspace.selected', path: next.workspacePath }); }
 
@@ -130,28 +152,33 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   if (!session.completed) return <FirstRunWizard session={session} onComplete={completeFirstRun} />;
 
   return (
-    <LiquidGlassWorkbench
-      workspacePath={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''}
-      coreStatus={state.coreStatus}
-      runId={runId}
-      goal={goal}
-      setGoal={setGoal}
-      hasWorkspace={hasWorkspace}
-      startRun={startRun}
-      createGoal={createGoal}
-      runStep={runStep}
-      refreshTrace={refreshTraceOnly}
-      refreshMemory={refreshMemory}
-      refreshPermissions={refreshPermissions}
-      runGardener={runGardener}
-      fetchTimeline={fetchTimelineAction}
-      runReview={runReview}
-      changeWorkspace={changeWorkspace}
-      error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
-      toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
-      modelPanel={<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} />}
-      legacyPanels={<><PanelsSection runId={runId} goalInfo={goalInfo} unfinishedGoals={unfinishedGoals} workspace={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''} baseUrl={session.coreUrl} fetcher={fetcher} onGoalChange={handleGoalConsoleChange} api={panelsApi} /><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></>}
-    />
+      <LiquidGlassWorkbench
+        workspacePath={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''}
+        coreStatus={state.coreStatus}
+        runId={runId}
+        goal={goal}
+        setGoal={setGoal}
+        hasWorkspace={hasWorkspace}
+        startRun={startRun}
+        createGoal={createGoal}
+        runStep={runStep}
+        refreshTrace={refreshTraceOnly}
+        refreshMemory={refreshMemory}
+        refreshPermissions={refreshPermissions}
+        runGardener={runGardener}
+        fetchTimeline={fetchTimelineAction}
+        runReview={runReview}
+        changeWorkspace={changeWorkspace}
+        theme={theme}
+        setTheme={setTheme}
+        onSaveTheme={handleSaveTheme}
+        settings={settings}
+        coreUrl={session.coreUrl}
+        error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
+        toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
+        modelPanel={<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} />}
+        legacyPanels={<><PanelsSection runId={runId} goalInfo={goalInfo} unfinishedGoals={unfinishedGoals} workspace={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''} baseUrl={session.coreUrl} fetcher={fetcher} onGoalChange={handleGoalConsoleChange} api={panelsApi} /><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></>}
+      />
   );
 
 }

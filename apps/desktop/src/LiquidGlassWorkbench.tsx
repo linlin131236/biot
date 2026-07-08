@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Activity, Folder, History, Search, Settings, ShieldCheck, Sparkles } from 'lucide-react';
 import { LiquidGlassHome } from './LiquidGlassHome';
 import { LiquidGlassSettings } from './LiquidGlassSettings';
@@ -10,7 +10,6 @@ import './liquidGlassHomeInteraction.css';
 import './liquidGlassSettings.css';
 
 export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
-  const [theme, setTheme] = useState<ThemeMode>('dark');
   const [view, setView] = useState<ViewMode>('home');
   const [activeSetting, setActiveSetting] = useState('general');
   const safeWorkspace = props.workspacePath || '工作区未选择';
@@ -21,8 +20,13 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
     { label: '失败恢复链路', status: 'amber', time: '3 天前' },
   ], []);
 
+  async function handleThemeChange(next: ThemeMode) {
+    props.setTheme(next);
+    props.onSaveTheme(next);
+  }
+
   return (
-    <main className="biotLiquidShell" data-theme={theme}>
+    <main className="biotLiquidShell" data-theme={props.theme}>
       <aside className="biotRail">
         <div className="biotBrand">
           <div className="biotLogo">B</div>
@@ -73,7 +77,7 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
       </aside>
 
       <section className="biotMainSurface">
-        <TopBar theme={theme} setTheme={setTheme} coreStatus={props.coreStatus} runId={props.runId} />
+        <TopBar theme={props.theme} setTheme={props.setTheme} coreStatus={props.coreStatus} runId={props.runId} onThemeChange={handleThemeChange} />
         {view === 'home' ? (
           <LiquidGlassHome
             goal={props.goal}
@@ -101,6 +105,9 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
             activeSetting={activeSetting}
             onBack={() => setView('home')}
             setActiveSetting={setActiveSetting}
+            coreUrl={props.coreUrl}
+            settings={props.settings}
+            onSaveTheme={props.onSaveTheme}
           />
         )}
       </section>
@@ -113,17 +120,19 @@ function TopBar({
   setTheme,
   coreStatus,
   runId,
+  onThemeChange,
 }: {
   theme: ThemeMode;
-  setTheme: (theme: ThemeMode) => void;
+  setTheme: (value: ThemeMode) => void;
   coreStatus: string;
   runId: string | null;
+  onThemeChange: (next: ThemeMode) => void;
 }) {
   return (
     <header className="biotWindowBar">
       <div className="biotThemeSwitch" aria-label="主题切换">
-        <button type="button" onClick={() => setTheme('dark')} className={theme === 'dark' ? 'active' : ''}>深色</button>
-        <button type="button" onClick={() => setTheme('light')} className={theme === 'light' ? 'active' : ''}>浅色</button>
+        <button type="button" onClick={() => { setTheme('dark'); onThemeChange('dark'); }} className={theme === 'dark' ? 'active' : ''}>深色</button>
+        <button type="button" onClick={() => { setTheme('light'); onThemeChange('light'); }} className={theme === 'light' ? 'active' : ''}>浅色</button>
       </div>
       <div className="biotStatusPills">
         <span><i /> 核心服务 <strong>{coreStatus === 'ok' ? '在线' : coreStatus}</strong></span>

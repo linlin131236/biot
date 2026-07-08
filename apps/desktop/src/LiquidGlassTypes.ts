@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { DesktopSettingsStatus } from './LiquidGlassSettingsData';
 
 export type ThemeMode = 'dark' | 'light';
 export type ViewMode = 'home' | 'settings';
@@ -24,6 +25,11 @@ export interface LiquidGlassWorkbenchProps {
   toolFlow?: ReactNode;
   modelPanel?: ReactNode;
   legacyPanels: ReactNode;
+  theme: ThemeMode;
+  setTheme: (value: ThemeMode) => void;
+  onSaveTheme: (next: ThemeMode) => void;
+  settings: DesktopSettingsStatus | null;
+  coreUrl: string;
 }
 
 export interface LiquidGlassHomeProps {

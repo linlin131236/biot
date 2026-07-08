@@ -1,6 +1,6 @@
 import type { AgentStepResult, HarnessRun, MemoryConsolidationResult, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolResult, TraceEvent } from '@bolt/shared';
 import type { Goal, Checkpoint } from '@bolt/shared/autonomy';
-import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, submitToolRequest } from './harnessClient';
+import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, saveDesktopSettings as harnessSaveDesktopSettings, fetchDesktopSettings as harnessFetchDesktopSettings, saveDesktopApiKey as harnessSaveDesktopApiKey, deleteDesktopApiKey as harnessDeleteDesktopApiKey, submitToolRequest } from './harnessClient';
 import { createGoal, createCheckpoint, loadCheckpoint, evaluateReview, fetchRunTimeline, createConversation, addMessage } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -81,4 +81,20 @@ export async function evaluateWorkflowReview(baseUrl: string, payload: { items: 
 
 export async function fetchWorkflowTimeline(baseUrl: string, runId: string, fetcher: Fetcher): Promise<unknown[]> {
   return fetchRunTimeline(baseUrl, runId, fetcher);
+}
+
+export async function loadDesktopSettings(baseUrl: string, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
+  return harnessFetchDesktopSettings(baseUrl, fetcher);
+}
+
+export async function storeDesktopSettings(baseUrl: string, settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
+  return harnessSaveDesktopSettings(baseUrl, settings, fetcher);
+}
+
+export async function storeDesktopApiKey(baseUrl: string, apiKey: string, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean }> {
+  return harnessSaveDesktopApiKey(baseUrl, apiKey, fetcher);
+}
+
+export async function removeDesktopApiKey(baseUrl: string, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean }> {
+  return harnessDeleteDesktopApiKey(baseUrl, fetcher);
 }

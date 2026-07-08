@@ -19,6 +19,11 @@ const baseProps = {
   fetchTimeline: vi.fn(),
   runReview: vi.fn(),
   changeWorkspace: vi.fn(),
+  theme: 'dark' as const,
+  setTheme: vi.fn(),
+  onSaveTheme: vi.fn(),
+  settings: { theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false },
+  coreUrl: 'http://localhost:8000',
   legacyPanels: <div>工程面板内容</div>,
 };
 
@@ -192,10 +197,14 @@ describe('LiquidGlassWorkbench', () => {
   });
 
   it('can switch between dark and light liquid glass themes', () => {
-    const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
+    const setTheme = vi.fn();
+    const { container, rerender } = render(<LiquidGlassWorkbench {...baseProps} theme="dark" setTheme={setTheme} onSaveTheme={vi.fn()} />);
 
     expect(container.querySelector('.biotLiquidShell')).toHaveAttribute('data-theme', 'dark');
     fireEvent.click(screen.getByRole('button', { name: '浅色' }));
+    expect(setTheme).toHaveBeenCalledWith('light');
+    // Simulate parent re-rendering with updated theme
+    rerender(<LiquidGlassWorkbench {...baseProps} theme="light" setTheme={setTheme} onSaveTheme={vi.fn()} />);
     expect(container.querySelector('.biotLiquidShell')).toHaveAttribute('data-theme', 'light');
   });
 });

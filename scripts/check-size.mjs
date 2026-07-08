@@ -20,6 +20,8 @@ const KNOWN_EXEMPT = new Set([
   'services/agent-core/src/bolt_core/approval_apply.py',
   // V6 P1: M108 test file (16 tests covering full security surface, split candidate)
   'services/agent-core/tests/test_approval_apply.py',
+  // M151: settings surface data (static product copy, single concern)
+  'apps/desktop/src/LiquidGlassSettingsData.tsx',
 ]);
 
 const failures = scan(root).filter((file) => {
