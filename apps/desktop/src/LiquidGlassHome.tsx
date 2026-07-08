@@ -59,8 +59,8 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       disabled: !props.hasWorkspace,
     },
     {
-      title: '运行白名单测试',
-      description: '按安全白名单执行验证并汇总结论。',
+      title: '评估验证门禁',
+      description: '根据已回填的测试与构建结果评估审查门禁。',
       meta: '验证',
       icon: <TestTube2 size={18} />,
       action: props.runReview,

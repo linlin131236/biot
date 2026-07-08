@@ -54,7 +54,7 @@ describe('LiquidGlassHome interaction cockpit', () => {
 
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：读取文件并解释代码' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：查看待批准权限' }));
-    fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：运行白名单测试' }));
+    fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：评估验证门禁' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：同步项目记忆' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：整理项目文档' }));
     fireEvent.click(within(recommendedTasks).getByRole('button', { name: '开始：查看执行时间线' }));
