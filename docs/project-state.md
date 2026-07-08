@@ -2,62 +2,53 @@
 
 ## 当前稳定基线
 
-- 已完成到：M141 Liquid Glass Visual System（已 push）。
-- 最新远端基线：`origin/main = main = e1aaf2e feat(M141): polish liquid glass desktop experience`。
-- 当前本地分支：`main...origin/main`，M142 本地验证完成。
-- 当前工作区：M142 改动由本次提交收口，`.claude/` 未跟踪、未提交。
+- 已完成到：M143 Task Home Cockpit（由本次提交收口，待 push）。
+- 最新远端基线：`origin/main = main = 6977045 feat(M142): add liquid glass component primitives`。
+- 当前本地分支：`main...origin/main`，M143 本地提交收口后待 push。
+- 当前工作区：M143 改动已验证，`.claude/` 未跟踪、未提交。
 - 未 push / 未 release / 未 tag / 未 delete。
 
-## M142 当前修复
+## M143 当前改动
 
-- 新增 Liquid Glass primitives 组件层。
-- 新增 `GlassButton`、`GlassPanel`、`GlassPill`、`GlassToolbar`。
-- 新增 primitives CSS，统一按钮、面板、pill、toolbar 的玻璃质感。
-- 首页任务 composer 和快捷操作开始接入 primitives。
-- 设置页 tabs、面板和部分操作按钮开始接入 primitives。
+- 首页新增任务驾驶舱。
+- 首页显示当前项目、权限边界、运行状态、核心服务。
+- 首页新增 6 个安全推荐任务卡片。
+- 推荐任务只复用已有 UI 回调，不新增自动执行能力。
+- 未选择工作区时，工作区相关任务卡片保持禁用。
 - 继续保持软件产品源码不出现私人称呼。
-- 未新增自动执行、自动批准、push、release、tag、delete 入口。
+- 未新增自动批准、push、release、tag、delete 入口。
 
-## M142 关键文件
+## M143 关键文件
 
-- `apps/desktop/src/LiquidGlassPrimitives.tsx`
-- `apps/desktop/src/LiquidGlassPrimitives.test.tsx`
-- `apps/desktop/src/liquidGlassPrimitives.css`
 - `apps/desktop/src/LiquidGlassHome.tsx`
-- `apps/desktop/src/LiquidGlassSettings.tsx`
+- `apps/desktop/src/LiquidGlassHomeInteraction.test.tsx`
+- `apps/desktop/src/liquidGlassHomeInteraction.css`
 - `apps/desktop/src/LiquidGlassWorkbench.tsx`
-- `docs/exec-plans/active/142-liquid-glass-component-system.md`
-- `docs/decisions/142-liquid-glass-component-system.md`
-- `docs/phase-142-review-gate.md`
+- `docs/superpowers/plans/2026-07-09-m143-task-home-cockpit.md`
+- `docs/exec-plans/active/143-task-home-cockpit.md`
+- `docs/decisions/143-task-home-cockpit.md`
+- `docs/phase-143-review-gate.md`
 
-## M142 已完成验证
+## M143 验证
 
-- RED：`pnpm --filter @bolt/desktop test -- LiquidGlassPrimitives.test.tsx` 失败，原因是 `LiquidGlassPrimitives` 尚不存在。
-- GREEN：`pnpm --filter @bolt/desktop test -- LiquidGlassPrimitives.test.tsx LiquidGlassWorkbench.test.tsx LiquidGlassDesignTokens.test.ts`：41 files / 290 tests passed。
-- `node scripts/check-size.mjs`：通过。
-- 产品源码私人称呼扫描：无命中。
-
-## M142 待完成验证
-
-无。
-
-## M142 全量验证
-
+- RED：`pnpm --filter @bolt/desktop test -- LiquidGlassHomeInteraction.test.tsx` 失败，原因是首页尚无“任务驾驶舱”和“推荐任务”区域。
+- GREEN：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassHomeInteraction.test.tsx --reporter verbose`：4 passed。
+- 相关桌面测试：46 passed。
+- `pnpm --filter @bolt/desktop test`：42 files / 294 tests passed。
 - `pnpm --filter @bolt/desktop build`：通过。
-- `pnpm run quality`：通过，shared 27 passed，desktop 41 files / 290 tests passed。
+- `pnpm run quality`：通过。
 - `uv run pytest -q`：1564 passed，5 warnings。
-- `git diff --check`：通过，仅 Windows LF/CRLF 提示。
 - 浏览器首页实机检查：通过。
-- 浏览器设置页实机检查：通过。
+- 产品源码私人称呼扫描：无命中。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M142 改动已验证并由本次提交收口。
+- M143 改动由本次提交收口，待 push。
 
 ## 下一步
 
-- 等待复审，不自动 push。
+- 复审后由用户决定是否 push。
 
 ## 长期硬规则
 

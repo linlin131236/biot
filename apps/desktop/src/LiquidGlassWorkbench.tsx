@@ -6,6 +6,7 @@ import type { LiquidGlassWorkbenchProps, ThemeMode, ViewMode } from './LiquidGla
 import './liquidGlassShell.css';
 import './liquidGlassPrimitives.css';
 import './liquidGlassHome.css';
+import './liquidGlassHomeInteraction.css';
 import './liquidGlassSettings.css';
 
 export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
