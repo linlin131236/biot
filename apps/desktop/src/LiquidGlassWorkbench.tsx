@@ -1,0 +1,126 @@
+import { useMemo, useState } from 'react';
+import { Folder, History, Search, Settings, ShieldCheck, Sparkles } from 'lucide-react';
+import { LiquidGlassHome } from './LiquidGlassHome';
+import { LiquidGlassSettings } from './LiquidGlassSettings';
+import type { LiquidGlassWorkbenchProps, ThemeMode, ViewMode } from './LiquidGlassTypes';
+import './liquidGlassShell.css';
+import './liquidGlassHome.css';
+import './liquidGlassSettings.css';
+
+export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
+  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [view, setView] = useState<ViewMode>('home');
+  const [activeSetting, setActiveSetting] = useState('general');
+  const safeWorkspace = props.workspacePath || '工作区未选择';
+  const recentSessions = useMemo(() => [
+    { label: 'M131 液态玻璃界面', status: 'green', time: '现在' },
+    { label: '补丁预览与批准', status: 'green', time: '昨天' },
+    { label: '测试反馈回填', status: 'amber', time: '昨天' },
+    { label: '失败恢复链路', status: 'amber', time: '3 天前' },
+  ], []);
+
+  return (
+    <main className="biotLiquidShell" data-theme={theme}>
+      <aside className="biotRail">
+        <div className="biotBrand">
+          <div className="biotLogo">B</div>
+          <strong>Biot</strong>
+        </div>
+
+        <nav className="biotNav" aria-label="主导航">
+          <button type="button" className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>
+            <Sparkles size={18} /> 新任务 <span>Ctrl+N</span>
+          </button>
+          <button type="button"><Search size={18} /> 搜索 <span>Ctrl+K</span></button>
+          <button type="button"><History size={18} /> 已安排</button>
+          <button type="button" className={view === 'settings' ? 'active' : ''} onClick={() => setView('settings')}>
+            <Settings size={18} /> 设置
+          </button>
+        </nav>
+
+        <div className="biotProjectBlock">
+          <div className="biotBlockTitle">
+            <span>项目</span>
+            <button type="button" onClick={props.changeWorkspace} aria-label={props.hasWorkspace ? '切换项目' : '添加项目'}>+</button>
+          </div>
+          <button type="button" className="biotProjectButton" onClick={props.changeWorkspace}>
+            <Folder size={18} /> {props.hasWorkspace ? '更换工作区' : '选择工作区'}
+          </button>
+          <div className="biotWorkspacePath">{safeWorkspace}</div>
+        </div>
+
+        <div className="biotRecent">
+          <div className="biotBlockTitle"><span>最近会话</span><span>清空</span></div>
+          {recentSessions.map((item) => (
+            <div className="biotRecentItem" key={item.label}>
+              <i data-status={item.status} />
+              <span>{item.label}</span>
+              <small>{item.time}</small>
+            </div>
+          ))}
+        </div>
+
+        <div className="biotUserCard">
+          <div className="biotAvatar">爸</div>
+          <div><strong>爸爸</strong><span><ShieldCheck size={14} /> 本地安全模式</span></div>
+          <Settings size={18} />
+        </div>
+      </aside>
+
+      <section className="biotMainSurface">
+        <TopBar theme={theme} setTheme={setTheme} coreStatus={props.coreStatus} runId={props.runId} />
+        {view === 'home' ? (
+          <LiquidGlassHome
+            goal={props.goal}
+            setGoal={props.setGoal}
+            hasWorkspace={props.hasWorkspace}
+            startRun={props.startRun}
+            createGoal={props.createGoal}
+            runStep={props.runStep}
+            refreshTrace={props.refreshTrace}
+            refreshMemory={props.refreshMemory}
+            refreshPermissions={props.refreshPermissions}
+            runGardener={props.runGardener}
+            fetchTimeline={props.fetchTimeline}
+            runReview={props.runReview}
+            workspacePath={safeWorkspace}
+            coreStatus={props.coreStatus}
+            runId={props.runId}
+            error={props.error}
+            toolFlow={props.toolFlow}
+            modelPanel={props.modelPanel}
+            legacyPanels={props.legacyPanels}
+          />
+        ) : (
+          <LiquidGlassSettings activeSetting={activeSetting} setActiveSetting={setActiveSetting} />
+        )}
+      </section>
+    </main>
+  );
+}
+
+function TopBar({
+  theme,
+  setTheme,
+  coreStatus,
+  runId,
+}: {
+  theme: ThemeMode;
+  setTheme: (theme: ThemeMode) => void;
+  coreStatus: string;
+  runId: string | null;
+}) {
+  return (
+    <header className="biotWindowBar">
+      <div>
+        <button type="button" onClick={() => setTheme('dark')} className={theme === 'dark' ? 'active' : ''}>深色</button>
+        <button type="button" onClick={() => setTheme('light')} className={theme === 'light' ? 'active' : ''}>浅色</button>
+      </div>
+      <div className="biotStatusPills">
+        <span><i /> 核心服务 <strong>{coreStatus === 'ok' ? '在线' : coreStatus}</strong></span>
+        <span><i /> 运行状态 <strong>{runId ? '已绑定' : '无运行'}</strong></span>
+        <span><i /> 写入前永远等待爸爸批准</span>
+      </div>
+    </header>
+  );
+}

@@ -2,73 +2,57 @@
 
 ## 当前稳定基线
 
-- 已完成到：M130 Product Workbench Dogfood（本地完成，等待爸爸复审）。
-- 最新远端基线：`origin/main = 6d128b0 docs: mark audit hardening pushed`。
-- 当前本地分支：`main` 基于 `origin/main` 开始 M126。
+- 已完成到：M131 Liquid Glass Desktop Shell（本地完成，等待爸爸复审）。
+- 最新远端基线：`origin/main = 16d7e9d fix(P2): stabilize workbench fetch effect`。
+- 最新本地提交：以 `git log -1` 为准，本地提交说明为 `feat(M131): add liquid glass desktop shell`。
+- 当前本地分支：`main` 基于 `origin/main` 完成 M131 本地改动。
 - 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M131。
+- 未进入 M132。
 
 ## 当前状态
 
 - M55-M125 已完成并 push。
 - 外部审计硬化已完成并 push。
-- M126 新增只读 Agent 工作台：
-  - 后端：`product_workbench.py`、`product_workbench_api.py`。
-  - 前端：`ProductWorkbenchPanel.tsx`，已接入桌面第一屏。
-  - API：`GET /product-workbench`。
-- M127 新增补丁批准检查清单：
-  - 字段：`patch_approval`。
-  - 检查：补丁预览、目标范围锁定、人工批准、过期复查、审计记录。
-  - UI：只读展示“补丁批准检查”，无批准按钮。
-- M128 新增白名单测试回填：
-  - 字段：`test_feedback`。
-  - 测试项：后端单元、后端 API、共享模块、桌面测试、桌面构建、全量质量门。
-  - UI：只读展示“白名单测试回填”，无任意命令输入框。
-- M129 新增失败与恢复检查：
-  - 字段：`failure_recovery`。
-  - 检查：失败分类、重试风险、权限复查、状态复查、人工恢复确认。
-  - UI：只读展示“失败与恢复检查”，无重试/恢复按钮。
-- M130 新增 Product Workbench Dogfood：
-  - 后端：`product_workbench_dogfood.py`、`product_workbench_dogfood_api.py`。
-  - API：`GET /product-workbench-dogfood`。
-  - 检查：工作台 API、桌面挂载、三条能力泳道、安全边界、文档链、中文 UI、无自动动作。
-- 工作区：存在 M126 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
+- M126-M130 Product Workbench 批次已完成并 push。
+- M131 新增液态玻璃桌面壳层：
+  - 主壳层：`LiquidGlassWorkbench.tsx`。
+  - 首页：`LiquidGlassHome.tsx`。
+  - 设置中心：`LiquidGlassSettings.tsx`。
+  - 类型：`LiquidGlassTypes.ts`。
+  - 样式：`liquidGlassShell.css`、`liquidGlassHome.css`、`liquidGlassSettings.css`。
+  - 测试：`LiquidGlassWorkbench.test.tsx`。
+- 工作区：存在 M131 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
 
-## M126 验证
+## M131 验证
 
-- `uv run pytest -q services/agent-core/tests/test_product_workbench.py`：7 passed。
-- `pnpm --filter @bolt/desktop test -- ProductWorkbenchPanel.test.tsx`：36 files / 276 tests passed。
 - `pnpm lint:size`：通过。
-- M130 dogfood targeted tests：10 passed。
-- 后端全量：1534 passed，2 warnings。
-- Shared tests：27 passed。
-- Desktop tests：36 files / 276 tests passed。
-- Desktop build：通过。
+- `pnpm --filter @bolt/desktop test`：37 files / 280 tests passed。
+- `pnpm --filter @bolt/desktop build`：通过。
 - `pnpm run quality`：通过。
-- `node scripts/check-docs.mjs`：通过。
+- `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
 - `node scripts/check-chinese-ui.mjs`：通过。
-- `git diff --check`：通过。
-- renderer 暴露扫描：无新增命中。
-- 自动执行 / 自动批准 / push-release-tag-delete 扫描：无新增命中。
-- `as any` / `unknown as`：无新增业务代码使用；仅历史测试和规则字符串命中。
+- renderer 暴露扫描：无新增 ipcRenderer / fs / shell / process 暴露。
+- 自动执行 / 自动批准 / push-release-tag-delete：无新增入口。
 
-## M126 参考资料
+## M131 产出
 
-- `Agent产品化流水线.md`：串行契约优先，需求、计划、实现、验证、复盘要形成稳定流水线。
-- `20260628_讨论场到执行系统_ZCode看板法.md`：任务要有状态、验收标准和下一步。
-- `OpenClaw实际场景学习报告.md`：项目状态、心跳、检查清单和恢复路径要可见。
+- `docs/exec-plans/active/131-liquid-glass-desktop-shell.md`
+- `docs/decisions/131-liquid-glass-desktop-shell.md`
+- `docs/phase-131-review-gate.md`
+- `docs/project-state.md`
 
 ## 已知风险
 
-- `harnessClientAutonomy.ts` 超过 300 行，属于历史豁免文件，后续可专项拆分。
+- M131 仍保留旧工程面板在折叠区，后续需要继续把权限、补丁、测试、恢复等面板产品化到主工作流。
+- `harnessClientAutonomy.ts` 仍是历史豁免的大文件，后续可专项拆分。
 - M61 Task Graph / M81-M89 多 Agent 工作流仍以纯内存为主，后续可评估持久化。
-- M126-M130 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
 - `.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步建议
 
-- 完成 full tests / quality / docs / Chinese UI / 安全扫描。
-- M126-M130 完成后停止，等待爸爸复审；不 push，除非爸爸明确授权。
+- 爸爸复审 M131 液态玻璃桌面壳层。
+- 复审通过后可提交 M131。
+- 下一步 M132 建议做真实任务输入体验：意图确认、文件范围选择、权限预检和补丁预览前置。
 
 ## 长期硬规则
 
