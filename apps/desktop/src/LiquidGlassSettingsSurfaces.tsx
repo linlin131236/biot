@@ -128,6 +128,21 @@ const surfaces: Record<string, SettingSurface> = {
       { title: '发布准备', detail: '检查发布准备度，但不执行推送、发布或打标签。', control: '人工决定', tone: 'warning' },
     ],
   },
+  collaboration: {
+    eyebrow: '上下文与团队',
+    title: '智能协作',
+    summary: '统一展示记忆、角色分工和队列状态，不自动派发写入任务。',
+    metrics: [
+      { label: '记忆索引', value: '决策与失败' },
+      { label: '多 Agent 团队', value: '规划/执行/审查', tone: 'success' },
+      { label: '多任务队列', value: '排队可见', tone: 'warning' },
+    ],
+    rows: [
+      { title: '记忆索引', detail: '汇总项目画像、代码地图、决策记忆和失败记忆。', control: '只读检索' },
+      { title: '多 Agent 团队', detail: '显示 Planner、Builder、Reviewer 的职责边界。', control: '角色分工', tone: 'success' },
+      { title: '多任务队列', detail: '展示排队、暂停和恢复状态，写入仍需用户确认。', control: '队列状态', tone: 'warning' },
+    ],
+  },
 };
 
 export function LiquidGlassSettingsSurface({ activeSetting }: { activeSetting: string }) {

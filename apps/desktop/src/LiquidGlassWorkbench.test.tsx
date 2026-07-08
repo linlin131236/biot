@@ -125,6 +125,19 @@ describe('LiquidGlassWorkbench', () => {
     expect(screen.getByText('这里只展示检查结果，不执行推送、发布或打标签。')).toBeInTheDocument();
   });
 
+  it('renders an intelligence collaboration surface for memory team and queue', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: '设置' }));
+    fireEvent.click(screen.getByRole('button', { name: '智能协作' }));
+
+    expect(screen.getByRole('heading', { name: '智能协作' })).toBeInTheDocument();
+    expect(screen.getAllByText('记忆索引').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('多 Agent 团队').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('多任务队列').length).toBeGreaterThan(0);
+    expect(screen.getByText('统一展示记忆、角色分工和队列状态，不自动派发写入任务。')).toBeInTheDocument();
+  });
+
   it('can switch between dark and light liquid glass themes', () => {
     const { container } = render(<LiquidGlassWorkbench {...baseProps} />);
 

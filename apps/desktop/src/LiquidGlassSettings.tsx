@@ -14,6 +14,7 @@ import {
   SlidersHorizontal,
   Sparkles,
   Terminal,
+  Users,
 } from 'lucide-react';
 import { GlassButton } from './LiquidGlassPrimitives';
 import { LiquidGlassSettingsSurface } from './LiquidGlassSettingsSurfaces';
@@ -26,6 +27,7 @@ const settingItems = [
   { id: 'patch', label: '补丁审查', icon: FileDiff },
   { id: 'audit', label: '审计诊断', icon: Activity },
   { id: 'validation', label: '验证发布', icon: CheckCircle2 },
+  { id: 'collaboration', label: '智能协作', icon: Users },
   { id: 'skills', label: '技能', icon: Sparkles },
   { id: 'agents', label: '子智能体', icon: Bot },
   { id: 'mcp', label: 'MCP 服务器', icon: Plug },
