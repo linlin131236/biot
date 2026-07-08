@@ -5,7 +5,7 @@
 - 已完成到：M151 Settings Persistence（真实设置持久化），P1/P2 复审修复已完成，已 commit 未 push。
 - 最新远端基线：`origin/main = 51e2502 docs: mark M150 pushed`。
 - 当前本地基线：M151 复审收口修复链，最新提交以 `git log --oneline -1` 为准。
-- 当前本地分支：`main...origin/main [ahead 2]`，本地领先远端 2 个 commit（M151 + P1/P2 修复）。
+- 当前本地分支：`main...origin/main`，本地领先远端，具体 ahead 数以 `git status --short --branch` 为准。
 - 当前工作区：M151 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
 - 未进入 M152。
