@@ -20,6 +20,7 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "theme": "dark",
     "language": "zh-CN",
     "default_workspace": "",
+    "recent_workspaces": [],
 }
 
 
@@ -28,6 +29,7 @@ class DesktopSettings:
     theme: str = "dark"
     language: str = "zh-CN"
     default_workspace: str = ""
+    recent_workspaces: list[str] = field(default_factory=list)
 
 
 class DesktopSettingsService:
@@ -49,6 +51,7 @@ class DesktopSettingsService:
             "theme": self._settings.theme,
             "language": self._settings.language,
             "default_workspace": self._settings.default_workspace,
+            "recent_workspaces": list(self._settings.recent_workspaces),
             "has_api_key": self._api_key_path.exists() and self._api_key_path.read_text().strip() != "",
         }
 
@@ -60,6 +63,17 @@ class DesktopSettingsService:
             self._settings.language = str(payload["language"])
         if "default_workspace" in payload:
             self._settings.default_workspace = str(payload["default_workspace"])
+        self._save()
+        return self.get_status()
+
+    def add_recent_workspace(self, path: str) -> dict[str, Any]:
+        """Add a workspace to the recent list (deduplicated, max 10)."""
+        path = str(path)
+        recent = list(self._settings.recent_workspaces)
+        if path in recent:
+            recent.remove(path)
+        recent.insert(0, path)
+        self._settings.recent_workspaces = recent[:10]
         self._save()
         return self.get_status()
 
@@ -95,6 +109,7 @@ class DesktopSettingsService:
                 theme=str(data.get("theme", DEFAULT_SETTINGS["theme"])),
                 language=str(data.get("language", DEFAULT_SETTINGS["language"])),
                 default_workspace=str(data.get("default_workspace", "")),
+                recent_workspaces=[str(p) for p in data.get("recent_workspaces", [])],
             )
         except (json.JSONDecodeError, OSError) as exc:
             logger.warning("desktop settings load fallback: %s", exc)
@@ -106,6 +121,7 @@ class DesktopSettingsService:
             "theme": self._settings.theme,
             "language": self._settings.language,
             "default_workspace": self._settings.default_workspace,
+            "recent_workspaces": self._settings.recent_workspaces,
         }
         self._settings_path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n")
         logger.info("desktop settings saved: theme=%s language=%s has_workspace=%s", data["theme"], data["language"], bool(data["default_workspace"]))

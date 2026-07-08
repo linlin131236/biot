@@ -6,7 +6,7 @@ endpoint and never appears in the settings payload.
 """
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 from bolt_core.desktop_settings import DesktopSettingsService
 
@@ -39,5 +39,13 @@ def create_desktop_settings_router(project_dir: str | Path | None = None) -> API
         """清除已保存的 API key。"""
         service.delete_api_key()
         return {"status": "ok", "has_api_key": False}
+
+    @router.post("/desktop/settings/workspace-history")
+    def add_workspace_history(payload: dict) -> dict:
+        """添加工作区到最近打开列表。"""
+        path = str(payload.get("path", ""))
+        if not path:
+            return {"status": "error", "message": "工作区路径不能为空"}
+        return service.add_recent_workspace(path)
 
     return router

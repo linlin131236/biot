@@ -8,7 +8,7 @@ import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
 import { createAgentCoreFetcher } from './agentCoreAuth';
-import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline, loadDesktopSettings, storeDesktopSettings } from './workflowClient';
+import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline, loadDesktopSettings, storeDesktopSettings, addWorkspaceToHistory, loadRecentSessions } from './workflowClient';
 import { PanelsSection } from './PanelsSection';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
 import { fetchUnfinishedGoals } from './harnessClientAutonomy';
@@ -144,7 +144,15 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
 
   async function changeWorkspace() {
     const path = await selectWorkspace();
-    if (path) { const next = { ...session, workspacePath: path }; saveSession(next); dispatch({ type: 'workspace.selected', path }); }
+    if (path) {
+      const next = { ...session, workspacePath: path };
+      saveSession(next);
+      dispatch({ type: 'workspace.selected', path });
+      // Add to recent workspaces history
+      if (session.coreUrl) {
+        addWorkspaceToHistory(session.coreUrl, path, fetcher).catch(() => {});
+      }
+    }
   }
 
   const hasWorkspace = !!(state.workspacePath || session.workspacePath);
@@ -169,10 +177,14 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         fetchTimeline={fetchTimelineAction}
         runReview={runReview}
         changeWorkspace={changeWorkspace}
+        addWorkspaceToHistory={addWorkspaceToHistory}
+        loadRecentSessions={loadRecentSessions}
         theme={theme}
         setTheme={setTheme}
         onSaveTheme={handleSaveTheme}
         settings={settings}
+        coreUrl={session.coreUrl}
+        fetcher={fetcher}
         error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
         toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
         modelPanel={<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} />}

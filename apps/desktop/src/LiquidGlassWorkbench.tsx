@@ -9,16 +9,41 @@ import './liquidGlassHome.css';
 import './liquidGlassHomeInteraction.css';
 import './liquidGlassSettings.css';
 
+type RecentSession = {
+  id: string;
+  title: string;
+  time: string;
+  status: string;
+};
+
 export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
   const [view, setView] = useState<ViewMode>('home');
   const [activeSetting, setActiveSetting] = useState('general');
+  const [recentSessions, setRecentSessions] = useState<RecentSession[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const safeWorkspace = props.workspacePath || '工作区未选择';
-  const recentSessions = useMemo(() => [
-    { label: 'M141 液态玻璃视觉系统', status: 'green', time: '现在' },
-    { label: '补丁预览与人工批准', status: 'green', time: '昨天' },
-    { label: '测试反馈回灌', status: 'amber', time: '昨天' },
-    { label: '失败恢复链路', status: 'amber', time: '3 天前' },
-  ], []);
+
+  useEffect(() => {
+    if (!props.hasWorkspace || !props.coreUrl || !props.fetcher) {
+      setRecentSessions([]);
+      return;
+    }
+    let active = true;
+    setSessionsLoading(true);
+    props.loadRecentSessions(props.coreUrl, 20, props.fetcher).then((sessions) => {
+      if (active) { setRecentSessions(sessions); setSessionsLoading(false); }
+    }).catch(() => {
+      if (active) { setRecentSessions([]); setSessionsLoading(false); }
+    });
+    return () => { active = false; };
+  }, [props.hasWorkspace, props.coreUrl, props.loadRecentSessions, props.fetcher]);
+
+  async function handleWorkspaceChange() {
+    await props.changeWorkspace();
+    if (props.workspacePath && props.coreUrl) {
+      props.addWorkspaceToHistory(props.coreUrl, props.workspacePath, props.fetcher).catch(() => {});
+    }
+  }
 
   async function handleThemeChange(next: ThemeMode) {
     props.setTheme(next);
@@ -50,9 +75,9 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
         <div className="biotProjectBlock">
           <div className="biotBlockTitle">
             <span>项目</span>
-            <button type="button" onClick={props.changeWorkspace} aria-label={props.hasWorkspace ? '切换项目' : '添加项目'}>+</button>
+            <button type="button" onClick={handleWorkspaceChange} aria-label={props.hasWorkspace ? '切换项目' : '添加项目'}>+</button>
           </div>
-          <button type="button" className="biotProjectButton" onClick={props.changeWorkspace}>
+          <button type="button" className="biotProjectButton" onClick={handleWorkspaceChange}>
             <Folder size={18} /> {props.hasWorkspace ? '更换工作区' : '选择工作区'}
           </button>
           <div className="biotWorkspacePath">{safeWorkspace}</div>
@@ -60,13 +85,19 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
 
         <div className="biotRecent">
           <div className="biotBlockTitle"><span>最近会话</span><span>只读</span></div>
-          {recentSessions.map((item) => (
-            <div className="biotRecentItem" key={item.label}>
-              <i data-status={item.status} />
-              <span>{item.label}</span>
-              <small>{item.time}</small>
-            </div>
-          ))}
+          {sessionsLoading ? (
+            <p className="biotRecentEmpty">加载中...</p>
+          ) : (recentSessions?.length ?? 0) === 0 ? (
+            <p className="biotRecentEmpty">暂无最近会话</p>
+          ) : (
+            recentSessions.map((item) => (
+              <div className="biotRecentItem" key={item.id}>
+                <i data-status={item.status === 'completed' ? 'green' : item.status === 'failed' ? 'red' : 'amber'} />
+                <span>{item.title}</span>
+                <small>{item.time || '—'}</small>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="biotUserCard">

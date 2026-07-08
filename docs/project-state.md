@@ -1,57 +1,59 @@
-# Bolt Project State
-
 ## 当前稳定基线
 
-- 已完成到：M151 Settings Persistence（真实设置持久化），P1/P2 复审修复已完成，已 push。
-- 最新远端基线：`origin/main = 01c4fe4 docs: avoid stale M151 ahead count`。
-- 当前本地基线：`HEAD = 01c4fe4 docs: avoid stale M151 ahead count`。
-- 当前本地分支：`main...origin/main`，本地与远端同步。
-- 当前工作区：M151 改动已完成全量验证，`.claude/` 未跟踪、未提交。
+- 已完成到：M152 Workspace & Recent Sessions（真实工作区和最近会话），已 commit 未 push。
+- 最新远端基线：`origin/main = 8036ef8 docs: mark M151 pushed`。
+- 当前本地基线：`HEAD = 1cf744c feat(M152): real workspace and recent sessions`。
+- 当前本地分支：`main...origin/main [ahead 1]`，本地领先远端 1 个 commit（M152）。
+- 当前工作区：M152 改动已完成全量验证，`.claude/` 未跟踪、未提交。
 - 未 release / 未 tag / 未 delete。
-- 未进入 M152。
+- 未进入 M153。
 
 ## M151 当前改动
 
 - M151：设置持久化。新增 `desktop_settings.py` + `desktop_settings_api.py`，主题、语言、默认工作区、API 密钥状态可真实读取/保存。API key 不回显明文。
+- M151 P1/P2 修复：移除设置页全局 fetch（改用认证回调）、主题切换即时更新 UI、日志脱敏 default_workspace 路径、review gate 文档修正。
 
-## M151 关键文件
+## M152 当前改动
 
-- `services/agent-core/src/bolt_core/desktop_settings.py`
-- `services/agent-core/src/bolt_core/desktop_settings_api.py`
-- `services/agent-core/src/bolt_core/app.py`（新增路由注册）
-- `apps/desktop/src/harnessClient.ts`（新增 desktop settings API）
-- `apps/desktop/src/workflowClient.ts`（新增 desktop settings workflow）
-- `apps/desktop/src/App.tsx`（settings state 提升，主题持久化）
+- M152：真实工作区和最近会话。新增 `workspace_api.py`，扩展 `desktop_settings.py` 添加 `recent_workspaces` 字段。最近会话来自 `.bolt/goals/goal_*.json` 真实数据。
+- 切换工作区后自动添加到最近工作区列表（去重、最多 10 个）。
+- 最近会话空状态中文展示：”暂无最近会话”。
+
+## M152 关键文件
+
+- `services/agent-core/src/bolt_core/workspace_api.py`
+- `services/agent-core/src/bolt_core/desktop_settings.py`（新增 recent_workspaces）
+- `services/agent-core/src/bolt_core/desktop_settings_api.py`（新增 workspace-history）
+- `services/agent-core/src/bolt_core/app.py`（注册 workspace router）
+- `apps/desktop/src/harnessClient.ts`（新增 workspace API）
+- `apps/desktop/src/workflowClient.ts`（新增 workspace workflow）
+- `apps/desktop/src/LiquidGlassWorkbench.tsx`（真实最近会话）
+- `apps/desktop/src/App.tsx`（切换工作区后添加历史）
 - `apps/desktop/src/LiquidGlassTypes.ts`（新增 props）
-- `apps/desktop/src/LiquidGlassWorkbench.tsx`（主题切换持久化）
-- `apps/desktop/src/LiquidGlassSettings.tsx`（真实数据展示）
-- `apps/desktop/src/LiquidGlassSettingsData.tsx`（静态 surface 数据拆分）
 - `apps/desktop/src/LiquidGlassWorkbench.test.tsx`（适配新 props）
-- `services/agent-core/tests/test_desktop_settings.py`
-- `docs/exec-plans/active/151-settings-persistence.md`
-- `docs/decisions/151-settings-persistence.md`
-- `docs/phase-151-review-gate.md`
+- `services/agent-core/tests/test_workspace_api.py`
+- `docs/exec-plans/active/152-workspace-recent-sessions.md`
+- `docs/decisions/152-workspace-recent-sessions.md`
+- `docs/phase-152-review-gate.md`
 
-## M151 验证
+## M152 验证
 
 - Desktop build：通过。
-- Desktop targeted：`pnpm --filter @bolt/desktop exec vitest run src/LiquidGlassWorkbench.test.tsx --reporter dot`：15 passed。
 - Desktop tests：42 files / 306 tests passed。
-- Backend targeted tests：`test_desktop_settings.py` 7 passed，`test_model_settings.py` + `test_app.py` 26 passed。
-- `pnpm run quality`：通过（size/docs/boundaries/architecture/release/package-runtime/chinese-ui/test）。
+- Backend targeted tests：`test_workspace_api.py` 6 passed，`test_desktop_settings.py` 7 passed。
+- `pnpm run quality`：通过。
 - `git diff --check`：通过。
 - 产品源码私人称呼扫描：无命中。
-- renderer 安全扫描：M151 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
-- `desktop_settings.py` 写文件已加入 `check-architecture.mjs` 白名单。
+- renderer 安全扫描：M152 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- M151 已完成、已复审、已 push，远端 `origin/main` 与本地 HEAD 同步。
+- M152 已完成、已复审，待 commit。未 push。
 
 ## 下一步
 
-- 下一步由用户授权后进入 M152；当前不自动进入 M152。
+- M153 — Permission Center Live：权限中心真实接入。
 
 ## 长期硬规则
 

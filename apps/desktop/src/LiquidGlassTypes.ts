@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type { DesktopSettingsStatus } from './LiquidGlassSettingsData';
 
+export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
+
 export type ThemeMode = 'dark' | 'light';
 export type ViewMode = 'home' | 'settings';
 
@@ -21,6 +23,8 @@ export interface LiquidGlassWorkbenchProps {
   fetchTimeline: () => void;
   runReview: () => void;
   changeWorkspace: () => void;
+  addWorkspaceToHistory: (baseUrl: string, path: string, fetcher: Fetcher) => Promise<void>;
+  loadRecentSessions: (baseUrl: string, limit: number, fetcher: Fetcher) => Promise<RecentSession[]>;
   error?: ReactNode;
   toolFlow?: ReactNode;
   modelPanel?: ReactNode;
@@ -29,7 +33,16 @@ export interface LiquidGlassWorkbenchProps {
   setTheme: (value: ThemeMode) => void;
   onSaveTheme: (next: ThemeMode) => void;
   settings: DesktopSettingsStatus | null;
+  coreUrl: string;
+  fetcher: Fetcher;
 }
+
+export type RecentSession = {
+  id: string;
+  title: string;
+  time: string;
+  status: string;
+};
 
 export interface LiquidGlassHomeProps {
   goal: string;

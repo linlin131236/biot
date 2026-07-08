@@ -1,6 +1,6 @@
 import type { AgentStepResult, HarnessRun, MemoryConsolidationResult, MemorySnapshot, ModelSettings, ModelSettingsStatus, PendingPermission, ToolResult, TraceEvent } from '@bolt/shared';
 import type { Goal, Checkpoint } from '@bolt/shared/autonomy';
-import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, saveDesktopSettings as harnessSaveDesktopSettings, fetchDesktopSettings as harnessFetchDesktopSettings, saveDesktopApiKey as harnessSaveDesktopApiKey, deleteDesktopApiKey as harnessDeleteDesktopApiKey, submitToolRequest } from './harnessClient';
+import { approvePermission, consolidateMemory, createHarnessRun, fetchHarnessTrace, fetchMemorySnapshot, fetchModelSettingsStatus, fetchPendingPermissions, rejectPermission, runAgentStep, runDocumentGardener, saveModelSettings, saveDesktopSettings as harnessSaveDesktopSettings, fetchDesktopSettings as harnessFetchDesktopSettings, saveDesktopApiKey as harnessSaveDesktopApiKey, deleteDesktopApiKey as harnessDeleteDesktopApiKey, addWorkspaceHistory as harnessAddWorkspaceHistory, fetchRecentSessions as harnessFetchRecentSessions, fetchWorkspaceStatus as harnessFetchWorkspaceStatus, submitToolRequest } from './harnessClient';
 import { createGoal, createCheckpoint, loadCheckpoint, evaluateReview, fetchRunTimeline, createConversation, addMessage } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
@@ -97,4 +97,17 @@ export async function storeDesktopApiKey(baseUrl: string, apiKey: string, fetche
 
 export async function removeDesktopApiKey(baseUrl: string, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean }> {
   return harnessDeleteDesktopApiKey(baseUrl, fetcher);
+}
+
+export async function addWorkspaceToHistory(baseUrl: string, path: string, fetcher: Fetcher): Promise<void> {
+  await harnessAddWorkspaceHistory(baseUrl, path, fetcher);
+}
+
+export async function loadRecentSessions(baseUrl: string, limit: number = 20, fetcher: Fetcher): Promise<Array<{ id: string; title: string; time: string; status: string }>> {
+  const result = await harnessFetchRecentSessions(baseUrl, limit, fetcher);
+  return result.sessions;
+}
+
+export async function loadWorkspaceStatus(baseUrl: string, fetcher: Fetcher): Promise<{ accessible: boolean; path: string }> {
+  return harnessFetchWorkspaceStatus(baseUrl, fetcher);
 }

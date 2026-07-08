@@ -89,6 +89,19 @@ export async function deleteDesktopApiKey(baseUrl: string, fetcher: Fetcher = fe
   return readJson(await fetcher(`${baseUrl}/desktop/settings/api-key`, { method: 'DELETE' }));
 }
 
+export async function addWorkspaceHistory(baseUrl: string, path: string, fetcher: Fetcher = fetch): Promise<{ recent_workspaces: string[] }> {
+  return readJson(await fetcher(`${baseUrl}/desktop/settings/workspace-history`, jsonPost({ path })));
+}
+
+export async function fetchRecentSessions(baseUrl: string, limit: number = 20, fetcher: Fetcher = fetch): Promise<{ sessions: Array<{ id: string; title: string; time: string; status: string }> }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  return readJson(await fetcher(`${baseUrl}/workspace/recent-sessions?${params}`));
+}
+
+export async function fetchWorkspaceStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<{ accessible: boolean; path: string }> {
+  return readJson(await fetcher(`${baseUrl}/workspace/status`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
