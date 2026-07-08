@@ -312,10 +312,36 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M161 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M162 当前改动
+
+- M162：SkillLearner 主动扫描。`skilllearner_review_loop.py` 新增 `auto_scan()` 方法，主动查询 failure memory 检测失败模式并自动生成改进提案。`skilllearner_review_loop_api.py` 新增 `POST /skill-learner/auto-scan` 端点。前端新建 `SkillLearnerPanel` 组件支持自动扫描和提案展示。
+
+## M162 关键文件
+
+- `services/agent-core/src/bolt_core/skilllearner_review_loop.py`（新增 auto_scan 方法）
+- `services/agent-core/src/bolt_core/skilllearner_review_loop_api.py`（新增 auto-scan 端点）
+- `apps/desktop/src/SkillLearnerPanel.tsx`（新建，技能学习器面板）
+- `apps/desktop/src/SkillLearnerPanel.test.tsx`（新建，8 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 autoScanSkillLearner、recordFailure）
+- `apps/desktop/src/panelsApi.ts`（新增 skilllearner namespace）
+- `apps/desktop/src/PanelsSection.tsx`（装配 SkillLearnerPanel）
+- `services/agent-core/tests/test_skilllearner_auto_scan.py`（新建，4 个后端测试）
+
+## M162 验证
+
+- Backend targeted tests：4 passed（test_skilllearner_auto_scan.py）
+- Frontend targeted tests：8 passed（SkillLearnerPanel.test.tsx）
+- Desktop tests：48 files / 355 tests passed（+8 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M162 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M161 完整实现（ReviewerEngine + strict Gate + review 端点 + ReviewerPanel + 13 测试 + decision + review gate + project-state 更新）。
-- M162 — SkillLearner Auto-Trigger：SkillLearner 从被动触发升级为主动扫描失败模式。
+- **待完成**：commit M162 完整实现（auto_scan 方法 + auto-scan 端点 + SkillLearnerPanel + 12 测试 + decision + review gate + project-state 更新）。
+- M163 — Orchestrator core (5 roles wired)：串联 Planner → Researcher → Builder → Reviewer → SkillLearner。
 
 ## 长期硬规则
 

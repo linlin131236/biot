@@ -22,6 +22,7 @@ import { ProductWorkbenchPanel } from './ProductWorkbenchPanel';
 import { ResearcherPanel } from './ResearcherPanel';
 import { BuilderPanel } from './BuilderPanel';
 import { ReviewerPanel } from './ReviewerPanel';
+import { SkillLearnerPanel } from './SkillLearnerPanel';
 import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
@@ -47,6 +48,7 @@ export interface PanelsProps {
     researcher: { createBrief: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; executeResearch: (b: string, briefId: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchScopes: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     builder: { executeTask: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchProposals: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     reviewer: { reviewOutput: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (b: string, verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    skilllearner: { autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -105,6 +107,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <ResearcherPanel baseUrl={baseUrl} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
       <BuilderPanel baseUrl={baseUrl} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
       <ReviewerPanel baseUrl={baseUrl} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
+      <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
     </>
   );
 }

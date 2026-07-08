@@ -393,6 +393,15 @@ export async function fetchBuilderProposals(baseUrl: string, fetcher: Fetcher = 
   return readJson(await fetcher(`${baseUrl}/builder/proposals`));
 }
 
+// === SkillLearner (M162) ===
+export async function autoScanSkillLearner(baseUrl: string, keyword: string = "", fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/skill-learner/auto-scan`, jsonPost({ keyword })));
+}
+
+export async function recordFailure(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/skill-learner/failures`, jsonPost(payload)));
+}
+
 // === Reviewer (M161) ===
 export async function reviewBuilderOutput(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
   return readJson(await fetcher(`${baseUrl}/reviewer/review`, jsonPost(payload)));

@@ -48,7 +48,7 @@ import {
   fetchBuilderProposals,
 } from './harnessClientAutonomy';
 import { startWorkflowRun } from './workflowClient';
-import { reviewBuilderOutput, fetchReviewVerdictLabel } from './harnessClientAutonomy';
+import { reviewBuilderOutput, fetchReviewVerdictLabel, autoScanSkillLearner, recordFailure } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -119,5 +119,6 @@ export function createPanelsApi(fetcher: Fetcher, goalInfo: Goal | null): Panels
       reviewOutput: reviewBuilderOutput,
       fetchVerdictLabel: fetchReviewVerdictLabel,
     },
+    skilllearner: { autoScan: autoScanSkillLearner, recordFailure },
   };
 }

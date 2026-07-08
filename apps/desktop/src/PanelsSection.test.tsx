@@ -35,6 +35,7 @@ function apiFixture() {
     researcher: { createBrief: vi.fn(), executeResearch: vi.fn(), fetchScopes: vi.fn() },
     builder: { executeTask: vi.fn(), fetchProposals: vi.fn() },
     reviewer: { reviewOutput: vi.fn(), fetchVerdictLabel: vi.fn() },
+    skilllearner: { autoScan: vi.fn(), recordFailure: vi.fn() },
   };
 }
 

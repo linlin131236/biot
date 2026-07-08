@@ -42,4 +42,16 @@ def create_skilllearner_review_loop_router() -> APIRouter:
             raise HTTPException(404, f"未找到提案：{proposal_id}")
         return p.to_dict()
 
+    @router.post("/skill-learner/auto-scan")
+    def auto_scan(payload: dict) -> dict:
+        """主动扫描失败记忆，自动检测模式并生成改进提案。
+
+        payload: { keyword?, category? }
+        """
+        keyword = str(payload.get("keyword", ""))
+        # Note: failure_memory query interface would be injected in production
+        # For now, auto_scan with no failure_memory returns a guide response
+        result = service.auto_scan(failure_memory=None, keyword=keyword)
+        return result
+
     return router

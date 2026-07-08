@@ -1,17 +1,27 @@
 """SkillLearner Review Loop. Analyzes repeated failures to propose
 workflow/skill/doc improvements. Proposes A/B/C options, never modifies
 business code or skill files directly. Requires father approval.
+
+M162: Added auto_scan method for proactive failure pattern detection.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Protocol, runtime_checkable
 import uuid
 
 
 # Minimum same-class failures to trigger analysis
 _MIN_FAILURES_FOR_PATTERN = 2
+
+
+# ── Failure memory query protocol (M162) ────────────────────────────────
+
+@runtime_checkable
+class _FailureMemoryQuery(Protocol):
+    def query_by_keyword(self, keyword: str) -> list: ...
+    def query_by_category(self, category: str) -> list: ...
 
 
 class ProposalTarget(str):
@@ -181,3 +191,77 @@ class SkillLearnerReviewLoopService:
 
     def total_failures(self) -> int:
         return len(self._failures)
+
+    def auto_scan(self, failure_memory: _FailureMemoryQuery | None = None, keyword: str = "") -> dict:
+        """Proactively scan failure memory for patterns without waiting for
+        record_failure calls.
+
+        Process:
+        1. Query failure memory by keyword or category
+        2. Import failures into internal tracking
+        3. Run analyze() to detect patterns
+        4. Auto-generate proposals for detected patterns
+        """
+        if failure_memory is None:
+            return {
+                "scanned": False,
+                "patterns_found": False,
+                "proposals_generated": 0,
+                "note": "未提供 failure_memory 查询接口。",
+            }
+
+        # Query failures from memory
+        entries: list[dict] = []
+        if keyword:
+            results = failure_memory.query_by_keyword(keyword)
+            for r in results[:20]:
+                entries.append({
+                    "failure_class": getattr(r, "category", keyword),
+                    "failure_id": getattr(r, "failure_id", f"auto-{uuid.uuid4().hex[:8]}"),
+                    "description_cn": getattr(r, "description_cn", getattr(r, "category", keyword)),
+                    "occurred_at": getattr(r, "occurred_at", datetime.now(timezone.utc).isoformat()),
+                })
+        else:
+            # Scan common categories
+            for cat in ("permission", "tool_execution", "network", "file_system"):
+                results = failure_memory.query_by_category(cat)
+                for r in results[:5]:
+                    entries.append({
+                        "failure_class": getattr(r, "category", cat),
+                        "failure_id": getattr(r, "failure_id", f"auto-{uuid.uuid4().hex[:8]}"),
+                        "description_cn": getattr(r, "description_cn", getattr(r, "category", cat)),
+                        "occurred_at": getattr(r, "occurred_at", datetime.now(timezone.utc).isoformat()),
+                    })
+
+        # Import into internal tracking
+        for entry in entries:
+            existing = [f for f in self._failures if f["failure_id"] == entry["failure_id"]]
+            if not existing:
+                self._failures.append(entry)
+
+        # Analyze patterns
+        analysis = self.analyze()
+        proposals_generated = 0
+
+        # Auto-generate proposals for detected patterns
+        for pattern in analysis.get("patterns", []):
+            failure_class = pattern.get("failure_class", "")
+            existing_proposals = [p for p in self._proposals.values() if p.triggered_by.failure_class == failure_class]
+            if not existing_proposals:
+                self.propose_improvement(
+                    title_cn=f"自动检测：{failure_class} 类失败模式改进",
+                    failure_class=failure_class,
+                    target_type="workflow_doc",
+                    evidence_refs=pattern.get("examples", []),
+                )
+                proposals_generated += 1
+
+        return {
+            "scanned": True,
+            "keyword": keyword,
+            "failures_imported": len(entries),
+            "patterns_found": analysis.get("patterns_found", False),
+            "patterns": analysis.get("patterns", []),
+            "proposals_generated": proposals_generated,
+            "total_failures_tracked": len(self._failures),
+        }
