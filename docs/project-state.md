@@ -2,52 +2,54 @@
 
 ## 当前稳定基线
 
-- 已完成到：M132 Local API Auth + Workspace Lock（已 push）。
+- 已完成到：M133 Real Model Gateway（本地完成，待提交）。
 - 最新远端基线：`origin/main = 2798191 fix(M132): add local api auth and workspace lock`。
-- 最新本地提交：`2798191 fix(M132): add local api auth and workspace lock`。
-- 当前本地分支：`main` 与 `origin/main` 已同步。
-- 已 push / 未 release / 未 tag / 未 delete。
-- 未进入 M133。
+- 最新本地提交：`d52130d docs: mark M132 pushed`。
+- 当前本地分支：`main` 与 `origin/main` 基线同步，存在 M133 未提交修复。
+- M132 已 push / M133 未 push / 未 release / 未 tag / 未 delete。
+- 未进入 M134。
 
-## M132 当前修复
+## M133 当前修复
 
 - 外部审计中确认成立：
-  - 本地 FastAPI 缺少 token 门禁。
-  - 桌面选择工作区没有成为后端硬边界。
-- 外部审计中当前不成立：
-  - `needs_replan` 未处理：当前 `AgentLoop.run_loop()` 已继续下一轮。
-  - `risk.py` 纯黑名单：当前已覆盖危险命令变体与 pipe-to-interpreter 拦截。
+  - 生产默认仍可能走 `FakeModelGateway`。
+- 已修复：
+  - 新增 `DefaultModelGateway`。
+  - 默认模型设置改为 `openai-compatible`，缺 key 明确失败。
+  - `provider=fake` 仅作为显式测试/开发选择。
+  - App 层 agent step 缺 key fail closed，不启动工具执行。
 
-## M132 关键文件
+## M133 关键文件
 
-- `services/agent-core/src/bolt_core/local_api_auth.py`
-- `services/agent-core/src/bolt_core/app.py`
-- `services/agent-core/src/bolt_core/harness.py`
-- `apps/desktop/electron/agentCoreRuntime.ts`
-- `apps/desktop/electron/main.ts`
-- `apps/desktop/electron/preload.ts`
-- `apps/desktop/src/agentCoreAuth.ts`
-- `apps/desktop/src/App.tsx`
+- `services/agent-core/src/bolt_core/model_gateway.py`
+- `services/agent-core/src/bolt_core/model_settings.py`
+- `services/agent-core/src/bolt_core/agent_loop.py`
+- `services/agent-core/tests/test_model_gateway.py`
+- `services/agent-core/tests/test_model_settings.py`
+- `services/agent-core/tests/test_agent_loop.py`
+- `services/agent-core/tests/test_app.py`
 
-## M132 验证
+## M133 验证
 
-- 后端 targeted tests：20 passed。
+- 后端 targeted tests：39 passed。
 - 桌面 targeted tests：39 files / 284 tests passed。
-- 后端 full tests：1539 passed。
+- 后端 full tests：1545 passed。
 - `pnpm run quality`：通过。
 - `pnpm --filter @bolt/desktop build`：通过。
 - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
 - `as any / unknown as`：无新增违规，命中均为规则文本、测试样例或扫描器字符串。
 - renderer 暴露扫描：无实际 `ipcRenderer` / `node:fs` / `child_process` / `process.` 引用，命中均为注释。
+- 自动危险操作扫描：无新增自动 push/release/tag/delete/approve 入口。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- 除 M132 工作文件外无其他已知改动。
+- 除 M133 工作文件外无其他已知改动。
 
 ## 下一步
 
-- 等待爸爸决定下一步是否进入 M133。
+- 提交 M133。
+- 自动继续 M134：真实 Agent Loop tool-result 消息闭环。
 
 ## 长期硬规则
 

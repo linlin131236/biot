@@ -26,6 +26,19 @@ def test_agent_loop_submits_read_tool_through_harness(tmp_path):
     assert _has_trace(harness, run.id, "agent.step.completed")
 
 
+def test_agent_loop_default_gateway_fails_closed_without_model_key(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    harness = Harness(workspace=str(workspace))
+    run = harness.create_run("read README")
+
+    result = harness.run_agent_step(run.id)
+
+    assert result.status == "failed"
+    assert result.error == "api key missing"
+    assert not _has_trace(harness, run.id, "tool.execution.started")
+
+
 def test_agent_loop_write_request_stops_on_pending_permission(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()

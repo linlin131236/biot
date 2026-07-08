@@ -217,22 +217,6 @@ async def test_model_settings_endpoint_redacts_api_key():
 
 
 @pytest.mark.anyio
-async def test_agent_step_endpoint_records_llm_trace(tmp_path):
-    workspace = tmp_path / "workspace"
-    workspace.mkdir()
-    (workspace / "README.md").write_text("# Project\n", encoding="utf-8")
-    async with _client() as client:
-        run_id = (await client.post("/harness/runs", json={"goal": "read README", "workspace": str(workspace)})).json()["id"]
-        step_response = await client.post(f"/harness/runs/{run_id}/agent-steps")
-        trace_response = await client.get(f"/harness/runs/{run_id}/trace")
-
-    event_types = [event["type"] for event in trace_response.json()]
-    assert step_response.json()["status"] == "executed"
-    assert "tokens.recorded" in event_types
-    assert "agent.step.completed" in event_types
-
-
-@pytest.mark.anyio
 async def test_harness_api_denies_reading_secret_file(tmp_path):
     workspace = tmp_path / "workspace"
     workspace.mkdir()

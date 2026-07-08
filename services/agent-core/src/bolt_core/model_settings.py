@@ -14,7 +14,7 @@ class ModelSettingsStatus:
 
 class ModelSettingsStore:
     def __init__(self) -> None:
-        self._config = ModelConfig("fake", "http://localhost", None, "fake-model", 0.2, 120.0)
+        self._config = ModelConfig("openai-compatible", "https://api.openai.com/v1", None, "gpt-4o", 0.2, 120.0)
 
     def config(self) -> ModelConfig:
         return self._config

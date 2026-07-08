@@ -54,6 +54,33 @@ def test_real_gateway_fails_without_api_key():
     assert response.tool_calls == []
 
 
+def test_default_gateway_does_not_use_fake_for_openai_compatible_without_key():
+    from bolt_core.model_gateway import DefaultModelGateway
+
+    gateway = DefaultModelGateway()
+    config = ModelConfig("openai-compatible", "https://api.example/v1", None, "gpt-test")
+    request = ModelRequest([ModelMessage("user", "read README")], config)
+
+    response = gateway.complete(request)
+
+    assert response.status == "failed"
+    assert response.error == "api key missing"
+    assert response.tool_calls == []
+
+
+def test_default_gateway_uses_fake_only_when_provider_is_fake():
+    from bolt_core.model_gateway import DefaultModelGateway
+
+    gateway = DefaultModelGateway()
+    config = ModelConfig("fake", "http://localhost", None, "fake-model")
+    request = ModelRequest([ModelMessage("user", "read README")], config)
+
+    response = gateway.complete(request)
+
+    assert response.status == "completed"
+    assert response.tool_calls[0].name == "file.read"
+
+
 def test_tool_call_dataclass():
     call = ToolCall("call_123", "file.read", {"path": "/tmp/test.py"})
     assert call.id == "call_123"

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from bolt_core.context_builder import ContextBuilder
-from bolt_core.model_gateway import FakeModelGateway, ModelConfig, ToolCall
+from bolt_core.model_gateway import DefaultModelGateway, ModelConfig, ToolCall
 from bolt_core.memory_store import MemoryRecord
 from bolt_core.planner import Planner
 from bolt_core.tool_protocol import ToolRequest, ToolResult
@@ -29,7 +29,7 @@ class AgentLoopResult:
 
 class AgentLoop:
     def __init__(self, gateway=None, context_builder=None, planner=None, verifier=None) -> None:
-        self.gateway = gateway or FakeModelGateway()
+        self.gateway = gateway or DefaultModelGateway()
         self.context_builder = context_builder or ContextBuilder()
         self.planner = planner or Planner()
         self.verifier = verifier or Verifier()

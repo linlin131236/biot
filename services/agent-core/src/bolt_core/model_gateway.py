@@ -110,6 +110,19 @@ class OpenAICompatibleGateway:
         return ModelResponse("failed", None, TokenUsage(0, 0, 0), [], last_error or "unknown error")
 
 
+class DefaultModelGateway:
+    """Routes explicit fake configs to tests, all real providers to OpenAI-compatible chat."""
+
+    def __init__(self, fake: FakeModelGateway | None = None, real: OpenAICompatibleGateway | None = None) -> None:
+        self._fake = fake or FakeModelGateway()
+        self._real = real or OpenAICompatibleGateway()
+
+    def complete(self, request: ModelRequest) -> ModelResponse:
+        if request.config.provider == "fake":
+            return self._fake.complete(request)
+        return self._real.complete(request)
+
+
 def _fake_tool_call(prompt: str) -> ToolCall:
     workspace = _fake_workspace(prompt)
     normalized = prompt.lower()
