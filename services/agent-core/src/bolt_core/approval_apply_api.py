@@ -1,15 +1,17 @@
 """Approval Apply API. Apply approved proposals after human verification."""
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 
 from bolt_core.approval_apply import ApprovalApplyEngine
 from bolt_core.write_tool_proposal import WriteProposalStore
 
 
-def create_approval_apply_router(store: WriteProposalStore | None = None) -> APIRouter:
+def create_approval_apply_router(store: WriteProposalStore | None = None, project_dir: str | Path = ".") -> APIRouter:
     """创建批准应用 API 路由。"""
     if store is None:
         store = WriteProposalStore()
-    engine = ApprovalApplyEngine(store=store)
+    engine = ApprovalApplyEngine(store=store, project_dir=str(project_dir))
 
     router = APIRouter(tags=["tools"])
 
@@ -26,6 +28,10 @@ def create_approval_apply_router(store: WriteProposalStore | None = None) -> API
         approval = payload.get("approval", {})
         if not isinstance(approval, dict):
             raise HTTPException(status_code=400, detail="approval 必须是一个对象")
+
+        # actor 由服务端强制注入，不信任请求体自报，防止 agent/攻击者伪造 "user" 自批准。
+        # 调用本路由已通过 local_api_auth 的 Bearer token 校验，故视为已鉴权的人类调用者。
+        approval = {**approval, "actor": "human", "scope": proposal_id}
 
         result = engine.apply(proposal_id, approval)
         if not result.success:

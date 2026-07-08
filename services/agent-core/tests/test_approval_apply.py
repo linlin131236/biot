@@ -185,6 +185,14 @@ class TestApprovalApply:
         assert result.success is False
         assert "自我批准" in result.reason or "self" in result.reason.lower()
 
+    @pytest.mark.parametrize("actor", ["user", "father"])
+    def test_ambiguous_actor_aliases_fail(self, tmp_path, actor):
+        store, prop = make_store_with_approved(tmp_path)
+        engine = ApprovalApplyEngine(store=store)
+        result = engine.apply(prop.proposal_id, {"actor": actor, "scope": prop.proposal_id})
+        assert result.success is False
+        assert "人工用户" in result.reason
+
     def test_scope_mismatch_fails(self, tmp_path):
         store, prop = make_store_with_approved(tmp_path)
         engine = ApprovalApplyEngine(store=store)

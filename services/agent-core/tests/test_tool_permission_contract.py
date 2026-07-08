@@ -182,6 +182,14 @@ class TestVerifyApproval:
         assert v.valid is False
         assert "自我批准" in v.reason or "self-approve" in v.reason
 
+    @pytest.mark.parametrize("actor", ["user", "father"])
+    def test_ambiguous_actor_aliases_rejected(self, actor):
+        decision = PermissionDecision(tool_id="t", decision=DECISION_NEEDS_APPROVAL, reason="r")
+        approval = {"actor": actor, "scope": "t"}
+        v = PermissionContractEngine.verify_approval(decision, approval)
+        assert v.valid is False
+        assert "人工用户" in v.reason
+
     def test_scope_mismatch_rejected(self):
         decision = PermissionDecision(tool_id="edit_file", decision=DECISION_NEEDS_APPROVAL, reason="r")
         approval = {"actor": "human", "scope": "other_tool"}

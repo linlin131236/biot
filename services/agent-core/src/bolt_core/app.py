@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Query
@@ -98,9 +99,9 @@ from bolt_core.product_workbench_dogfood_api import create_product_workbench_dog
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
-def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None, local_api_token: str | None = None) -> FastAPI:
+def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None, local_api_token: str | None = None, require_local_api_token: bool = False) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
-    install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"))
+    install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
     workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"))
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))
     audit_store_status = "ok"
@@ -152,7 +153,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_readonly_tool_runner_router())
     app.include_router(create_write_tool_proposal_router())
     app.include_router(create_patch_proposal_router())
-    app.include_router(create_approval_apply_router())
+    app.include_router(create_approval_apply_router(project_dir=str(project_dir or Path.cwd())))
     app.include_router(create_test_runner_integration_router())
     app.include_router(create_tool_ecosystem_dogfood_router())
     app.include_router(create_tool_call_eval_router())
@@ -280,4 +281,12 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
 
     return app
 
-app = create_app()
+
+@asynccontextmanager
+async def fail_without_local_token(_app: FastAPI):
+    raise RuntimeError("本地 API 鉴权令牌未配置，拒绝以裸奔模式启动。请通过 BOLT_AGENT_CORE_TOKEN 环境变量提供。")
+    yield
+
+
+_module_token = os.environ.get("BOLT_AGENT_CORE_TOKEN")
+app = create_app(local_api_token=_module_token, require_local_api_token=True) if _module_token else FastAPI(title="Bolt Agent Core", lifespan=fail_without_local_token)

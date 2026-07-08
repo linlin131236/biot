@@ -98,7 +98,7 @@ class ApprovalApplyEngine:
 
         # ── 6. Actor must be human ──
         actor = str(approval_record.get("actor", "")).lower()
-        if actor not in ("human", "father", "user", "用户"):
+        if actor not in ("human", "用户"):
             return ApplyResult(
                 success=False, proposal_id=proposal_id,
                 reason=f"Agent '{actor}' 不能自我批准。apply 必须由人工用户授权。",

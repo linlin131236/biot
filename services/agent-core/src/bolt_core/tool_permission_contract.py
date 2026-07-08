@@ -219,7 +219,7 @@ class PermissionContractEngine:
 
         # ── 3. Actor must be human ──
         actor = str(approval_record.get("actor", "")).lower()
-        if actor not in ("human", "father", "user", "用户"):
+        if actor not in ("human", "用户"):
             checks.append({
                 "check": "actor_is_human",
                 "passed": False,

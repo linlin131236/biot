@@ -8,9 +8,14 @@ from fastapi.responses import JSONResponse, Response
 PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
 
 
-def install_local_api_auth(app: FastAPI, token: str | None) -> None:
+def install_local_api_auth(app: FastAPI, token: str | None, *, require_token: bool = True) -> None:
     if not token:
-        return
+        if not require_token:
+            return
+        raise RuntimeError(
+            "本地 API 鉴权令牌未配置，拒绝以裸奔模式启动。"
+            "请通过 local_api_token 参数或 BOLT_AGENT_CORE_TOKEN 环境变量提供。"
+        )
 
     expected = f"Bearer {token}"
 
