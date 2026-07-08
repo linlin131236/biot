@@ -2,52 +2,54 @@
 
 ## 当前稳定基线
 
-- 已完成到：M134 Agent Loop Tool Result Feedback（本地完成，待提交）。
-- 最新远端基线：`origin/main = 2798191 fix(M132): add local api auth and workspace lock`。
-- 最新本地提交：`9efe58e fix(M133): fail closed without real model config`。
-- 当前本地分支：`main` 基于 `origin/main`，本地已提交 M133，并存在 M134 未提交修复。
-- M132 已 push / M133-M134 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M135。
+- 已完成到：M135 Checkpoint Restore Semantics（本地完成，待提交）。
+- 最新远端基线：`origin/main = d52130d docs: mark M132 pushed`。
+- 最新本地提交：`068c0bd feat(M134): feed tool results back into agent loop`。
+- 当前本地分支：`main...origin/main [ahead 2]`。
+- M133-M134 已本地提交，尚未 push。
+- M135 已通过 targeted tests、full tests、quality 和 build，尚未提交。
+- 未 release / 未 tag / 未 delete。
+- 未进入 M136。
 
-## M134 当前修复
+## M135 当前修复
 
-- 外部审计中确认成立：
-  - Agent Loop 需要把 tool result 回填给下一轮 LLM。
-- 已修复：
-  - 新增 `tool.result.observed` trace。
-  - Planner 注入最近工具结果摘要。
-  - 工具结果回填前脱敏并截断。
-  - 文本完成态可正常结束 loop。
+- 新增真实 checkpoint restore 语义。
+- restore 必须显式确认，未确认不写文件。
+- restore 只写 workspace 内文件。
+- checkpoint 创建时跳过秘密路径内容。
+- restore 时秘密路径也会跳过。
+- 新增 `POST /checkpoints/{checkpoint_id}/restore`，未确认返回中文 400。
 
-## M134 关键文件
+## M135 关键文件
 
-- `services/agent-core/src/bolt_core/agent_loop.py`
-- `services/agent-core/src/bolt_core/planner.py`
-- `services/agent-core/tests/test_agent_loop.py`
-- `docs/exec-plans/active/134-agent-loop-tool-result-feedback.md`
-- `docs/decisions/134-agent-loop-tool-result-feedback.md`
-- `docs/phase-134-review-gate.md`
+- `services/agent-core/src/bolt_core/checkpoint.py`
+- `services/agent-core/src/bolt_core/app_routes.py`
+- `services/agent-core/tests/test_checkpoint.py`
+- `services/agent-core/tests/test_checkpoint_api.py`
+- `docs/exec-plans/active/135-checkpoint-restore-semantics.md`
+- `docs/decisions/135-checkpoint-restore-semantics.md`
+- `docs/phase-135-review-gate.md`
 
-## M134 验证
+## M135 验证
 
-- M134 targeted tests：24 passed。
-- 后端 full tests：1547 passed。
-- `pnpm run quality`：通过。
+- Targeted tests：17 passed。
+- Full backend tests：1553 passed。
+- `pnpm run quality`：通过；shared 27 passed，desktop 39 files / 284 tests passed。
 - `pnpm --filter @bolt/desktop build`：通过。
 - `git diff --check`：通过（仅 Windows LF/CRLF 提示）。
-- `as any / unknown as`：无新增违规，命中均为规则文本、测试样例或扫描器字符串。
-- renderer 暴露扫描：无实际 `ipcRenderer` / `node:fs` / `child_process` / `process.` 引用，命中均为注释。
-- 自动危险操作扫描：无新增自动 push/release/tag/delete/approve 入口。
+- `as any / unknown as`：无 M135 新增违规。
+- renderer 暴露扫描：无 M135 新增暴露。
+- 自动危险操作扫描：无 M135 新增自动 push/release/tag/delete/approve 入口。
 
 ## 工作区状态
 
 - `.claude/` 未跟踪、未提交，按规则保持。
-- 除 M133-M134 工作文件外无其他已知改动。
+- M135 文件有未提交改动。
 
 ## 下一步
 
-- 提交 M134。
-- 自动继续 M135：checkpoint / restore 语义收口。
+- 提交 M135。
+- 自动继续 M136：权限中心到真实执行链路的 UI/API 绑定收口。
 
 ## 长期硬规则
 

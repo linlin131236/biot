@@ -124,3 +124,56 @@ def test_checkpoint_load_rejects_bad_id(tmp_path):
     assert svc.load("../../../etc/passwd") is None
     assert svc.load("unfinished") is None
     assert svc.load("cp_ZZZZZZZZ") is None  # uppercase not hex
+
+
+def test_checkpoint_restore_writes_saved_content_back(tmp_path):
+    target = tmp_path / "app.py"
+    target.write_text("before\n", encoding="utf-8")
+    svc = CheckpointService(workspace=str(tmp_path))
+    cp = svc.create(run_id="run_restore", goal_id="goal_restore", changed_files=["app.py"])
+    target.write_text("after\n", encoding="utf-8")
+
+    result = svc.restore(cp.id, confirm_restore=True)
+
+    assert result["status"] == "restored"
+    assert result["restored_files"] == ["app.py"]
+    assert target.read_text(encoding="utf-8") == "before\n"
+
+
+def test_checkpoint_restore_requires_explicit_confirmation(tmp_path):
+    target = tmp_path / "app.py"
+    target.write_text("before\n", encoding="utf-8")
+    svc = CheckpointService(workspace=str(tmp_path))
+    cp = svc.create(run_id="run_restore", goal_id="goal_restore", changed_files=["app.py"])
+    target.write_text("after\n", encoding="utf-8")
+
+    result = svc.restore(cp.id, confirm_restore=False)
+
+    assert result["status"] == "confirmation_required"
+    assert target.read_text(encoding="utf-8") == "after\n"
+
+
+def test_checkpoint_restore_does_not_write_secret_paths(tmp_path):
+    secret = tmp_path / ".env"
+    secret.write_text("TOKEN=before\n", encoding="utf-8")
+    svc = CheckpointService(workspace=str(tmp_path))
+    cp = svc.create(run_id="run_restore", goal_id="goal_restore", changed_files=[".env"])
+    secret.write_text("TOKEN=after\n", encoding="utf-8")
+
+    result = svc.restore(cp.id, confirm_restore=True)
+
+    assert result["status"] == "restored"
+    assert result["restored_files"] == []
+    assert ".env" in result["skipped_files"]
+    assert secret.read_text(encoding="utf-8") == "TOKEN=after\n"
+
+
+def test_checkpoint_create_does_not_store_secret_path_content(tmp_path):
+    secret = tmp_path / ".env"
+    secret.write_text("TOKEN=before\n", encoding="utf-8")
+    svc = CheckpointService(workspace=str(tmp_path))
+    cp = svc.create(run_id="run_secret", goal_id="goal_secret", changed_files=[".env"])
+
+    assert ".env" not in (cp.file_contents or {})
+    stored = (tmp_path / ".bolt" / "checkpoints" / f"{cp.id}.json").read_text(encoding="utf-8")
+    assert "TOKEN=before" not in stored

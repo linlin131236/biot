@@ -14,6 +14,17 @@ from uuid import uuid4
 _MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 _SECRET_PATTERN = re.compile(r"sk-[a-zA-Z0-9]{20,}")
 _CP_ID_PATTERN = re.compile(r"^cp_[a-f0-9]{8}$")
+_SECRET_PATH_PARTS = {
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.development",
+    "credentials",
+    "secrets",
+    "secret",
+    "id_rsa",
+    "id_ed25519",
+}
 
 
 @dataclass
@@ -62,6 +73,8 @@ class CheckpointService:
         if changed_files and self._workspace:
             ws = Path(self._workspace).resolve()
             for f in changed_files:
+                if _is_secret_path(f):
+                    continue
                 fp = (ws / f).resolve()
                 try:
                     fp.relative_to(ws)
@@ -108,8 +121,67 @@ class CheckpointService:
             evidence_refs=data.get("evidence_refs", []),
         )
 
+    def restore(self, cp_id: str, confirm_restore: bool = False) -> dict:
+        if not confirm_restore:
+            return {
+                "status": "confirmation_required",
+                "checkpoint_id": cp_id,
+                "restored_files": [],
+                "skipped_files": [],
+                "reason": "restore requires explicit confirmation",
+            }
+
+        cp = self.load(cp_id)
+        if cp is None:
+            return {
+                "status": "not_found",
+                "checkpoint_id": cp_id,
+                "restored_files": [],
+                "skipped_files": [],
+                "reason": "checkpoint not found",
+            }
+
+        restored_files: list[str] = []
+        skipped_files: list[str] = []
+        file_contents = cp.file_contents or {}
+        ws = Path(self._workspace).resolve() if self._workspace else Path.cwd().resolve()
+
+        for rel_path in cp.changed_files:
+            if _is_secret_path(rel_path):
+                skipped_files.append(rel_path)
+                continue
+            content = file_contents.get(rel_path)
+            if content is None:
+                skipped_files.append(rel_path)
+                continue
+            target = (ws / rel_path).resolve()
+            try:
+                target.relative_to(ws)
+            except ValueError:
+                skipped_files.append(rel_path)
+                continue
+            try:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding="utf-8")
+            except OSError:
+                skipped_files.append(rel_path)
+                continue
+            restored_files.append(rel_path)
+
+        return {
+            "status": "restored",
+            "checkpoint_id": cp.id,
+            "restored_files": restored_files,
+            "skipped_files": skipped_files,
+        }
+
     def project_status(self) -> dict:
         """Return project status. Uses workspace .bolt cache if available."""
         status = {"commits": 0, "uncommitted_changes": False}
         # Delegated to shell_executor via harness; checkpoint only stores
         return status
+
+
+def _is_secret_path(path: str) -> bool:
+    parts = {part.lower() for part in Path(path).parts}
+    return bool(parts & _SECRET_PATH_PARTS)

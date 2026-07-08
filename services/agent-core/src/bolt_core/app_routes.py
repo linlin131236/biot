@@ -1,5 +1,5 @@
 """Simple route registrations extracted from app.py for size gate."""
-from fastapi import Query
+from fastapi import HTTPException, Query
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.app_helpers import checkpoint_workspace, string_list
 from bolt_core.review_gate import ReviewChecklist
@@ -104,6 +104,18 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
         service = CheckpointService(target) if target != harness.workspace else checkpoint_service
         checkpoint = service.load(checkpoint_id)
         return None if checkpoint is None else checkpoint.to_dict()
+
+    @app.post("/checkpoints/{checkpoint_id}/restore")
+    def restore_checkpoint(checkpoint_id: str, payload: dict,
+                           workspace: str | None = Query(default=None)) -> dict:
+        if not bool(payload.get("confirm_restore")):
+            raise HTTPException(status_code=400, detail="恢复检查点需要爸爸明确确认")
+        target = workspace or checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        service = CheckpointService(target) if target != harness.workspace else checkpoint_service
+        result = service.restore(checkpoint_id, confirm_restore=True)
+        if result["status"] == "not_found":
+            raise HTTPException(status_code=404, detail="未找到检查点")
+        return result
 
     @app.post("/review/evaluate")
     def evaluate_review(payload: dict) -> dict:
