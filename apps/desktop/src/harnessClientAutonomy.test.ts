@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, approvePermissionFromCenter, rejectPermissionFromCenter } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, approvePermissionFromCenter, rejectPermissionFromCenter, applyApproval } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
@@ -235,5 +235,29 @@ describe('harness autonomy client', () => {
     const fetcher = vi.fn().mockResolvedValue(new Response('null', { status: 200 }));
     const result = await loadCheckpoint('http://core', 'cp_nonexist', fetcher);
     expect(result).toBeNull();
+  });
+
+  it('applyApproval sends POST with proposal_id and empty approval', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ result: { success: true } }), { status: 200 }));
+    await applyApproval('http://core', 'prop_1', fetcher);
+    expect(fetcher).toHaveBeenCalledWith('http://core/tools/approval/apply', expect.objectContaining({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }));
+    const body = JSON.parse(fetcher.mock.calls[0][1].body);
+    expect(body.proposal_id).toBe('prop_1');
+    expect(body.approval).toEqual({});
+  });
+
+  it('applyApproval returns result on success', async () => {
+    const responseBody = { result: { success: true, proposal_id: 'prop_1', reason: '已应用' } };
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200 }));
+    const result = await applyApproval('http://core', 'prop_1', fetcher);
+    expect(result.result.success).toBe(true);
+  });
+
+  it('applyApproval throws on error response', async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: '提案不存在' }), { status: 400 }));
+    await expect(applyApproval('http://core', 'prop_bad', fetcher)).rejects.toThrow();
   });
 });

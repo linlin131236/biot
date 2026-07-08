@@ -132,9 +132,53 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M155 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M155 当前改动
+
+- M155：补丁预览中文风险解释与测试补齐。`PatchPreviewPanel.tsx` 新增 `RISK_EXPLANATIONS_CN` 映射，在风险标签旁显示中文风险解释。新建 `test_patch_proposal_api.py` 包含 5 个 patch API 集成测试。`PatchPreviewPanel.test.tsx` 新增 4 个前端测试。
+
+## M155 关键文件
+
+- `apps/desktop/src/PatchPreviewPanel.tsx`（新增 RISK_EXPLANATIONS_CN）
+- `services/agent-core/tests/test_patch_proposal_api.py`（新建，5 个集成测试）
+- `apps/desktop/src/PatchPreviewPanel.test.tsx`（新增 4 个前端测试）
+
+## M155 验证
+
+- Backend targeted tests：5 passed（test_patch_proposal_api.py）
+- Frontend targeted tests：10 passed（PatchPreviewPanel.test.tsx）
+- Desktop tests：42 files / 314 tests passed（+4 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M155 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
+## M156 当前改动
+
+- M156：桌面端批准后应用补丁闭环。`harnessClientAutonomy.ts` 新增 `applyApproval` 函数调用 `/tools/approval/apply` 端点。`harnessClientAutonomy.test.ts` 新增 3 个前端测试。`test_approval_apply_api.py` 新增 2 个后端集成测试（API 注入 approval、过期提案中文错误）。后端 `ApprovalApplyEngine` 已有完整 10 步安全检查链和 19 个测试。
+
+## M156 关键文件
+
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 applyApproval）
+- `apps/desktop/src/harnessClientAutonomy.test.ts`（新增 3 个前端测试）
+- `services/agent-core/tests/test_approval_apply_api.py`（新增 2 个集成测试）
+- `services/agent-core/src/bolt_core/approval_apply.py`（已有 10 步安全检查链）
+- `services/agent-core/src/bolt_core/approval_apply_api.py`（已有 /tools/approval/apply 端点）
+
+## M156 验证
+
+- Backend targeted tests：23 passed（test_approval_apply.py 19 + test_approval_apply_api.py 4）
+- Frontend targeted tests：22 passed（harnessClientAutonomy.test.ts）
+- Desktop tests：42 files / 317 tests passed（+3 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M156 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- M156 — Approval Apply Desktop Flow：桌面端批准后应用补丁闭环。
+- M157 — Safe Test Runner Live：安全测试运行器真实接入。
 
 ## 长期硬规则
 

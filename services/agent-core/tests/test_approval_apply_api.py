@@ -85,3 +85,38 @@ def test_apply_api_preserves_forged_rejection(tmp_path):
     assert response.status_code == 400
     assert "伪造" in response.json()["detail"]
     assert (tmp_path / "src" / "main.py").read_text(encoding="utf-8") == "print('old')\n"
+
+
+def test_apply_api_injects_approval_when_client_sends_empty(tmp_path):
+    """API layer must inject actor=human and scope=proposal_id even when client sends empty approval."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "main.py").write_text("print('old')\n", encoding="utf-8")
+    store, proposal_id = _approved_store(tmp_path)
+    client = _client(store, tmp_path)
+
+    response = client.post(
+        "/tools/approval/apply",
+        json={"proposal_id": proposal_id},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["result"]["audit_record"]["actor"] == "human"
+    assert body["result"]["audit_record"]["proposal_id"] == proposal_id
+
+
+def test_apply_api_returns_chinese_error_on_stale_proposal(tmp_path, monkeypatch):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "main.py").write_text("print('old')\n", encoding="utf-8")
+    store, proposal_id = _approved_store(tmp_path)
+    # Make proposal stale by mocking _get_git_head to return a different hash
+    monkeypatch.setattr(store, "_get_git_head", lambda: "different_hash_1234567890")
+    client = _client(store, tmp_path)
+
+    response = client.post(
+        "/tools/approval/apply",
+        json={"proposal_id": proposal_id, "approval": {"actor": "human", "scope": proposal_id}},
+    )
+
+    assert response.status_code == 400
+    assert "过期" in response.json()["detail"]
