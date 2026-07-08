@@ -23,7 +23,8 @@ import { ResearcherPanel } from './ResearcherPanel';
 import { BuilderPanel } from './BuilderPanel';
 import { ReviewerPanel } from './ReviewerPanel';
 import { SkillLearnerPanel } from './SkillLearnerPanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel } from './harnessClientAutonomy';
+import { OrchestratorPanel } from './OrchestratorPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -49,6 +50,7 @@ export interface PanelsProps {
     builder: { executeTask: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchProposals: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     reviewer: { reviewOutput: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (b: string, verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
     skilllearner: { autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    orchestrator: { runOrchestration: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchRoles: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -108,6 +110,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <BuilderPanel baseUrl={baseUrl} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
       <ReviewerPanel baseUrl={baseUrl} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
       <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
+      <OrchestratorPanel baseUrl={baseUrl} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
     </>
   );
 }

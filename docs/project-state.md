@@ -338,10 +338,37 @@
 - `as any` / `unknown as`：未命中。
 - renderer 安全扫描：M162 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
 
+## M163 当前改动
+
+- M163：Orchestrator 核心串联 5 角色。新建 `OrchestratorEngine`（`orchestrator_engine.py`）串联 Planner → Researcher → Builder → Reviewer → SkillLearner，支持 review loop（max 3 轮）。`orchestrator_api.py` 新增 `POST /orchestrator/run` 和 `GET /orchestrator/roles` 端点。前端新建 `OrchestratorPanel` 组件展示 5 角色流转和 pipeline trace。
+
+## M163 关键文件
+
+- `services/agent-core/src/bolt_core/orchestrator_engine.py`（新建，OrchestratorEngine）
+- `services/agent-core/src/bolt_core/orchestrator_api.py`（新建，run + roles 端点）
+- `services/agent-core/src/bolt_core/app.py`（注册 orchestrator router）
+- `apps/desktop/src/OrchestratorPanel.tsx`（新建，编排器面板）
+- `apps/desktop/src/OrchestratorPanel.test.tsx`（新建，6 个前端测试）
+- `apps/desktop/src/harnessClientAutonomy.ts`（新增 2 个 API 函数）
+- `apps/desktop/src/panelsApi.ts`（新增 orchestrator namespace）
+- `apps/desktop/src/PanelsSection.tsx`（装配 OrchestratorPanel）
+- `services/agent-core/tests/test_orchestrator_engine.py`（新建，6 个后端测试）
+
+## M163 验证
+
+- Backend targeted tests：6 passed（test_orchestrator_engine.py）
+- Frontend targeted tests：6 passed（OrchestratorPanel.test.tsx）
+- Desktop tests：49 files / 361 tests passed（+6 新增测试）
+- `pnpm run quality`：通过。
+- `git diff --check`：通过。
+- Chinese UI check：通过。
+- `as any` / `unknown as`：未命中。
+- renderer 安全扫描：M163 修改文件无 `ipcRenderer` / `process.` / `require` / `as any` / `unknown as` 命中。
+
 ## 下一步
 
-- **待完成**：commit M162 完整实现（auto_scan 方法 + auto-scan 端点 + SkillLearnerPanel + 12 测试 + decision + review gate + project-state 更新）。
-- M163 — Orchestrator core (5 roles wired)：串联 Planner → Researcher → Builder → Reviewer → SkillLearner。
+- **待完成**：commit M163 完整实现（OrchestratorEngine + run/roles 端点 + OrchestratorPanel + 12 测试 + decision + review gate + project-state 更新）。
+- M164 — Sleep/Wake mode：空闲循环 + 目标唤醒。
 
 ## 长期硬规则
 

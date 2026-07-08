@@ -79,6 +79,7 @@ from bolt_core.multi_agent_workflow_api import create_multi_agent_workflow_route
 from bolt_core.researcher_integration_api import create_researcher_integration_router
 from bolt_core.builder_api import create_builder_router
 from bolt_core.reviewer_api import create_reviewer_router
+from bolt_core.orchestrator_api import create_orchestrator_router
 from bolt_core.subtask_assignment_api import create_subtask_assignment_router
 from bolt_core.reviewer_independent_gate_api import create_reviewer_independent_gate_router
 from bolt_core.conflict_resolution_api import create_conflict_resolution_router
@@ -193,6 +194,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_researcher_integration_router())
     app.include_router(create_builder_router())
     app.include_router(create_reviewer_router())
+    app.include_router(create_orchestrator_router())
     app.include_router(create_subtask_assignment_router())
     app.include_router(create_reviewer_independent_gate_router())
     app.include_router(create_conflict_resolution_router())

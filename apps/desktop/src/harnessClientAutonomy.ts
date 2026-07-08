@@ -411,6 +411,15 @@ export async function fetchReviewVerdictLabel(baseUrl: string, verdict: string, 
   return readJson(await fetcher(`${baseUrl}/reviewer/verdict/${encodeURIComponent(verdict)}`));
 }
 
+// === Orchestrator (M163) ===
+export async function runOrchestrator(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/orchestrator/run`, jsonPost(payload)));
+}
+
+export async function fetchOrchestratorRoles(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/orchestrator/roles`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
