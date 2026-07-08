@@ -177,7 +177,8 @@ class ProductWorkbenchService:
     """Builds a read-only product workflow snapshot for the desktop."""
 
     def __init__(self, project_dir: str | Path | None = None) -> None:
-        self._project_dir = Path(project_dir) if project_dir is not None else Path(__file__).resolve().parents[4]
+        candidate = Path(project_dir).resolve() if project_dir is not None else Path(__file__).resolve().parents[4]
+        self._project_dir = self._resolve_project_dir(candidate)
 
     def snapshot(self) -> WorkbenchSnapshot:
         return WorkbenchSnapshot(
@@ -275,3 +276,11 @@ class ProductWorkbenchService:
 
     def _exists_status(self, rel: str) -> str:
         return "ready" if (self._project_dir / rel).exists() else "empty"
+
+    @staticmethod
+    def _resolve_project_dir(candidate: Path) -> Path:
+        current = candidate.resolve()
+        for path in [current, *current.parents]:
+            if (path / "docs").is_dir() and (path / "apps").is_dir() and (path / "services").is_dir():
+                return path
+        return current

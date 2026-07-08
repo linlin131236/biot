@@ -2,11 +2,11 @@
 
 ## 当前稳定基线
 
-- 已完成到：M129 Failure And Recovery Lane（本地完成，待后续 M130 继续）。
+- 已完成到：M130 Product Workbench Dogfood（本地完成，等待爸爸复审）。
 - 最新远端基线：`origin/main = 6d128b0 docs: mark audit hardening pushed`。
 - 当前本地分支：`main` 基于 `origin/main` 开始 M126。
 - 未 push / 未 release / 未 tag / 未 delete。
-- 未进入 M130。
+- 未进入 M131。
 
 ## 当前状态
 
@@ -28,6 +28,10 @@
   - 字段：`failure_recovery`。
   - 检查：失败分类、重试风险、权限复查、状态复查、人工恢复确认。
   - UI：只读展示“失败与恢复检查”，无重试/恢复按钮。
+- M130 新增 Product Workbench Dogfood：
+  - 后端：`product_workbench_dogfood.py`、`product_workbench_dogfood_api.py`。
+  - API：`GET /product-workbench-dogfood`。
+  - 检查：工作台 API、桌面挂载、三条能力泳道、安全边界、文档链、中文 UI、无自动动作。
 - 工作区：存在 M126 本地改动；`.claude/` 未跟踪、未提交，按规则保持。
 
 ## M126 验证
@@ -35,6 +39,18 @@
 - `uv run pytest -q services/agent-core/tests/test_product_workbench.py`：7 passed。
 - `pnpm --filter @bolt/desktop test -- ProductWorkbenchPanel.test.tsx`：36 files / 276 tests passed。
 - `pnpm lint:size`：通过。
+- M130 dogfood targeted tests：10 passed。
+- 后端全量：1534 passed，2 warnings。
+- Shared tests：27 passed。
+- Desktop tests：36 files / 276 tests passed。
+- Desktop build：通过。
+- `pnpm run quality`：通过。
+- `node scripts/check-docs.mjs`：通过。
+- `node scripts/check-chinese-ui.mjs`：通过。
+- `git diff --check`：通过。
+- renderer 暴露扫描：无新增命中。
+- 自动执行 / 自动批准 / push-release-tag-delete 扫描：无新增命中。
+- `as any` / `unknown as`：无新增业务代码使用；仅历史测试和规则字符串命中。
 
 ## M126 参考资料
 
@@ -46,12 +62,13 @@
 
 - `harnessClientAutonomy.ts` 超过 300 行，属于历史豁免文件，后续可专项拆分。
 - M61 Task Graph / M81-M89 多 Agent 工作流仍以纯内存为主，后续可评估持久化。
-- M126-M129 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
+- M126-M130 工作台当前是只读聚合层，不替代真实批准、apply、测试和恢复执行链路。
 - `.claude/` 未跟踪、未提交，按规则保持。
 
 ## 下一步建议
 
-- 继续 M130 Product Workbench Dogfood，完成全量质量门和本批复盘后停止，等待爸爸复审。
+- 完成 full tests / quality / docs / Chinese UI / 安全扫描。
+- M126-M130 完成后停止，等待爸爸复审；不 push，除非爸爸明确授权。
 
 ## 长期硬规则
 
