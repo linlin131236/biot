@@ -22,8 +22,10 @@ describe('ToolVerificationPanel', () => {
       { tool_name: 'git', status: 'ok', message: '可用' },
       { tool_name: 'node', status: 'error', message: '未安装' },
     ]);
-    render(<ToolVerificationPanel baseUrl="http://test" api={api} />);
+    const fetcher = vi.fn();
+    render(<ToolVerificationPanel baseUrl="http://test" fetcher={fetcher} api={api} />);
     fireEvent.click(screen.getByRole('button', { name: '验证工具链' }));
+    await waitFor(() => expect(api.verifyTools).toHaveBeenCalledWith('http://test', fetcher));
     expect(await screen.findByText('git')).toBeTruthy();
     expect(screen.getByText('消息：可用')).toBeTruthy();
     expect(screen.getByText('消息：未安装')).toBeTruthy();

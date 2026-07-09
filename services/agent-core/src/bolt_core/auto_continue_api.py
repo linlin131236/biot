@@ -24,7 +24,10 @@ def create_auto_continue_router(
             raise HTTPException(status_code=423, detail=f"Gate 已冻结：{exc}") from exc
 
         enabled = bool(payload.get("enabled", False))
-        max_rounds = int(payload.get("max_rounds", 5))
+        try:
+            max_rounds = int(payload.get("max_rounds", 5))
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="max_rounds 必须是数字") from exc
         return auto_continue_service.set_auto_continue(enabled, max_rounds)
 
     @router.get("/orchestrator/auto-continue")

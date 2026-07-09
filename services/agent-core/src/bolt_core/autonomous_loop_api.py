@@ -25,7 +25,10 @@ def create_autonomous_loop_router(
 
         task_description = str(payload.get("task_description", "未命名任务")).strip()
         workspace = str(payload.get("workspace", ".")).strip()
-        max_rounds = int(payload.get("max_rounds", 5))
+        try:
+            max_rounds = int(payload.get("max_rounds", 5))
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="max_rounds 必须是数字") from exc
         if not task_description:
             raise HTTPException(status_code=400, detail="task_description 不能为空")
         if not workspace:

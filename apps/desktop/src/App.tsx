@@ -11,6 +11,7 @@ import { createAgentCoreFetcher } from './agentCoreAuth';
 import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline, loadDesktopSettings, storeDesktopSettings, addWorkspaceToHistory, loadRecentSessions } from './workflowClient';
 import { PanelsSection } from './PanelsSection';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
+import type { ThemeMode } from './LiquidGlassTypes';
 import { fetchUnfinishedGoals } from './harnessClientAutonomy';
 import { createPanelsApi } from './panelsApi';
 import './styles.css';
@@ -71,7 +72,7 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
 
   async function handleSaveTheme(nextTheme: ThemeMode) {
     setTheme(nextTheme);
-    await saveDesktopSettings({ theme: nextTheme });
+    await storeDesktopSettings(session.coreUrl, { theme: nextTheme }, fetcher);
     // Refresh full settings from server
     try {
       const s = await loadDesktopSettings(session.coreUrl, fetcher);

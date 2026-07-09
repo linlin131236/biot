@@ -124,11 +124,11 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
       <OrchestratorPanel baseUrl={baseUrl} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
       <SleepWakePanel baseUrl={baseUrl} api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
-      <GateFreezePanel baseUrl={baseUrl} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
-      <ToolVerificationPanel baseUrl={baseUrl} api={{ verifyTools: api.toolVerification.verifyTools }} />
-      <AutoFixPanel baseUrl={baseUrl} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
-      <AutoContinuePanel baseUrl={baseUrl} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
-      <AutonomousLoopPanel baseUrl={baseUrl} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
+      <GateFreezePanel baseUrl={baseUrl} fetcher={fetcher} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
+      <ToolVerificationPanel baseUrl={baseUrl} fetcher={fetcher} api={{ verifyTools: api.toolVerification.verifyTools }} />
+      <AutoFixPanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
+      <AutoContinuePanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
+      <AutonomousLoopPanel baseUrl={baseUrl} fetcher={fetcher} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
     </>
   );
 }

@@ -36,14 +36,22 @@ class OrchestratorEngine:
         builder=None,
         reviewer=None,
         skill_learner=None,
+        max_review_rounds: int | None = None,
     ) -> None:
         self._planner = planner
         self._researcher = researcher
         self._builder = builder
         self._reviewer = reviewer
         self._skill_learner = skill_learner
+        self._max_review_rounds = self._coerce_max_review_rounds(max_review_rounds)
 
-    def orchestrate(self, task_description: str, workspace: str) -> OrchestrationResult:
+    @classmethod
+    def _coerce_max_review_rounds(cls, max_review_rounds: int | None) -> int:
+        if max_review_rounds is None:
+            return cls._MAX_REVIEW_ROUNDS
+        return max(1, min(int(max_review_rounds), cls._MAX_REVIEW_ROUNDS))
+
+    def orchestrate(self, task_description: str, workspace: str, max_review_rounds: int | None = None) -> OrchestrationResult:
         """Run the full orchestration pipeline.
 
         Process:
@@ -69,7 +77,8 @@ class OrchestratorEngine:
             trace.append({"role": "researcher", "status": "completed", "output": "研究已完成"})
 
         # Step 3-5: Build → Review loop (max 3 rounds)
-        for round_num in range(1, self._MAX_REVIEW_ROUNDS + 1):
+        round_limit = self._coerce_max_review_rounds(max_review_rounds) if max_review_rounds is not None else self._max_review_rounds
+        for round_num in range(1, round_limit + 1):
             rounds = round_num
 
             # Build
@@ -100,7 +109,7 @@ class OrchestratorEngine:
 
                 if final_verdict == "approved":
                     break
-                if final_verdict == "blocked" and round_num >= self._MAX_REVIEW_ROUNDS:
+                if final_verdict == "blocked" and round_num >= round_limit:
                     final_verdict = "blocked"
                     break
                 # Continue to next round (builder will refine)

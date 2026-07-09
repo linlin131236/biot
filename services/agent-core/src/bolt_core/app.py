@@ -82,6 +82,7 @@ from bolt_core.reviewer_api import create_reviewer_router
 from bolt_core.orchestrator_api import create_orchestrator_router
 from bolt_core.sleep_wake_api import create_sleep_wake_router
 from bolt_core.gate_freeze_api import create_gate_freeze_router
+from bolt_core.gate_freeze_service import GateFrozenError, get_global_gate_freeze_service
 from bolt_core.tool_verification_api import create_tool_verification_router
 from bolt_core.auto_fix_api import create_auto_fix_router
 from bolt_core.auto_continue_api import create_auto_continue_router
@@ -140,6 +141,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     checkpoint_service = CheckpointService(harness.workspace)
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
+    gate_freeze_service = get_global_gate_freeze_service()
     app.include_router(create_task_closure_router(
         task_closure_service,
         run_exists=lambda run_id: run_id in harness.runs,
@@ -162,7 +164,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_readonly_tool_runner_router())
     app.include_router(create_write_tool_proposal_router())
     app.include_router(create_patch_proposal_router())
-    app.include_router(create_approval_apply_router(project_dir=str(project_dir or Path.cwd())))
+    app.include_router(create_approval_apply_router(project_dir=str(project_dir or Path.cwd()), gate_service=gate_freeze_service))
     app.include_router(create_test_runner_integration_router())
     app.include_router(create_tool_ecosystem_dogfood_router())
     app.include_router(create_tool_call_eval_router())
@@ -202,11 +204,11 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_reviewer_router())
     app.include_router(create_orchestrator_router())
     app.include_router(create_sleep_wake_router())
-    app.include_router(create_gate_freeze_router())
+    app.include_router(create_gate_freeze_router(gate_freeze_service))
     app.include_router(create_tool_verification_router())
     app.include_router(create_auto_fix_router())
-    app.include_router(create_auto_continue_router())
-    app.include_router(create_autonomous_loop_router())
+    app.include_router(create_auto_continue_router(gate_service=gate_freeze_service))
+    app.include_router(create_autonomous_loop_router(gate_service=gate_freeze_service))
     app.include_router(create_subtask_assignment_router())
     app.include_router(create_reviewer_independent_gate_router())
     app.include_router(create_conflict_resolution_router())
@@ -285,6 +287,11 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
 
     @app.post("/permissions/{request_id}/approve")
     def approve_permission(request_id: str) -> dict[str, str | None]:
+        try:
+            gate_freeze_service.assert_not_frozen()
+        except GateFrozenError as exc:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=423, detail=f"Gate 已冻结：{exc}") from exc
         result = harness.approve_permission(request_id)
         result_ingestion.ingest(result)
         return tool_result_dict(result)

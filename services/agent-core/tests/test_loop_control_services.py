@@ -74,6 +74,48 @@ def test_gate_freeze_blocks_auto_continue_and_autonomous_loop(tmp_path):
     assert ok.json()["max_rounds"] == 3
 
 
+def test_gate_freeze_blocks_legacy_permission_approval(tmp_path):
+    client = TestClient(create_app(project_dir=tmp_path))
+    client.post("/gate/unfreeze")
+    run = client.post("/harness/runs", json={"goal": "冻结批准测试", "workspace": str(tmp_path)}).json()["id"]
+    proposed = client.post(
+        f"/harness/runs/{run}/tool-requests",
+        json={
+            "tool": "file.write",
+            "operation": "write",
+            "payload": {"path": str(tmp_path / "blocked.txt"), "proposed_content": "blocked\n"},
+        },
+    )
+    assert proposed.status_code == 200
+    request_id = proposed.json()["request_id"]
+
+    client.post("/gate/freeze", json={"reason": "冻结批准"})
+    approved = client.post(f"/permissions/{request_id}/approve")
+    assert approved.status_code == 423
+    assert "Gate 已冻结" in approved.json()["detail"]
+    assert not (tmp_path / "blocked.txt").exists()
+    client.post("/gate/unfreeze")
+
+
+def test_auto_continue_rejects_invalid_rounds(tmp_path):
+    client = TestClient(create_app(project_dir=tmp_path))
+    client.post("/gate/unfreeze")
+    response = client.post("/orchestrator/auto-continue", json={"enabled": True, "max_rounds": "abc"})
+    assert response.status_code == 400
+    assert "max_rounds 必须是数字" in response.json()["detail"]
+
+
+def test_autonomous_loop_rejects_invalid_rounds(tmp_path):
+    client = TestClient(create_app(project_dir=tmp_path))
+    client.post("/gate/unfreeze")
+    response = client.post(
+        "/orchestrator/autonomous-loop",
+        json={"task_description": "继续", "workspace": str(tmp_path), "max_rounds": "abc"},
+    )
+    assert response.status_code == 400
+    assert "max_rounds 必须是数字" in response.json()["detail"]
+
+
 def test_app_registers_tool_verification_route(tmp_path):
     client = TestClient(create_app(project_dir=tmp_path))
     response = client.get("/tools/verify")

@@ -19,10 +19,12 @@ describe('AutonomousLoopPanel', () => {
 
   it('runs autonomous loop and shows result', async () => {
     const api = apiFixture({ status: 'completed', rounds_completed: 3, verdict: 'approved', trace: [{ role: 'builder' }, { role: 'reviewer' }] });
-    render(<AutonomousLoopPanel baseUrl="http://test" api={api} />);
+    const fetcher = vi.fn();
+    render(<AutonomousLoopPanel baseUrl="http://test" fetcher={fetcher} api={api} />);
     const numberInput = document.querySelector('input[type="number"]') as HTMLInputElement;
     fireEvent.change(numberInput, { target: { value: '3' } });
     fireEvent.click(screen.getByRole('button', { name: '启动自主循环' }));
+    await waitFor(() => expect(api.runAutonomousLoop).toHaveBeenCalledWith('http://test', expect.any(Object), fetcher));
     await waitFor(() => expect(screen.getByText('循环结果')).toBeTruthy());
     expect(screen.getAllByText(/completed/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/完成轮次：/)).toBeTruthy();

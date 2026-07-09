@@ -23,6 +23,13 @@ describe('AutoContinuePanel', () => {
     expect(await screen.findByText('自动继续：已关闭')).toBeTruthy();
   });
 
+  it('uses the provided authenticated fetcher', async () => {
+    const api = apiFixture();
+    const fetcher = vi.fn();
+    render(<AutoContinuePanel baseUrl="http://test" fetcher={fetcher} api={api} />);
+    await waitFor(() => expect(api.fetchAutoContinueStatus).toHaveBeenCalledWith('http://test', fetcher));
+  });
+
   it('enables auto-continue', async () => {
     const api = apiFixture({ enabled: false });
     api.autoContinue.mockResolvedValueOnce({ enabled: true, updated_at: new Date().toISOString() });

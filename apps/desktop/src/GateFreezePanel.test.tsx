@@ -24,6 +24,13 @@ describe('GateFreezePanel', () => {
     expect(await screen.findByText('当前状态：未冻结')).toBeTruthy();
   });
 
+  it('uses the provided authenticated fetcher', async () => {
+    const api = apiFixture();
+    const fetcher = vi.fn();
+    render(<GateFreezePanel baseUrl="http://test" fetcher={fetcher} api={api} />);
+    await waitFor(() => expect(api.fetchGateStatus).toHaveBeenCalledWith('http://test', fetcher));
+  });
+
   it('freezes gate and shows frozen state', async () => {
     const api = apiFixture({ frozen: false });
     render(<GateFreezePanel baseUrl="http://test" api={api} />);

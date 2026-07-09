@@ -1,29 +1,33 @@
-"""End-to-end autonomous loop summary service."""
+"""End-to-end autonomous loop service."""
 from __future__ import annotations
+
+from bolt_core.orchestrator_engine import OrchestratorEngine
 
 
 class AutonomousLoopService:
-    """Run a bounded, diagnostic autonomous-loop simulation.
+    """Run a bounded autonomous loop through the orchestrator.
 
-    The service records role transitions and never performs file writes,
-    approval bypasses, push, release, tag, or delete operations.
+    The loop delegates to OrchestratorEngine for the actual role pipeline.
+    It still does not push, release, tag, delete, or bypass approvals.
     """
+
+    def __init__(self, orchestrator: OrchestratorEngine | None = None) -> None:
+        self._orchestrator = orchestrator or OrchestratorEngine()
 
     def run_loop(self, task_description: str, workspace: str, max_rounds: int = 5) -> dict:
         safe_rounds = max(1, min(int(max_rounds), 5))
-        trace = [
-            {"role": "planner", "status": "completed", "summary": "已拆解任务并固定验收标准"},
-            {"role": "researcher", "status": "completed", "summary": "已读取必要上下文"},
-            {"role": "builder", "status": "completed", "summary": "已生成变更提案"},
-            {"role": "reviewer", "status": "approved", "summary": "未发现阻断项"},
-        ]
+        result = self._orchestrator.orchestrate(task_description, workspace, max_review_rounds=safe_rounds)
+
         return {
-            "task_description": task_description,
+            "task_description": result.task_description,
             "workspace": workspace,
             "max_rounds": safe_rounds,
-            "rounds_completed": 1,
-            "status": "completed",
-            "verdict": "approved",
-            "trace": trace,
-            "message": "自主循环已完成诊断闭环，未执行危险操作",
+            "rounds_completed": result.rounds,
+            "status": "completed" if result.final_verdict == "approved" else "needs_review",
+            "verdict": result.final_verdict,
+            "trace": result.trace,
+            "builder_output": result.builder_output,
+            "review_findings": result.review_findings,
+            "proposals": result.proposals,
+            "message": "自主循环已通过编排引擎完成，未执行危险操作",
         }

@@ -19,9 +19,11 @@ describe('AutoFixPanel', () => {
 
   it('auto-fixes and shows fixed/remaining counts', async () => {
     const api = apiFixture({ fixed: 3, remaining: 1, fixed_items: [{ id: 'f1' }], remaining_items: [{ id: 'r1' }], message: '修复完成' });
-    render(<AutoFixPanel baseUrl="http://test" api={api} />);
+    const fetcher = vi.fn();
+    render(<AutoFixPanel baseUrl="http://test" fetcher={fetcher} api={api} />);
     fireEvent.change(screen.getByPlaceholderText('[{"severity": "P0", "description": "示例问题"}]'), { target: { value: '[{"id":"1"}]' } });
     fireEvent.click(screen.getByRole('button', { name: '自动修复' }));
+    await waitFor(() => expect(api.autoFixReviewFindings).toHaveBeenCalledWith('http://test', expect.any(Object), fetcher));
     await waitFor(() => expect(screen.getByText('修复结果')).toBeTruthy());
     expect(screen.getByText('3')).toBeTruthy();
     expect(screen.getByText('1')).toBeTruthy();
