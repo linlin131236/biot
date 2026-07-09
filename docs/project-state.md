@@ -3,7 +3,8 @@
 ## 2026-07-09 二轮复审三项 Beta 阻断修复
 
 - 当前阶段：M180 Desktop Beta Release Candidate 后的二轮复审修复。
-- 本轮处理范围：只处理复审列为 Beta 发布前必须处理的 S2、S3、Q4，不进入新 milestone，不 push、不 release、不 tag、不 delete。
+- 代码修复提交：`34a8bbf fix: close beta audit blockers`。
+- 本轮处理范围：只处理复审列为 Beta 发布前必须处理的问题，不进入新 milestone；本次按用户指令同步远端，不 release、不 tag、不 delete。
 - S2 workspace lock：`resolve_app_workspace()` 无参数默认锁到当前工作区；模块级生产入口继续显式锁默认 workspace。测试/嵌入场景若要外部临时 workspace，必须显式传入自己的项目目录或显式关闭默认锁。
 - S3 workspace 外写：`classify_path(..., operation="write")` 对 workspace 外路径改为 `level=6/action=deny`，与 patch 越界行为一致。
 - Q4 fetchSkills：在 `/skills` 后端路由未接入前返回空列表，不再把未实现状态暴露成运行时 throw。
