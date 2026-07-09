@@ -4,6 +4,7 @@
 
 - 当前阶段：M180 Desktop Beta Release Candidate 后的审查修复。
 - 本轮修复提交：`6582237 fix: harden zcodex audit findings`。
+- 质量门补强提交：`4cab104 chore: include backend tests in quality gate`。
 - 修复范围：
   - Electron renderer 不再读取 Agent Core 明文 token，改由 preload 受限本机 fetch 代理添加认证。
   - 多个桌面面板不再直接使用 `window.fetch`，统一走父级注入 fetcher。
@@ -12,12 +13,13 @@
   - checkpoint 创建/读取/恢复不再允许请求覆盖 workspace，恢复仍需用户明确确认。
   - 发布准备度与会话恢复面板按当前 shared/backend 字段展示，保留只读边界。
   - 根 pytest 配置补齐，`uv run pytest -q` 不再扫描桌面打包生成物。
+  - `pnpm run quality` 纳入 `uv run pytest -q`，后续质量门不再漏掉 Python agent-core。
   - size gate 忽略 `release` 生成目录，避免 package smoke 产物污染质量门。
   - 首页“搜索 / 已安排”在真实功能接入前禁用，避免假按钮。
 - 静态站同步修复：`D:\Bolt\bolt-cn-site\index.html` 的 CTA/footer 空 `<a>` 已补 `href`，该目录不是当前 Git 仓库。
 - 已验证：
   - `uv run pytest -q`：1665 passed，2 warnings。
-  - `pnpm run quality`：通过，shared 27 passed，desktop 401 passed。
+  - `pnpm run quality`：通过，shared 27 passed，desktop 401 passed，backend 1665 passed。
   - `pnpm --filter @bolt/desktop build`：通过。
   - `git diff --check`：通过，仅 Windows LF/CRLF 提示。
   - renderer 扫描：无 `window.fetch` 直连、无 `as any / unknown as`、无新增 `ipcRenderer/fs/shell/process` 暴露。
