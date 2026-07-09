@@ -102,7 +102,11 @@ function defaultCoreRoot(options: AgentCoreRuntimeOptions): string {
 function packagedResourceError(options: AgentCoreRuntimeOptions, coreRoot: string, sourceRoot: string): string | undefined {
   if (!options.packaged) return undefined;
   const exists = options.exists ?? (() => false);
-  const missing = [joinPath(sourceRoot, 'bolt_core', 'app.py'), joinPath(coreRoot, 'pyproject.toml')].filter((file) => !exists(file));
+  const missing = [
+    joinPath(sourceRoot, 'bolt_core', 'app.py'),
+    joinPath(coreRoot, 'pyproject.toml'),
+    joinPath(coreRoot, '.venv', 'Scripts', 'python.exe'),
+  ].filter((file) => !exists(file));
   if (missing.length === 0) return undefined;
   return `missing packaged Agent Core resource: ${missing.join(', ')}`;
 }

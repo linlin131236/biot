@@ -11,6 +11,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 
 const BOLT_SELECT_WORKSPACE_CHANNEL = 'bolt:select-workspace';
 const agentCoreToken = process.env.BOLT_AGENT_CORE_TOKEN || null;
+const agentCorePort = normalizePort(process.env.BOLT_AGENT_CORE_PORT);
 
 interface AgentCoreFetchInit {
   method?: string;
@@ -29,7 +30,10 @@ function isTrustedAgentCoreUrl(input: string): boolean {
   try {
     const url = new URL(input);
     const loopbackHosts = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
-    return (url.protocol === 'http:' || url.protocol === 'https:') && loopbackHosts.has(url.hostname);
+    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+    return (url.protocol === 'http:' || url.protocol === 'https:')
+      && loopbackHosts.has(url.hostname)
+      && port === String(agentCorePort);
   } catch {
     return false;
   }
@@ -61,5 +65,11 @@ async function agentCoreFetch(input: string, init?: AgentCoreFetchInit): Promise
 
 contextBridge.exposeInMainWorld('bolt', {
   selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL),
+  agentCoreEndpoint: () => ({ port: agentCorePort }),
   agentCoreFetch,
 });
+
+function normalizePort(value: string | undefined): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 && parsed < 65536 ? parsed : 8000;
+}

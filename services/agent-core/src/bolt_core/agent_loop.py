@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass
 from typing import Callable
 
+from bolt_core.context_compressor import ContextCompressor
+from bolt_core.conversation import ConversationMessage
 from bolt_core.context_builder import ContextBuilder
 from bolt_core.model_gateway import DefaultModelGateway, ModelConfig, ModelMessage, ModelRequest, ToolCall
 from bolt_core.memory_store import MemoryRecord
@@ -30,11 +32,12 @@ class AgentLoopResult:
 
 
 class AgentLoop:
-    def __init__(self, gateway=None, context_builder=None, planner=None, verifier=None) -> None:
+    def __init__(self, gateway=None, context_builder=None, planner=None, verifier=None, context_compressor=None) -> None:
         self.gateway = gateway or DefaultModelGateway()
         self.context_builder = context_builder or ContextBuilder()
         self.planner = planner or Planner()
         self.verifier = verifier or Verifier()
+        self.context_compressor = context_compressor or ContextCompressor()
 
     def run_step(self, goal: str, config: ModelConfig, p0_context: dict, trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories: list[MemoryRecord] | None = None) -> AgentStepResult:
         context = self.context_builder.build(goal, p0_context, trace.events(), memories)
@@ -56,7 +59,7 @@ class AgentLoop:
         trace.record("context.built", {"token_budget": context.token_budget, "memory_count": len(context.memory_context)})
         trace.record("planner.started", {})
         initial_request = self.planner.build_request(context, config)
-        messages = list(initial_request.messages)
+        messages = self._compress_loop_messages(list(initial_request.messages), context.token_budget, trace)
         trace.record("planner.completed", {"messages": len(messages)})
         last_step: AgentStepResult | None = None
         for index in range(max(1, max_steps)):
@@ -72,6 +75,7 @@ class AgentLoop:
                 self._record_model_trace(trace, config.model, response)
                 last_step, new_messages = self._dispatch_model_response_with_messages(response, trace, submit)
                 messages.extend(new_messages)
+                messages = self._compress_loop_messages(messages, context.token_budget, trace)
             trace.record("agent.loop.iteration.completed", {"step": index + 1, "status": last_step.status})
             if last_step.status == "completed" and last_step.tool_result is None:
                 trace.record("agent.loop.completed", {"step": index + 1})
@@ -127,6 +131,40 @@ class AgentLoop:
         trace.record("agent.step.completed", {"status": result.status})
         return AgentStepResult(result.status, json.dumps({"tool": call.name, "arguments": call.arguments}), result, None)
 
+    def _compress_loop_messages(self, messages: list[ModelMessage], budget: int, trace: TraceLog) -> list[ModelMessage]:
+        plain: list[tuple[int, ModelMessage]] = [
+            (index, message) for index, message in enumerate(messages) if _is_plain_text_message(message)
+        ]
+        if not plain:
+            return messages
+
+        compressed = self.context_compressor.compress(
+            [ConversationMessage(message.role, message.content, {}) for _, message in plain],
+            budget,
+        )
+        summary = next((message for message in compressed if message.metadata.get("compressed") is True), None)
+        if summary is None:
+            return messages
+
+        recent_plain_count = len([message for message in compressed if message.metadata.get("compressed") is not True])
+        older_plain_count = max(0, len(plain) - recent_plain_count)
+        older_indexes = {index for index, _ in plain[:older_plain_count]}
+        result: list[ModelMessage] = []
+        inserted_summary = False
+        for index, message in enumerate(messages):
+            if index in older_indexes:
+                if not inserted_summary:
+                    result.append(ModelMessage("user", summary.content))
+                    inserted_summary = True
+                continue
+            result.append(message)
+        trace.record("context.compressed", {
+            "before": len(messages),
+            "after": len(result),
+            "compressed_messages": older_plain_count,
+        })
+        return result
+
 
 def _tool_result_feedback(result: ToolResult) -> dict[str, str | None]:
     output = _safe_feedback_text(result.output)
@@ -161,3 +199,7 @@ def _safe_feedback_text(value: str | None, limit: int = 2000) -> str | None:
         return None
     text = redact(value)
     return text if len(text) <= limit else text[:limit] + "\n[truncated]"
+
+
+def _is_plain_text_message(message: ModelMessage) -> bool:
+    return message.role in {"user", "assistant"} and not message.tool_call_id and not message.tool_calls

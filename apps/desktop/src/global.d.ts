@@ -5,6 +5,7 @@
 
 interface BoltBridge {
   selectWorkspace: () => Promise<string | null>;
+  agentCoreEndpoint?: () => Promise<{ port: number }> | { port: number };
   agentCoreFetch?: (
     input: string,
     init?: {

@@ -26,12 +26,14 @@ function checkBuilderResources() {
 }
 
 function checkPackagedOutput() {
+  if (!requireOutput) return;
   if (!existsSync(releaseRoot)) {
-    if (requireOutput) failures.push('missing apps/desktop/release/win-unpacked; run package:win:dir before runtime smoke');
+    failures.push('missing apps/desktop/release/win-unpacked; run package:win:dir before runtime smoke');
     return;
   }
   requireReleaseFile('resources/agent-core/src/bolt_core/app.py');
   requireReleaseFile('resources/agent-core/pyproject.toml');
+  requireReleaseFile('resources/agent-core/.venv/Scripts/python.exe');
 }
 
 function requireResource(resources, from, to) {

@@ -2,7 +2,8 @@ type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
 export function createAgentCoreFetcher(fetcher: Fetcher = fetch): Fetcher {
   return async (input: string, init?: RequestInit) => {
-    if (typeof window !== 'undefined' && window.bolt?.agentCoreFetch && isTrustedAgentCoreUrl(input)) {
+    const endpoint = await readAgentCoreEndpoint();
+    if (typeof window !== 'undefined' && window.bolt?.agentCoreFetch && isTrustedAgentCoreUrl(input, endpoint.port)) {
       const response = await window.bolt.agentCoreFetch(input, serializeRequestInit(init));
       return new Response(response.body, {
         status: response.status,
@@ -26,11 +27,19 @@ function serializeRequestInit(init?: RequestInit): { method?: string; headers?: 
   };
 }
 
-function isTrustedAgentCoreUrl(input: string): boolean {
+async function readAgentCoreEndpoint(): Promise<{ port: number }> {
+  if (typeof window === 'undefined') return { port: 8000 };
+  const endpoint = await window.bolt?.agentCoreEndpoint?.();
+  return typeof endpoint?.port === 'number' ? endpoint : { port: 8000 };
+}
+
+function isTrustedAgentCoreUrl(input: string, allowedPort: number): boolean {
   try {
     const url = new URL(input);
+    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
     return (url.protocol === 'http:' || url.protocol === 'https:')
-      && ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname);
+      && ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname)
+      && port === String(allowedPort);
   } catch {
     return false;
   }

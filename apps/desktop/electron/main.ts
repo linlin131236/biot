@@ -41,6 +41,7 @@ async function startAgentCore() {
     exists: existsSync
   });
   process.env.BOLT_AGENT_CORE_TOKEN = runtime.authToken;
+  process.env.BOLT_AGENT_CORE_PORT = new URL(runtime.baseUrl).port;
   process.env.BOLT_WORKSPACE = runtime.env.BOLT_WORKSPACE;
   agentCore = new AgentCoreSupervisor({ runtime });
   const status = await agentCore.ensureStarted();

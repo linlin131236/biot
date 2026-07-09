@@ -5,6 +5,7 @@ describe('agent core authenticated fetcher', () => {
   it('delegates local Agent Core requests to the desktop bridge without exposing the token', async () => {
     window.bolt = {
       selectWorkspace: vi.fn(),
+      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
       agentCoreFetch: vi.fn().mockResolvedValue({
         status: 200,
         statusText: 'OK',
@@ -32,6 +33,7 @@ describe('agent core authenticated fetcher', () => {
   it('does not send external URLs through the authenticated desktop bridge', async () => {
     window.bolt = {
       selectWorkspace: vi.fn(),
+      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
       agentCoreFetch: vi.fn()
     };
     const fetcher = vi.fn().mockResolvedValue(new Response('{}'));
@@ -43,5 +45,19 @@ describe('agent core authenticated fetcher', () => {
     expect(window.bolt.agentCoreFetch).not.toHaveBeenCalled();
     const init = fetcher.mock.calls[0][1] as RequestInit;
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer explicit-token');
+  });
+
+  it('does not send wrong localhost ports through the authenticated desktop bridge', async () => {
+    window.bolt = {
+      selectWorkspace: vi.fn(),
+      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
+      agentCoreFetch: vi.fn()
+    };
+    const fetcher = vi.fn().mockResolvedValue(new Response('{}'));
+
+    await createAgentCoreFetcher(fetcher)('http://127.0.0.1:9000/memory');
+
+    expect(window.bolt.agentCoreFetch).not.toHaveBeenCalled();
+    expect(fetcher).toHaveBeenCalledWith('http://127.0.0.1:9000/memory', undefined);
   });
 });

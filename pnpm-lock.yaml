@@ -16,65 +16,65 @@ importers:
         specifier: workspace:*
         version: link:../../packages/shared
       '@vitejs/plugin-react':
-        specifier: latest
+        specifier: 6.0.3
         version: 6.0.3(vite@8.1.3(@types/node@26.1.0)(jiti@2.7.0))
       lucide-react:
-        specifier: latest
+        specifier: 1.23.0
         version: 1.23.0(react@19.2.7)
       react:
-        specifier: latest
+        specifier: 19.2.7
         version: 19.2.7
       react-dom:
-        specifier: latest
+        specifier: 19.2.7
         version: 19.2.7(react@19.2.7)
       typescript:
-        specifier: latest
+        specifier: 6.0.3
         version: 6.0.3
       vite:
-        specifier: latest
+        specifier: 8.1.3
         version: 8.1.3(@types/node@26.1.0)(jiti@2.7.0)
       zustand:
-        specifier: latest
+        specifier: 5.0.14
         version: 5.0.14(@types/react@19.2.17)(react@19.2.7)
     devDependencies:
       '@testing-library/jest-dom':
-        specifier: latest
+        specifier: 6.9.1
         version: 6.9.1
       '@testing-library/react':
-        specifier: latest
+        specifier: 16.3.2
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@types/node':
-        specifier: latest
+        specifier: 26.1.0
         version: 26.1.0
       '@types/react':
-        specifier: latest
+        specifier: 19.2.17
         version: 19.2.17
       '@types/react-dom':
-        specifier: latest
+        specifier: 19.2.3
         version: 19.2.3(@types/react@19.2.17)
       electron:
-        specifier: latest
+        specifier: 43.0.0
         version: 43.0.0
       electron-builder:
         specifier: ^26.15.3
         version: 26.15.3(electron-builder-squirrel-windows@26.15.3)
       jsdom:
-        specifier: latest
+        specifier: 29.1.1
         version: 29.1.1(@noble/hashes@2.2.0)
       tslib:
         specifier: ^2.8.1
         version: 2.8.1
       vitest:
-        specifier: latest
+        specifier: 4.1.9
         version: 4.1.9(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(jiti@2.7.0))
 
   packages/shared:
     devDependencies:
       typescript:
-        specifier: latest
+        specifier: 6.0.3
         version: 6.0.3
       vitest:
-        specifier: latest
+        specifier: 4.1.9
         version: 4.1.9(@types/node@26.1.0)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@8.1.3(@types/node@26.1.0)(jiti@2.7.0))
 
 packages:

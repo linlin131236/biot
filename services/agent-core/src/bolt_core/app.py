@@ -110,10 +110,16 @@ from bolt_core.desktop_beta_ship_api import create_desktop_beta_ship_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
-def create_app(execution_audit_path: str | Path | None = None, project_dir: str | Path | None = None, local_api_token: str | None = None, require_local_api_token: bool = False) -> FastAPI:
+def create_app(
+    execution_audit_path: str | Path | None = None,
+    project_dir: str | Path | None = None,
+    local_api_token: str | None = None,
+    require_local_api_token: bool = False,
+    lock_default_workspace: bool = False,
+) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core")
     install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
-    workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"))
+    workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"), lock_default_workspace)
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))
     audit_store_status = "ok"
     audit_store_error = ""
@@ -316,4 +322,4 @@ async def fail_without_local_token(_app: FastAPI):
 
 
 _module_token = os.environ.get("BOLT_AGENT_CORE_TOKEN")
-app = create_app(local_api_token=_module_token, require_local_api_token=True) if _module_token else FastAPI(title="Bolt Agent Core", lifespan=fail_without_local_token)
+app = create_app(local_api_token=_module_token, require_local_api_token=True, lock_default_workspace=True) if _module_token else FastAPI(title="Bolt Agent Core", lifespan=fail_without_local_token)
