@@ -4,9 +4,9 @@
 
 - 当前分支：`main`
 - 已完成到：M180 Desktop Beta Release Candidate
-- 最新本地提交：`7e14e85 feat(M171-M180): add desktop beta ship readiness gate`
-- 远端基线：`origin/main = 697932f docs: mark M170 pushed state`
-- 本地状态：`main...origin/main [ahead 1]`，M171-M180 已提交，未 push
+- 最新提交：`f38eae3 docs: mark M171-M180 local committed state`
+- 远端基线：`origin/main = f38eae3 docs: mark M171-M180 local committed state`
+- 分支状态：`main` 与 `origin/main` 已同步，无 ahead、无 behind
 - 工作区状态：已跟踪文件干净；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
 
 ## M171-M180 收口范围
@@ -57,4 +57,4 @@
 
 ## 下一步
 
-M171-M180 已提交，等待复审与 push 授权。
+M171-M180 已 push 并同步。下一步建议在人工授权下运行 Windows `package:win:dir` 真机打包 smoke，确认可启动后再决定是否发布 Beta。
