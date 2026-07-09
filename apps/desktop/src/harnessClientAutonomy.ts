@@ -433,6 +433,43 @@ export async function fetchSleepWakeStatus(baseUrl: string, fetcher: Fetcher = f
   return readJson(await fetcher(`${baseUrl}/sleep-wake/status`));
 }
 
+// === Gate Freeze (M165) ===
+export async function freezeGate(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/gate/freeze`, jsonPost(payload)));
+}
+
+export async function unfreezeGate(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/gate/unfreeze`, jsonPost({})));
+}
+
+export async function fetchGateStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/gate/status`));
+}
+
+// === Tool Verification (M166) ===
+export async function verifyTools(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/tools/verify`));
+}
+
+// === Self-Review Auto-Fix (M167) ===
+export async function autoFixReviewFindings(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/reviewer/auto-fix`, jsonPost(payload)));
+}
+
+// === Auto-Continue (M169) ===
+export async function autoContinueOrchestration(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/orchestrator/auto-continue`, jsonPost(payload)));
+}
+
+export async function fetchAutoContinueStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/orchestrator/auto-continue/status`));
+}
+
+// === E2E Autonomous Loop (M170) ===
+export async function runAutonomousLoop(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/orchestrator/autonomous-loop`, jsonPost(payload)));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }

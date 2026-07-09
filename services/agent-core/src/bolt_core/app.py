@@ -81,6 +81,11 @@ from bolt_core.builder_api import create_builder_router
 from bolt_core.reviewer_api import create_reviewer_router
 from bolt_core.orchestrator_api import create_orchestrator_router
 from bolt_core.sleep_wake_api import create_sleep_wake_router
+from bolt_core.gate_freeze_api import create_gate_freeze_router
+from bolt_core.tool_verification_api import create_tool_verification_router
+from bolt_core.auto_fix_api import create_auto_fix_router
+from bolt_core.auto_continue_api import create_auto_continue_router
+from bolt_core.autonomous_loop_api import create_autonomous_loop_router
 from bolt_core.subtask_assignment_api import create_subtask_assignment_router
 from bolt_core.reviewer_independent_gate_api import create_reviewer_independent_gate_router
 from bolt_core.conflict_resolution_api import create_conflict_resolution_router
@@ -197,6 +202,11 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_reviewer_router())
     app.include_router(create_orchestrator_router())
     app.include_router(create_sleep_wake_router())
+    app.include_router(create_gate_freeze_router())
+    app.include_router(create_tool_verification_router())
+    app.include_router(create_auto_fix_router())
+    app.include_router(create_auto_continue_router())
+    app.include_router(create_autonomous_loop_router())
     app.include_router(create_subtask_assignment_router())
     app.include_router(create_reviewer_independent_gate_router())
     app.include_router(create_conflict_resolution_router())

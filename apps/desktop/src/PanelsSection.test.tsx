@@ -38,6 +38,11 @@ function apiFixture() {
     skilllearner: { autoScan: vi.fn(), recordFailure: vi.fn() },
     orchestrator: { runOrchestration: vi.fn(), fetchRoles: vi.fn() },
     sleepWake: { sleep: vi.fn(), wake: vi.fn(), fetchStatus: vi.fn() },
+    gateFreeze: { freezeGate: vi.fn(), unfreezeGate: vi.fn(), fetchStatus: vi.fn() },
+    toolVerification: { verifyTools: vi.fn() },
+    autoFix: { autoFixReviewFindings: vi.fn() },
+    autoContinue: { autoContinue: vi.fn(), fetchStatus: vi.fn() },
+    autonomousLoop: { runLoop: vi.fn() },
   };
 }
 

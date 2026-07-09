@@ -27,7 +27,7 @@ class OrchestratorEngine:
     Pipeline: Planner → Researcher → Builder → Reviewer → (loop if blocked) → SkillLearner
     """
 
-    _MAX_REVIEW_ROUNDS = 3
+    _MAX_REVIEW_ROUNDS = 5
 
     def __init__(
         self,

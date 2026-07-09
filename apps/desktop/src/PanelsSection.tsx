@@ -25,7 +25,12 @@ import { ReviewerPanel } from './ReviewerPanel';
 import { SkillLearnerPanel } from './SkillLearnerPanel';
 import { OrchestratorPanel } from './OrchestratorPanel';
 import { SleepWakePanel } from './SleepWakePanel';
-import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus } from './harnessClientAutonomy';
+import { GateFreezePanel } from './GateFreezePanel';
+import { ToolVerificationPanel } from './ToolVerificationPanel';
+import { AutoFixPanel } from './AutoFixPanel';
+import { AutoContinuePanel } from './AutoContinuePanel';
+import { AutonomousLoopPanel } from './AutonomousLoopPanel';
+import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus, freezeGate, unfreezeGate, fetchGateStatus, verifyTools, autoFixReviewFindings, autoContinueOrchestration, fetchAutoContinueStatus, runAutonomousLoop } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
 import type { LocalReleaseChecklist, RecoveryPolicy, ReleaseReadiness, TaskGraphSummary } from '@bolt/shared/release';
@@ -53,6 +58,11 @@ export interface PanelsProps {
     skilllearner: { autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
     orchestrator: { runOrchestration: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchRoles: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     sleepWake: { sleep: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; wake: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    gateFreeze: { freezeGate: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; unfreezeGate: (b: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    toolVerification: { verifyTools: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    autoFix: { autoFixReviewFindings: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    autoContinue: { autoContinue: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    autonomousLoop: { runLoop: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -114,6 +124,11 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
       <OrchestratorPanel baseUrl={baseUrl} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
       <SleepWakePanel baseUrl={baseUrl} api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
+      <GateFreezePanel baseUrl={baseUrl} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
+      <ToolVerificationPanel baseUrl={baseUrl} api={{ verifyTools: api.toolVerification.verifyTools }} />
+      <AutoFixPanel baseUrl={baseUrl} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
+      <AutoContinuePanel baseUrl={baseUrl} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
+      <AutonomousLoopPanel baseUrl={baseUrl} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
     </>
   );
 }

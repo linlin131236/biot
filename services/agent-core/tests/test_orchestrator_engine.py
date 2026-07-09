@@ -53,6 +53,12 @@ def test_orchestrator_respects_max_rounds():
     # Force blocked verdict by providing risky code
     result = engine.orchestrate("使用 ipcRenderer", "services/agent-core/src/bolt_core/approval_apply.py")
     assert result.rounds <= engine._MAX_REVIEW_ROUNDS
+    assert engine._MAX_REVIEW_ROUNDS == 5
+
+
+def test_orchestrator_max_rounds_is_five():
+    engine = OrchestratorEngine()
+    assert engine._MAX_REVIEW_ROUNDS == 5
 
 
 def test_orchestrator_without_reviewer_auto_approves():

@@ -26,6 +26,8 @@ const KNOWN_EXEMPT = new Set([
   'services/agent-core/tests/test_task_closure_service.py',
   // M161: project-state.md grows with each milestone (accumulated state record)
   'docs/project-state.md',
+  // M164: app.py is the central router registry (one import/registration per feature module)
+  'services/agent-core/src/bolt_core/app.py',
 ]);
 
 const failures = scan(root).filter((file) => {

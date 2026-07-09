@@ -4,14 +4,20 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 
 from bolt_core.approval_apply import ApprovalApplyEngine
+from bolt_core.gate_freeze_service import GateFrozenError, GateFreezeService, get_global_gate_freeze_service
 from bolt_core.write_tool_proposal import WriteProposalStore
 
 
-def create_approval_apply_router(store: WriteProposalStore | None = None, project_dir: str | Path = ".") -> APIRouter:
+def create_approval_apply_router(
+    store: WriteProposalStore | None = None,
+    project_dir: str | Path = ".",
+    gate_service: GateFreezeService | None = None,
+) -> APIRouter:
     """创建批准应用 API 路由。"""
     if store is None:
         store = WriteProposalStore()
     engine = ApprovalApplyEngine(store=store, project_dir=str(project_dir))
+    gate = gate_service or get_global_gate_freeze_service()
 
     router = APIRouter(tags=["tools"])
 
@@ -24,6 +30,10 @@ def create_approval_apply_router(store: WriteProposalStore | None = None, projec
         proposal_id = str(payload.get("proposal_id", "")).strip()
         if not proposal_id:
             raise HTTPException(status_code=400, detail="proposal_id 不能为空")
+        try:
+            gate.assert_not_frozen()
+        except GateFrozenError as exc:
+            raise HTTPException(status_code=423, detail=f"Gate 已冻结：{exc}") from exc
 
         approval = payload.get("approval", {})
         if not isinstance(approval, dict):
