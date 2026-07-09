@@ -3,10 +3,11 @@
 ## 当前稳定基线
 
 - 当前分支：`main`
-- 远端基线：`origin/main = 7f2567b docs: avoid self-referential M152 baseline hash`
-- 已完成到：M170 E2E Autonomous Loop，本轮正在收口 M165-M170 复审修复
-- 本地状态：本轮修复提交后预计 `main...origin/main [ahead 16]`
-- 工作区约定：`.claude/` 为外部工具状态目录，保持未跟踪、未提交
+- 已完成到：M170 E2E Autonomous Loop
+- 最新提交：`16ecb6a fix(M165-M170): close autonomous loop review gaps`
+- 远端基线：`origin/main = 16ecb6a fix(M165-M170): close autonomous loop review gaps`
+- 分支状态：`main` 与 `origin/main` 已同步，无 ahead、无 behind
+- 工作区状态：已跟踪文件干净；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
 
 ## 已完成范围
 
@@ -29,13 +30,24 @@
 - M169 Auto Continue：自动继续状态控制，受 Gate Freeze 约束
 - M170 E2E Autonomous Loop：受限端到端诊断闭环
 
-## 本轮复审修复
+## M165-M170 复审修复
 
 - P1：旧 `/permissions/{request_id}/approve` 批准入口补上 Gate Freeze 检查，冻结后返回 423，不再绕过冻结门。
 - P1：M165-M170 新增桌面面板统一使用父级注入的认证 `fetcher`，不再直接使用全局 `window.fetch`。
 - P1：主题保存改为通过 `storeDesktopSettings(session.coreUrl, ..., fetcher)` 写入，修复运行时未定义函数问题。
 - P2：`/orchestrator/auto-continue` 与 `/orchestrator/autonomous-loop` 对非法 `max_rounds` 返回 400。
 - P2：M170 自主循环改为调用 `OrchestratorEngine`，不再返回硬编码假 trace。
+- P2：`OrchestratorEngine` 支持公开 `max_review_rounds` 参数，自主循环不再修改内部私有属性。
+
+## 最近验证
+
+- `uv run pytest -q`：1657 passed
+- `pnpm run quality`：通过
+- Desktop tests：396 passed
+- Shared tests：27 passed
+- Desktop build：通过
+- `git diff --check`：通过
+- docs / Chinese UI：通过
 
 ## 已知风险
 
@@ -56,4 +68,4 @@
 
 ## 下一步
 
-完成本轮修复验证后，等待复审与 push 授权。若继续产品化，下一批应回到桌面端真实体验、打包 smoke 和可用性验证，而不是继续扩大自主 Loop 权限。
+M170 已 push 并同步。若继续产品化，下一批应回到桌面端真实体验、打包 smoke 和可用性验证，而不是继续扩大自主 Loop 权限。
