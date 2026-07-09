@@ -1,5 +1,15 @@
 # Bolt/Biot Project State
 
+## 2026-07-09 打包 Smoke 修复状态
+
+- 当前阶段：M180 Desktop Beta Release Candidate。
+- 当前远端：`main = origin/main = 0d1e69c docs: mark M171-M180 pushed state`。
+- 本轮修复：`apps/desktop/electron-builder.json` 增加 `electronDist: "node_modules/electron/dist"`，让 electron-builder 复用本地已安装 Electron 分发目录，不再在 packaging 阶段重复慢速下载 Electron zip。
+- 已验证：`pnpm --filter @bolt/desktop package:win:dir` 通过，生成 `apps/desktop/release/win-unpacked/Bolt.exe`。
+- 已验证：`node scripts/check-release-policy.mjs`、`node scripts/check-desktop-package-runtime.mjs --require-output`、`git diff --check` 通过。
+- 未执行：未 push、未 release、未 tag、未 delete。
+- 工作区：仅本轮配置/文档修复待提交；`.claude/` 保持未跟踪、未提交。
+
 ## 当前稳定基线
 
 - 当前分支：`main`

@@ -1,6 +1,7 @@
 {
   "appId": "dev.bolt.desktop",
   "productName": "Bolt",
+  "electronDist": "node_modules/electron/dist",
   "directories": {
     "output": "release"
   },
