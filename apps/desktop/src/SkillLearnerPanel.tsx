@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 interface Props {
   baseUrl: string;
+  fetcher?: Fetcher;
   api: {
     autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>;
     recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>;
@@ -50,7 +51,7 @@ const VERDICT_COLORS: Record<string, string> = {
   applied: '#2563eb',
 };
 
-export function SkillLearnerPanel({ baseUrl, api }: Props) {
+export function SkillLearnerPanel({ baseUrl, api, fetcher = fetch }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [keyword, setKeyword] = useState('');
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -66,7 +67,7 @@ export function SkillLearnerPanel({ baseUrl, api }: Props) {
   function handleAutoScan() {
     setError('');
     setPhase('executing');
-    api.autoScan(baseUrl, keyword.trim(), window.fetch)
+    api.autoScan(baseUrl, keyword.trim(), fetcher)
       .then((data) => {
         const r = data as Record<string, unknown>;
         const rawPatterns = Array.isArray(r.patterns) ? r.patterns : [];
@@ -105,7 +106,7 @@ export function SkillLearnerPanel({ baseUrl, api }: Props) {
   function handleRecordFailure() {
     setError('');
     setPhase('executing');
-    api.recordFailure(baseUrl, { failure_class: 'manual', failure_id: `manual_${Date.now()}`, description_cn: '用户手动记录失败' }, window.fetch)
+    api.recordFailure(baseUrl, { failure_class: 'manual', failure_id: `manual_${Date.now()}`, description_cn: '用户手动记录失败' }, fetcher)
       .then(() => {
         setResult((prev) => prev ? { ...prev, total_failures_tracked: (prev.total_failures_tracked ?? 0) + 1 } : prev);
         setPhase('done');

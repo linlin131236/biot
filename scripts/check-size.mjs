@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 
 const root = process.cwd();
 const maxLines = 300;
-const ignored = new Set(['node_modules', 'dist', 'dist-electron', '.venv', '.git', '.bolt']);
+const ignored = new Set(['node_modules', 'dist', 'dist-electron', 'release', '.venv', '.git', '.bolt']);
 const extensions = new Set(['.py', '.ts', '.tsx', '.css', '.md', '.json', '.yaml', '.yml']);
 const generated = new Set(['pnpm-lock.yaml']);
 

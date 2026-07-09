@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 interface Props {
   baseUrl: string;
+  fetcher?: Fetcher;
   api: {
     reviewOutput: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
     fetchVerdictLabel: (baseUrl: string, verdict: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
@@ -46,7 +47,7 @@ const VERDICT_COLORS: Record<string, string> = {
   blocked: '#dc2626',
 };
 
-export function ReviewerPanel({ baseUrl, api }: Props) {
+export function ReviewerPanel({ baseUrl, api, fetcher = fetch }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [codeChanges, setCodeChanges] = useState('');
   const [tests, setTests] = useState('');
@@ -75,7 +76,7 @@ export function ReviewerPanel({ baseUrl, api }: Props) {
       evidence_refs: evidenceRefs.split('\n').map((s) => s.trim()).filter((s) => s.length > 0),
       source_refs: sourceRefs.split('\n').map((s) => s.trim()).filter((s) => s.length > 0),
     };
-    api.reviewOutput(baseUrl, payload, window.fetch)
+    api.reviewOutput(baseUrl, payload, fetcher)
       .then((data) => {
         const r = data as Record<string, unknown>;
         const rawFindings = Array.isArray(r.findings) ? r.findings : [];

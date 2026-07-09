@@ -58,8 +58,8 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
           <button type="button" className={view === 'home' ? 'active' : ''} onClick={() => setView('home')}>
             <Sparkles size={18} /> 新任务 <span>Ctrl+N</span>
           </button>
-          <button type="button"><Search size={18} /> 搜索 <span>Ctrl+K</span></button>
-          <button type="button"><History size={18} /> 已安排</button>
+          <button type="button" disabled aria-disabled="true"><Search size={18} /> 搜索 <span>Ctrl+K</span></button>
+          <button type="button" disabled aria-disabled="true"><History size={18} /> 已安排</button>
           <button type="button" className={view === 'settings' ? 'active' : ''} onClick={() => setView('settings')}>
             <Settings size={18} /> 设置
           </button>

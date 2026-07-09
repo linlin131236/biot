@@ -5,7 +5,19 @@
 
 interface BoltBridge {
   selectWorkspace: () => Promise<string | null>;
-  agentCoreAuth?: () => Promise<string | null> | string | null;
+  agentCoreFetch?: (
+    input: string,
+    init?: {
+      method?: string;
+      headers?: Record<string, string> | [string, string][];
+      body?: string;
+    },
+  ) => Promise<{
+    status: number;
+    statusText: string;
+    headers: [string, string][];
+    body: string;
+  }>;
 }
 
 declare global {

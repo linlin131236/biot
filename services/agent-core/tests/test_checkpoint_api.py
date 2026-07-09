@@ -47,3 +47,47 @@ async def test_checkpoint_restore_api_restores_saved_files(tmp_path):
     assert response.json()["status"] == "restored"
     assert response.json()["restored_files"] == ["app.py"]
     assert target.read_text(encoding="utf-8") == "before\n"
+
+
+@pytest.mark.anyio
+async def test_checkpoint_create_ignores_payload_workspace_override(tmp_path):
+    target = tmp_path / "app.py"
+    target.write_text("before\n", encoding="utf-8")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "app.py").write_text("outside\n", encoding="utf-8")
+
+    app = create_app(project_dir=tmp_path)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        cp = (await client.post("/checkpoints", json={
+            "run_id": "run_1",
+            "goal_id": "goal_1",
+            "workspace": str(outside),
+            "changed_files": ["app.py"],
+        })).json()
+
+    assert cp["file_contents"]["app.py"] == "before\n"
+
+
+@pytest.mark.anyio
+async def test_checkpoint_restore_rejects_workspace_query_override(tmp_path):
+    target = tmp_path / "app.py"
+    target.write_text("before\n", encoding="utf-8")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+
+    app = create_app(project_dir=tmp_path)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        cp = (await client.post("/checkpoints", json={
+            "run_id": "run_1",
+            "goal_id": "goal_1",
+            "changed_files": ["app.py"],
+        })).json()
+        response = await client.post(
+            f"/checkpoints/{cp['id']}/restore",
+            params={"workspace": str(outside)},
+            json={"confirm_restore": True},
+        )
+
+    assert response.status_code == 400
+    assert target.read_text(encoding="utf-8") == "before\n"

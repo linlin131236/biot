@@ -4,6 +4,10 @@ import pytest
 from bolt_core.agent_intelligence_dogfood import AgentIntelligenceDogfoodService
 
 
+def write_utf8(path: Path, text: str) -> None:
+    path.write_text(text, encoding="utf-8")
+
+
 def make_v7_project(tmp_path: Path) -> Path:
     src = tmp_path / "services/agent-core/src/bolt_core"
     src.mkdir(parents=True, exist_ok=True)
@@ -16,18 +20,18 @@ def make_v7_project(tmp_path: Path) -> Path:
                 "memory_retrieval_eval", "chinese_interaction_eval",
                 "e2e_task_dogfood", "failure_recovery_dogfood"]
     for f in v7_files:
-        (src / f"{f}.py").write_text(f"# {f}")
-        (tests / f"test_{f}.py").write_text(f"# test_{f}")
+        write_utf8(src / f"{f}.py", f"# {f}")
+        write_utf8(tests / f"test_{f}.py", f"# test_{f}")
 
     # V6 files
     v6_files = ["tool_registry", "tool_manifest", "tool_permission_contract",
                 "readonly_tool_runner", "write_tool_proposal", "patch_proposal",
                 "test_runner_integration", "tool_ecosystem_dogfood"]
     for f in v6_files:
-        (src / f"{f}.py").write_text(f"# {f}")
-        (tests / f"test_{f}.py").write_text(f"# test_{f}")
-    (src / "approval_apply.py").write_text("approved=true\nactor\nhuman\n")
-    (tests / "test_approval_apply.py").write_text("# test_approval_apply")
+        write_utf8(src / f"{f}.py", f"# {f}")
+        write_utf8(tests / f"test_{f}.py", f"# test_{f}")
+    write_utf8(src / "approval_apply.py", "approved=true\nactor\nhuman\n")
+    write_utf8(tests / "test_approval_apply.py", "# test_approval_apply")
 
     # Docs: exec plans, decisions, review gates for M111-M120
     exec_plans = tmp_path / "docs/exec-plans/active"
@@ -35,11 +39,11 @@ def make_v7_project(tmp_path: Path) -> Path:
     decisions = tmp_path / "docs/decisions"
     decisions.mkdir(parents=True, exist_ok=True)
     for n in range(111, 121):
-        (exec_plans / f"{n}-test.md").write_text(f"# M{n}")
-        (decisions / f"{n}-test.md").write_text(f"# M{n}")
-        (tmp_path / f"docs/phase-{n}-review-gate.md").write_text(f"# M{n}")
+        write_utf8(exec_plans / f"{n}-test.md", f"# M{n}")
+        write_utf8(decisions / f"{n}-test.md", f"# M{n}")
+        write_utf8(tmp_path / f"docs/phase-{n}-review-gate.md", f"# M{n}")
 
-    (tmp_path / "docs/project-state.md").write_text("M120 完成\nV7 智能Agent\n未 push\n未进入 M121")
+    write_utf8(tmp_path / "docs/project-state.md", "M120 完成\nV7 智能Agent\n未 push\n未进入 M121")
     return tmp_path
 
 

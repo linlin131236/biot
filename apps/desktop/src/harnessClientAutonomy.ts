@@ -232,7 +232,10 @@ export async function addPlannerNode(baseUrl: string, graphId: string, payload: 
 }
 
 export async function updatePlannerNodeStatus(baseUrl: string, graphId: string, nodeId: string, status: string, fetcher: Fetcher = fetch): Promise<TaskNode> {
-  return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}/nodes/${nodeId}`, jsonPost({ status })));
+  return readJson(await fetcher(`${baseUrl}/planner/graphs/${graphId}/nodes/${nodeId}`, {
+    ...jsonPost({ status }),
+    method: 'PATCH',
+  }));
 }
 
 // === Execution State Machine API (M62) ===

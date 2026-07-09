@@ -35,3 +35,15 @@ async def test_recovery_policy_is_read_only(client):
     r1 = await client.get("/recovery-policy")
     r2 = await client.get("/recovery-policy")
     assert r1.json() == r2.json()
+
+
+@pytest.mark.anyio
+async def test_session_recovery_embeds_real_recovery_policy(client):
+    """Session recovery should expose the same structured policy, not an empty fallback."""
+    response = await client.get("/session-recovery")
+    assert response.status_code == 200
+    policy = response.json()["recovery_policy"]
+    assert "scenarios" in policy
+    assert "categories" in policy
+    assert "total" in policy
+    assert policy["total"] > 0

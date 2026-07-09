@@ -12,11 +12,7 @@ def create_session_recovery_router() -> APIRouter:
 
     @router.get("/session-recovery")
     def get_session_recovery() -> dict:
-        policy: dict = {}
-        try:
-            policy = recovery.get_policy()
-        except Exception:
-            pass
+        policy = recovery.list_scenarios()
 
         paused: list[dict] = []
         try:

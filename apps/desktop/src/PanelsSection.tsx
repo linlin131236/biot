@@ -120,11 +120,11 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
         fetchBoard: fetchSubtasksBoard,
         fetchSubtasks: fetchSubtasks,
       }} />
-      <ResearcherPanel baseUrl={baseUrl} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
-      <BuilderPanel baseUrl={baseUrl} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
-      <ReviewerPanel baseUrl={baseUrl} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
-      <SkillLearnerPanel baseUrl={baseUrl} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
-      <OrchestratorPanel baseUrl={baseUrl} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
+      <ResearcherPanel baseUrl={baseUrl} fetcher={fetcher} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
+      <BuilderPanel baseUrl={baseUrl} fetcher={fetcher} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
+      <ReviewerPanel baseUrl={baseUrl} fetcher={fetcher} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
+      <SkillLearnerPanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
+      <OrchestratorPanel baseUrl={baseUrl} fetcher={fetcher} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
       <SleepWakePanel baseUrl={baseUrl} api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
       <GateFreezePanel baseUrl={baseUrl} fetcher={fetcher} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
       <ToolVerificationPanel baseUrl={baseUrl} fetcher={fetcher} api={{ verifyTools: api.toolVerification.verifyTools }} />

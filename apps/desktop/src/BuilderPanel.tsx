@@ -7,6 +7,7 @@ import { useState } from 'react';
 
 interface Props {
   baseUrl: string;
+  fetcher?: Fetcher;
   api: {
     executeTask: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
     fetchProposals: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
@@ -17,7 +18,7 @@ type Phase = 'form' | 'executing' | 'done' | 'error';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export function BuilderPanel({ baseUrl, api }: Props) {
+export function BuilderPanel({ baseUrl, api, fetcher = fetch }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [taskId, setTaskId] = useState('');
   const [description, setDescription] = useState('');
@@ -46,7 +47,7 @@ export function BuilderPanel({ baseUrl, api }: Props) {
       target_files: targetFiles.split('\n').map((s) => s.trim()).filter((s) => s.length > 0),
       workspace: workspace.trim(),
     };
-    api.executeTask(baseUrl, payload, window.fetch)
+    api.executeTask(baseUrl, payload, fetcher)
       .then((data) => {
         setResult(data);
         setPhase('done');

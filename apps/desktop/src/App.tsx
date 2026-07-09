@@ -222,7 +222,7 @@ function ModelPanel({ model, setModel, apiKey, setApiKey, saveModel, status }: {
 
 function TaskLog({ state }: { state: BoltState }) {
   const items = [...state.agentStepResults.map((r) => r.status), ...state.toolResults.map((r) => r.output || r.reason || r.status)];
-  return <aside className="panel"><h2>任务日志</h2>{items.length ? items.map((item) => <p key={item}>{item}</p>) : <p>暂无执行结果</p>}</aside>;
+  return <aside className="panel"><h2>任务日志</h2>{items.length ? items.map((item, index) => <p key={`${index}-${item}`}>{item}</p>) : <p>暂无执行结果</p>}</aside>;
 }
 
 function TracePanel({ state }: { state: BoltState }) {

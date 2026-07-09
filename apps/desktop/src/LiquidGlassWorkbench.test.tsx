@@ -93,6 +93,8 @@ describe('LiquidGlassWorkbench', () => {
   it('marks unavailable composer affordances as disabled', () => {
     render(<LiquidGlassWorkbench {...baseProps} />);
 
+    expect(screen.getByRole('button', { name: /搜索/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '已安排' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '添加上下文' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '语音输入' })).toBeDisabled();
   });

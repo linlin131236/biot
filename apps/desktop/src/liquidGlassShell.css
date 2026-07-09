@@ -182,6 +182,9 @@
   transform: translateY(-1px);
 }
 
+.biotNav button:disabled { cursor: not-allowed; opacity: 0.48; }
+.biotNav button:disabled:hover { background: rgb(255 255 255 / 7%); border-color: transparent; box-shadow: none; transform: none; }
+
 .biotProjectBlock {
   border-top: 1px solid var(--line-soft);
   margin-top: 20px;

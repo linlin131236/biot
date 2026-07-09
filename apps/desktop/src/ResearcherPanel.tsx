@@ -23,6 +23,7 @@ interface ResearchResult {
 
 interface Props {
   baseUrl: string;
+  fetcher?: Fetcher;
   api: {
     createBrief: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
     executeResearch: (baseUrl: string, briefId: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
@@ -42,7 +43,7 @@ const SCOPES = [
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export function ResearcherPanel({ baseUrl, api }: Props) {
+export function ResearcherPanel({ baseUrl, api, fetcher = fetch }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
@@ -54,7 +55,7 @@ export function ResearcherPanel({ baseUrl, api }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchScopes(baseUrl, window.fetch)
+    api.fetchScopes(baseUrl, fetcher)
       .then((data) => {
         if (cancelled) return;
         const raw = (data as Record<string, unknown>).scopes as Array<Record<string, unknown>> | undefined;
@@ -70,7 +71,7 @@ export function ResearcherPanel({ baseUrl, api }: Props) {
     if (!title.trim() || !question.trim() || !scope) return;
     setError('');
     setPhase('creating');
-    api.createBrief(baseUrl, { title: title.trim(), question: question.trim(), scope }, window.fetch)
+    api.createBrief(baseUrl, { title: title.trim(), question: question.trim(), scope }, fetcher)
       .then((data) => {
         const b = data as Record<string, unknown>;
         const briefRecord: Brief = {
@@ -93,7 +94,7 @@ export function ResearcherPanel({ baseUrl, api }: Props) {
     if (!brief?.brief_id) return;
     setError('');
     setPhase('executing');
-    api.executeResearch(baseUrl, brief.brief_id, window.fetch)
+    api.executeResearch(baseUrl, brief.brief_id, fetcher)
       .then((data) => {
         const r = data as Record<string, unknown>;
         const rawRefs = r.source_refs as Array<Record<string, unknown>> | undefined;

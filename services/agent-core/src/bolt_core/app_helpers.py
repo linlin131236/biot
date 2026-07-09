@@ -43,8 +43,5 @@ def string_list(value) -> list[str]:
 
 
 def checkpoint_workspace(payload: dict, runs: dict, default_workspace: str) -> str:
-    workspace = payload.get("workspace")
-    if isinstance(workspace, str) and workspace:
-        return workspace
     run = runs.get(str(payload.get("run_id", "")))
     return run.workspace if run is not None else default_workspace

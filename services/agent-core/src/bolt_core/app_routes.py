@@ -100,7 +100,9 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
 
     @app.get("/checkpoints/{checkpoint_id}")
     def load_checkpoint(checkpoint_id: str, workspace: str | None = Query(default=None)) -> dict | None:
-        target = workspace or checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        target = checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        if workspace is not None and workspace != target:
+            raise HTTPException(status_code=400, detail="检查点工作区不允许由请求覆盖")
         service = CheckpointService(target) if target != harness.workspace else checkpoint_service
         checkpoint = service.load(checkpoint_id)
         return None if checkpoint is None else checkpoint.to_dict()
@@ -110,7 +112,9 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
                            workspace: str | None = Query(default=None)) -> dict:
         if not bool(payload.get("confirm_restore")):
             raise HTTPException(status_code=400, detail="恢复检查点需要用户明确确认")
-        target = workspace or checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        target = checkpoint_workspaces.get(checkpoint_id, harness.workspace)
+        if workspace is not None and workspace != target:
+            raise HTTPException(status_code=400, detail="检查点工作区不允许由请求覆盖")
         service = CheckpointService(target) if target != harness.workspace else checkpoint_service
         result = service.restore(checkpoint_id, confirm_restore=True)
         if result["status"] == "not_found":
