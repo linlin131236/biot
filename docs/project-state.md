@@ -4,9 +4,10 @@
 
 - 当前分支：`main`
 - 已完成到：M180 Desktop Beta Release Candidate
+- 最新本地提交：`7e14e85 feat(M171-M180): add desktop beta ship readiness gate`
 - 远端基线：`origin/main = 697932f docs: mark M170 pushed state`
-- 本地状态：M171-M180 正在本地收口，待验证与提交，未 push
-- 工作区状态：M171-M180 有本地改动；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
+- 本地状态：`main...origin/main [ahead 1]`，M171-M180 已提交，未 push
+- 工作区状态：已跟踪文件干净；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
 
 ## M171-M180 收口范围
 
@@ -56,4 +57,4 @@
 
 ## 下一步
 
-完成 full tests、quality、docs、Chinese UI、diff check 和安全扫描后提交 M171-M180；等待复审与 push 授权。
+M171-M180 已提交，等待复审与 push 授权。
