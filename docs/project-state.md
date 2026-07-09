@@ -1,5 +1,33 @@
 # Bolt/Biot Project State
 
+## 2026-07-09 第二轮全面审计修复状态
+
+- 当前阶段：M180 Desktop Beta Release Candidate 后的第二轮审计修复。
+- 代码修复提交：`7e47dae fix: harden second audit security and runtime findings`。
+- 本轮修复来源：Claude / ZCodex / 八维度全面审核报告中的可验证问题。
+- 修复范围：
+  - Agent Core 本地认证代理从“只校验 localhost 主机”升级为“校验 localhost + 当前 Agent Core 端口”，降低 token 被转发到本机其他端口的风险。
+  - Electron preload 继续只暴露受限 `agentCoreFetch`，不暴露明文 token；renderer 仍不直接访问 `ipcRenderer` / `fs` / `shell` / `process`。
+  - 桌面启动时记录 Agent Core 实际端口，并通过 preload 只允许该端口走认证代理。
+  - workspace lock 修正为：显式 `project_dir` / `BOLT_WORKSPACE` / 模块级生产入口会加锁；测试用 `create_app()` 不被当前仓库路径误锁。
+  - `AgentLoop` 接入 `ContextCompressor`，只压缩普通 user/assistant 文本消息，保护 tool protocol 消息不被压坏。
+  - 新增 `command_security` 专项测试，覆盖 shell 控制符、管道、重定向、命令替换和引号边界。
+  - 打包 runtime smoke 增加 packaged Python runtime 检查；当前 `--require-output` 会正确 fail closed，因为正式 Python runtime 仍未打进 release 产物。
+  - 前端与 Python 依赖从浮动版本收敛为当前可复现版本区间/精确版本，并更新 `pnpm-lock.yaml`。
+- 已验证：
+  - `uv run pytest services/agent-core/tests/test_harness_workspace_lock.py services/agent-core/tests/test_agent_loop.py services/agent-core/tests/test_agent_loop_context_compression.py services/agent-core/tests/test_agent_loop_messages.py services/agent-core/tests/test_command_security.py -q`：26 passed。
+  - 失败回归组：43 passed。
+  - `pnpm run quality`：通过；shared 27 passed，desktop 402 passed，backend 1673 passed。
+  - `git diff --check`：通过，仅 Windows LF/CRLF 提示。
+  - `node scripts/check-desktop-package-runtime.mjs`：通过。
+  - `node scripts/check-desktop-package-runtime.mjs --require-output`：按预期 fail closed，提示缺少 `resources/agent-core/.venv/Scripts/python.exe`。
+  - renderer 安全扫描：无新增真实暴露；命中均为注释或 Electron preload/main 允许边界。
+- 未执行：未 push、未 release、未 tag、未 delete。
+- 工作区注意：`.claude/` 仍为外部工具未跟踪目录，不提交。
+- 剩余风险：
+  - Windows release 产物仍需要真正嵌入 Python runtime；当前修复先把坏包从“静默通过”改成“明确阻断”。
+  - `app.py` 仍是大型路由注册中心，后续可做低风险分域拆分，但本轮不擅自重构。
+
 ## 2026-07-09 zcodex 全量审查修复状态
 
 - 当前阶段：M180 Desktop Beta Release Candidate 后的审查修复。
