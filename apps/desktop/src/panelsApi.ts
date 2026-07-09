@@ -48,7 +48,7 @@ import {
   fetchBuilderProposals,
 } from './harnessClientAutonomy';
 import { startWorkflowRun } from './workflowClient';
-import { reviewBuilderOutput, fetchReviewVerdictLabel, autoScanSkillLearner, recordFailure, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus, freezeGate, unfreezeGate, fetchGateStatus, verifyTools, autoFixReviewFindings, autoContinueOrchestration, fetchAutoContinueStatus, runAutonomousLoop } from './harnessClientAutonomy';
+import { reviewBuilderOutput, fetchReviewVerdictLabel, autoScanSkillLearner, recordFailure, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus, freezeGate, unfreezeGate, fetchGateStatus, verifyTools, autoFixReviewFindings, autoContinueOrchestration, fetchAutoContinueStatus, runAutonomousLoop, fetchDesktopBetaShip } from './harnessClientAutonomy';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -127,5 +127,6 @@ export function createPanelsApi(fetcher: Fetcher, goalInfo: Goal | null): Panels
     autoFix: { autoFixReviewFindings },
     autoContinue: { autoContinue: autoContinueOrchestration, fetchStatus: fetchAutoContinueStatus },
     autonomousLoop: { runLoop: runAutonomousLoop },
+    desktopBetaShip: { fetchBetaShip: fetchDesktopBetaShip },
   };
 }

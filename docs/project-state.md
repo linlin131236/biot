@@ -3,56 +3,44 @@
 ## 当前稳定基线
 
 - 当前分支：`main`
-- 已完成到：M170 E2E Autonomous Loop
-- 最新提交：`16ecb6a fix(M165-M170): close autonomous loop review gaps`
-- 远端基线：`origin/main = 16ecb6a fix(M165-M170): close autonomous loop review gaps`
-- 分支状态：`main` 与 `origin/main` 已同步，无 ahead、无 behind
-- 工作区状态：已跟踪文件干净；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
+- 已完成到：M180 Desktop Beta Release Candidate
+- 远端基线：`origin/main = 697932f docs: mark M170 pushed state`
+- 本地状态：M171-M180 正在本地收口，待验证与提交，未 push
+- 工作区状态：M171-M180 有本地改动；`.claude/` 为外部工具状态目录，保持未跟踪、未提交
 
-## 已完成范围
+## M171-M180 收口范围
 
-- M153 Permission Center Live：权限中心真实接入与 payload summary 脱敏
-- M154 Audit Timeline Live：审计时间线真实接入、脱敏与 source 筛选
-- M155 Patch Preview Live：中文风险解释与 patch API 测试
-- M156 Approval Apply Desktop Flow：桌面端批准后应用闭环
-- M157 Safe Test Runner Live：白名单安全测试运行器 UI
-- M158 Task Result Summary：任务结果摘要结构化展示
-- M159 Researcher Execution Engine：研究者执行引擎
-- M160 Builder Execution Engine：构建者执行引擎
-- M161 Reviewer Execution Engine：严格 Reviewer Gate
-- M162 SkillLearner Auto Trigger：失败模式扫描与提案
-- M163 Orchestrator Core：五角色编排核心
-- M164 Sleep/Wake Mode：Agent 待机与唤醒状态
-- M165 Gate Freeze：共享冻结状态，阻断自动继续与自主循环
-- M166 Tool Verification：只读工具链健康验证
-- M167 Self-Review Auto-Fix：低风险发现自动提案，不直接写文件
-- M168 Round Limit：自动循环最大 5 轮
-- M169 Auto Continue：自动继续状态控制，受 Gate Freeze 约束
-- M170 E2E Autonomous Loop：受限端到端诊断闭环
+- M171 Desktop Package Smoke：验证 build、Windows package、package runtime smoke 脚本存在。
+- M172 First Run Setup：验证工作区、设置、权限中心入口存在。
+- M173 Real Task Flow：验证补丁预览、安全测试、结果摘要和 dogfood smoke 链路存在。
+- M174 Error State Experience：验证连接失败、模型失败、诊断中心等中文错误态可见。
+- M175 Settings Readiness：验证设置持久化、API key 边界、设置页入口存在。
+- M176 Audit Recovery Visuals：验证审计时间线、会话恢复和发布准备度入口存在。
+- M177 Performance Quality Signals：验证质量门、桌面测试基线、构建基线存在。
+- M178 Installer Readiness：验证 Windows 安装包脚本存在且 `--publish never`。
+- M179 Desktop Dogfood Evidence：验证 dogfood 测试与 release dogfood 文档存在。
+- M180 Desktop Beta Release Candidate：聚合 M171-M179，输出只读 Beta 候选结论。
 
-## M165-M170 复审修复
+## 本轮实现
 
-- P1：旧 `/permissions/{request_id}/approve` 批准入口补上 Gate Freeze 检查，冻结后返回 423，不再绕过冻结门。
-- P1：M165-M170 新增桌面面板统一使用父级注入的认证 `fetcher`，不再直接使用全局 `window.fetch`。
-- P1：主题保存改为通过 `storeDesktopSettings(session.coreUrl, ..., fetcher)` 写入，修复运行时未定义函数问题。
-- P2：`/orchestrator/auto-continue` 与 `/orchestrator/autonomous-loop` 对非法 `max_rounds` 返回 400。
-- P2：M170 自主循环改为调用 `OrchestratorEngine`，不再返回硬编码假 trace。
-- P2：`OrchestratorEngine` 支持公开 `max_review_rounds` 参数，自主循环不再修改内部私有属性。
+- 新增 `DesktopBetaShipService`：只读聚合 M171-M180 桌面 Beta 发布候选门禁。
+- 新增 `/desktop/beta-ship` API：返回 ready、checks、blockers、next_step。
+- 新增 `DesktopBetaShipPanel`：桌面端中文展示发布候选状态，不提供 push/release/tag/delete 按钮。
+- 新增 M171-M180 exec plan、decision、review gate 文档链。
 
 ## 最近验证
 
-- `uv run pytest -q`：1657 passed
-- `pnpm run quality`：通过
-- Desktop tests：396 passed
-- Shared tests：27 passed
-- Desktop build：通过
-- `git diff --check`：通过
-- docs / Chinese UI：通过
+- `uv run pytest services/agent-core/tests/test_desktop_beta_ship.py -q`：5 passed
+- `pnpm --filter @bolt/desktop test -- DesktopBetaShipPanel --run`：56 files / 399 tests passed
+- `uv run pytest -q`：1662 passed
+- `pnpm run quality`：通过（shared 27 passed，desktop 399 passed）
+- `pnpm --filter @bolt/desktop build`：通过
+- 真实仓库 `DesktopBetaShipService`：M171-M180 10/10 ready
 
 ## 已知风险
 
-- M157 和 M161 各有一个 exec-plan-only 历史提交，后续完整实现提交已补齐；复审时必须以最终 HEAD 文件状态为准。
-- M153-M170 多个阶段由不同窗口完成，继续推进前必须坚持 targeted tests、full tests、quality、docs、Chinese UI、diff check 和安全扫描。
+- M171-M180 当前是 release-candidate readiness gate，不自动打包、不自动发布。
+- 真机安装包 smoke 仍需在人工授权下运行 `pnpm --filter @bolt/desktop package:win:dir`。
 - `.claude/` 保持未跟踪、未提交。
 
 ## 硬规则
@@ -68,4 +56,4 @@
 
 ## 下一步
 
-M170 已 push 并同步。若继续产品化，下一批应回到桌面端真实体验、打包 smoke 和可用性验证，而不是继续扩大自主 Loop 权限。
+完成 full tests、quality、docs、Chinese UI、diff check 和安全扫描后提交 M171-M180；等待复审与 push 授权。

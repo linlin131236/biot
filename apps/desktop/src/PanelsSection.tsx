@@ -30,6 +30,7 @@ import { ToolVerificationPanel } from './ToolVerificationPanel';
 import { AutoFixPanel } from './AutoFixPanel';
 import { AutoContinuePanel } from './AutoContinuePanel';
 import { AutonomousLoopPanel } from './AutonomousLoopPanel';
+import { DesktopBetaShipPanel } from './DesktopBetaShipPanel';
 import { fetchMemoryDecisions, fetchMemoryFailures, fetchMemoryPreferences, fetchProjectProfile, fetchCodeMapEntries, fetchMultiAgentRoles, fetchSubtasksBoard, fetchSubtasks, fetchTaskHome, fetchPermissionCenter, approvePermissionFromCenter, rejectPermissionFromCenter, fetchAuditTimeline, fetchDiagnosticsCenter, fetchMultiTaskQueue, fetchFailureExplanation, fetchSessionRecovery, fetchSettingsTools, fetchPatchList, fetchPatchPreview, fetchProductWorkbench, fetchTestRunnerAvailable, runTest, fetchTestRunnerHistory, createResearchBrief, executeResearch, fetchResearchScopes, executeBuilderTask, fetchBuilderProposals, reviewBuilderOutput, fetchReviewVerdictLabel, runOrchestrator, fetchOrchestratorRoles, sleepAgent, wakeAgent, fetchSleepWakeStatus, freezeGate, unfreezeGate, fetchGateStatus, verifyTools, autoFixReviewFindings, autoContinueOrchestration, fetchAutoContinueStatus, runAutonomousLoop } from './harnessClientAutonomy';
 import type { AgentLoopResult } from '@bolt/shared';
 import type { Goal, GoalEvidence, SteeringResult, TaskClosureEvidence, TaskTemplate, TimelineEvent, VerificationAssessment, VerificationPlan, ExecutionQueueItem, ExecutionHandoffRecord, ExecutionAuditTimelineEvent, ExecutionAuditDiagnostic, ExecutionAuditIntegrity } from '@bolt/shared/autonomy';
@@ -63,6 +64,7 @@ export interface PanelsProps {
     autoFix: { autoFixReviewFindings: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
     autoContinue: { autoContinue: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
     autonomousLoop: { runLoop: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    desktopBetaShip?: { fetchBetaShip: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
@@ -129,6 +131,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
       <AutoFixPanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
       <AutoContinuePanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
       <AutonomousLoopPanel baseUrl={baseUrl} fetcher={fetcher} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
+      {api.desktopBetaShip && <DesktopBetaShipPanel baseUrl={baseUrl} fetcher={fetcher} api={{ fetchBetaShip: api.desktopBetaShip.fetchBetaShip }} />}
     </>
   );
 }

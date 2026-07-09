@@ -106,6 +106,7 @@ from bolt_core.workspace_api import create_workspace_router
 from bolt_core.desktop_beta_dogfood_api import create_desktop_beta_dogfood_router
 from bolt_core.product_workbench_api import create_product_workbench_router
 from bolt_core.product_workbench_dogfood_api import create_product_workbench_dogfood_router
+from bolt_core.desktop_beta_ship_api import create_desktop_beta_ship_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.app_routes import register as register_simple_routes
@@ -228,6 +229,7 @@ def create_app(execution_audit_path: str | Path | None = None, project_dir: str 
     app.include_router(create_desktop_beta_dogfood_router())
     app.include_router(create_product_workbench_router(str(project_dir or Path.cwd())))
     app.include_router(create_product_workbench_dogfood_router(str(project_dir or Path.cwd())))
+    app.include_router(create_desktop_beta_ship_router(str(project_dir or Path.cwd())))
     app.include_router(create_harness_router(harness))
 
     @app.get("/health")

@@ -470,6 +470,11 @@ export async function runAutonomousLoop(baseUrl: string, payload: Record<string,
   return readJson(await fetcher(`${baseUrl}/orchestrator/autonomous-loop`, jsonPost(payload)));
 }
 
+// === Desktop Beta Ship (M171-M180) ===
+export async function fetchDesktopBetaShip(baseUrl: string, fetcher: Fetcher = fetch): Promise<Record<string, unknown>> {
+  return readJson(await fetcher(`${baseUrl}/desktop/beta-ship`));
+}
+
 function jsonPost(body: unknown): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
