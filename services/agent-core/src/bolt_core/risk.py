@@ -69,7 +69,7 @@ def classify_path(path: str, workspace: str, operation: str) -> RiskDecision:
         return RiskDecision(6, "deny", "path outside workspace")
     if operation == "write" and _is_inside_workspace(path, workspace):
         return RiskDecision(2, "confirm_with_diff", "workspace write")
-    return RiskDecision(3, "confirm", "path outside workspace")
+    return RiskDecision(6, "deny", "path outside workspace")
 
 
 def _is_destructive_command(command: str) -> bool:

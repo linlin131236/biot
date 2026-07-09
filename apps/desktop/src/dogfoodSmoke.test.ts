@@ -226,9 +226,9 @@ describe('desktop dogfood smoke — full product path', () => {
     expect((timeline as { type: string }[]).some((e) => e.type === 'agent.loop.started')).toBe(true);
   });
 
-  it('unwired surfaces throw explicitly instead of returning fake data', async () => {
+  it('unwired skill surface returns an empty list instead of crashing', async () => {
     const fetcher = vi.fn();
-    await expect(fetchSkills('http://core', fetcher)).rejects.toThrow('/skills endpoint not registered');
+    await expect(fetchSkills('http://core', fetcher)).resolves.toEqual([]);
     expect(fetcher).not.toHaveBeenCalled();
   });
 });

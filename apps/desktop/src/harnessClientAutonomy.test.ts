@@ -62,10 +62,10 @@ describe('harness autonomy client', () => {
     );
   });
 
-  it('keeps skills explicitly unwired until the backend has a route', async () => {
+  it('returns an empty skill list until the backend has a route', async () => {
     const fetcher = vi.fn();
 
-    await expect(fetchSkills('http://core', fetcher)).rejects.toThrow('/skills endpoint not registered');
+    await expect(fetchSkills('http://core', fetcher)).resolves.toEqual([]);
     expect(fetcher).not.toHaveBeenCalled();
   });
 

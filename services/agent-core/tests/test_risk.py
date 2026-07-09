@@ -82,6 +82,14 @@ def test_project_write_requires_diff_confirmation():
     assert result.action == "confirm_with_diff"
 
 
+def test_write_outside_workspace_is_denied():
+    result = classify_path("C:/Projects/outside.txt", workspace="C:/Projects/Bolt", operation="write")
+
+    assert result.level == 6
+    assert result.action == "deny"
+    assert result.reason == "path outside workspace"
+
+
 def test_secret_path_is_denied():
     result = classify_path("C:/Projects/Bolt/.env", workspace="C:/Projects/Bolt", operation="read")
 

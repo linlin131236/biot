@@ -142,26 +142,31 @@ class AgentLoop:
             [ConversationMessage(message.role, message.content, {}) for _, message in plain],
             budget,
         )
-        summary = next((message for message in compressed if message.metadata.get("compressed") is True), None)
-        if summary is None:
+        summary = next((m for m in compressed if m.metadata.get("compressed") is True), None)
+        recent_plain_count = len([m for m in compressed if not m.metadata.get("compressed")])
+        older_plain_count = max(0, len(plain) - recent_plain_count)
+
+        if older_plain_count == 0:
+            # Compressor kept every plain message; nothing to replace or drop
             return messages
 
-        recent_plain_count = len([message for message in compressed if message.metadata.get("compressed") is not True])
-        older_plain_count = max(0, len(plain) - recent_plain_count)
         older_indexes = {index for index, _ in plain[:older_plain_count]}
         result: list[ModelMessage] = []
         inserted_summary = False
         for index, message in enumerate(messages):
             if index in older_indexes:
-                if not inserted_summary:
+                if not inserted_summary and summary is not None:
                     result.append(ModelMessage("user", summary.content))
                     inserted_summary = True
+                # Drop older plain messages; if budget is too tight for a summary
+                # they are silently removed — still better than full context fallback.
                 continue
             result.append(message)
         trace.record("context.compressed", {
             "before": len(messages),
             "after": len(result),
             "compressed_messages": older_plain_count,
+            "has_summary": summary is not None,
         })
         return result
 

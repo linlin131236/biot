@@ -23,6 +23,8 @@ function checkBuilderResources() {
   const resources = config.extraResources ?? [];
   requireResource(resources, '../../services/agent-core/src', 'agent-core/src');
   requireResource(resources, '../../services/agent-core/pyproject.toml', 'agent-core/pyproject.toml');
+  requireResource(resources, '../../services/agent-core/.venv', 'agent-core/.venv');
+  requireFile('services/agent-core/.venv/Scripts/python.exe');
 }
 
 function checkPackagedOutput() {

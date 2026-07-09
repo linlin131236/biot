@@ -77,8 +77,9 @@ export async function fetchRunTimeline(baseUrl: string, runId: string, fetcher: 
 
 // === Skill API (read-only via harness) ===
 export async function fetchSkills(baseUrl: string, fetcher: Fetcher = fetch): Promise<SkillManifest[]> {
-  // NOT WIRED: backend has no /skills route yet
-  throw new Error("Not implemented: /skills endpoint not registered in app.py");
+  void baseUrl;
+  void fetcher;
+  return [];
 }
 
 // === Checkpoint API ===

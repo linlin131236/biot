@@ -1,5 +1,24 @@
 # Bolt/Biot Project State
 
+## 2026-07-09 二轮复审三项 Beta 阻断修复
+
+- 当前阶段：M180 Desktop Beta Release Candidate 后的二轮复审修复。
+- 本轮处理范围：只处理复审列为 Beta 发布前必须处理的 S2、S3、Q4，不进入新 milestone，不 push、不 release、不 tag、不 delete。
+- S2 workspace lock：`resolve_app_workspace()` 无参数默认锁到当前工作区；模块级生产入口继续显式锁默认 workspace。测试/嵌入场景若要外部临时 workspace，必须显式传入自己的项目目录或显式关闭默认锁。
+- S3 workspace 外写：`classify_path(..., operation="write")` 对 workspace 外路径改为 `level=6/action=deny`，与 patch 越界行为一致。
+- Q4 fetchSkills：在 `/skills` 后端路由未接入前返回空列表，不再把未实现状态暴露成运行时 throw。
+- P1 ContextCompressor：`budget` 参与 recent window 和 summary 选择；tool 结果超长内容会截断；极小 budget 下 AgentLoop 不再回退原始上下文，而是丢弃旧 plain 消息并记录 `has_summary`。
+- D1 desktop runtime：`electron-builder.json` 将 `services/agent-core/.venv` 纳入 `extraResources`；静态 runtime 检查同时验证 `.venv/Scripts/python.exe` 源文件存在。
+- 已新增/更新回归测试：workspace 默认锁、workspace 外写 deny、`fetchSkills()` 空列表 fallback、dogfood smoke fallback、budget-bounded summary、tool 截断、metadata=None、AgentLoop 极小 budget 不回退原文。
+- 已验证：
+  - `uv run pytest -q services/agent-core/tests/test_harness_workspace_lock.py services/agent-core/tests/test_risk.py`：23 passed。
+  - `pnpm --filter @bolt/desktop test -- harnessClientAutonomy.test.ts dogfoodSmoke.test.ts`：56 files / 402 tests passed。
+  - `uv run pytest -q services/agent-core/tests/test_context_compressor.py services/agent-core/tests/test_agent_loop_context_compression.py services/agent-core/tests/test_harness_workspace_lock.py services/agent-core/tests/test_risk.py`：51 passed。
+  - `node scripts/check-desktop-package-runtime.mjs`：通过。
+  - `pnpm run quality`：通过，shared 27 passed，desktop 402 passed，backend 1681 passed。
+  - `git diff --check`：通过，仅 Windows LF/CRLF 提示。
+- 仍未处理的近期项：当前旧 `win-unpacked` 产物尚未重新打包，需重新运行打包后再用 `--require-output` 验证 packaged Python runtime。
+
 ## 2026-07-09 第二轮全面审计修复状态
 
 - 当前阶段：M180 Desktop Beta Release Candidate 后的第二轮审计修复。

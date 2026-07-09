@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def resolve_app_workspace(project_dir: str | Path | None, env_workspace: str | None, lock_default: bool = False) -> tuple[Path, str | None]:
+def resolve_app_workspace(project_dir: str | Path | None, env_workspace: str | None, lock_default: bool = True) -> tuple[Path, str | None]:
     explicit_workspace = project_dir or env_workspace
     workspace_root = Path(explicit_workspace or Path.cwd()).resolve()
     if explicit_workspace or lock_default:

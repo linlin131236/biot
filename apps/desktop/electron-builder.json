@@ -18,6 +18,10 @@
     {
       "from": "../../services/agent-core/pyproject.toml",
       "to": "agent-core/pyproject.toml"
+    },
+    {
+      "from": "../../services/agent-core/.venv",
+      "to": "agent-core/.venv"
     }
   ],
   "win": {
