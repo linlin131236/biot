@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "pnpm -r test",
+    "test:backend": "uv run pytest -q",
     "lint:size": "node scripts/check-size.mjs",
     "lint:docs": "node scripts/check-docs.mjs",
     "lint:boundaries": "node scripts/check-boundaries.mjs",
@@ -12,7 +13,7 @@
     "lint:release": "node scripts/check-release-policy.mjs",
     "lint:package-runtime": "node scripts/check-desktop-package-runtime.mjs",
     "lint:chinese-ui": "node scripts/check-chinese-ui.mjs",
-    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm lint:release && pnpm lint:package-runtime && pnpm lint:chinese-ui && pnpm test"
+    "quality": "pnpm lint:size && pnpm lint:docs && pnpm lint:boundaries && pnpm lint:architecture && pnpm lint:release && pnpm lint:package-runtime && pnpm lint:chinese-ui && pnpm test && pnpm test:backend"
   },
   "engines": {
     "node": ">=22"
