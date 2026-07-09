@@ -8,7 +8,7 @@
 - 已验证：`pnpm --filter @bolt/desktop package:win:dir` 通过，生成 `apps/desktop/release/win-unpacked/Bolt.exe`。
 - 已验证：`node scripts/check-release-policy.mjs`、`node scripts/check-desktop-package-runtime.mjs --require-output`、`git diff --check` 通过。
 - 未执行：未 push、未 release、未 tag、未 delete。
-- 工作区：仅本轮配置/文档修复待提交；`.claude/` 保持未跟踪、未提交。
+- 工作区：本轮配置/文档修复已提交：`f990c4e fix: reuse local electron distribution for desktop packaging`，待 push；`.claude/` 保持未跟踪、未提交。
 
 ## 当前稳定基线
 
