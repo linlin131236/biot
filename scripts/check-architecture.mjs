@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = process.cwd();
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const ignored = new Set(['node_modules', 'dist', 'dist-electron', '.venv', '.git', '__pycache__', '.pytest_cache']);
 const sourceExts = new Set(['.py', '.ts', '.tsx', '.js', '.jsx']);
 const failures = [];
@@ -28,6 +29,8 @@ function checkFile(file) {
   const text = readFileSync(file, 'utf8');
   checkLayerImports(rel, text);
   checkPythonBoundaries(rel, text);
+  checkP0LocalSecurity(rel, text);
+  checkRendererCoreUrlAuthority(rel, text);
 }
 
 function checkLayerImports(rel, text) {
@@ -43,6 +46,7 @@ function checkLayerImports(rel, text) {
 
 function checkPythonBoundaries(rel, text) {
   if (!rel.startsWith('services/agent-core/src/bolt_core/') || !rel.endsWith('.py')) return;
+  if (rel.endsWith('windows_credential_store.py') || rel.endsWith('windows_dpapi.py')) return;
   if (rel.endsWith('harness.py') || rel.endsWith('file_writer.py') || rel.endsWith('patch_engine.py') || rel.endsWith('atomic_write.py') || rel.endsWith('shell_executor.py') || rel.endsWith('background_executor.py') || rel.endsWith('goal_persistence.py') || rel.endsWith('checkpoint.py') || rel.endsWith('execution_audit_store.py') || rel.endsWith('release_readiness.py') || rel.endsWith('local_release_checklist.py')) return;
   // Pre-existing: subprocess only for read-only git commands (log, status)
   if (rel.endsWith('code_map_index.py') || rel.endsWith('project_profile.py')) return;
@@ -65,6 +69,46 @@ function checkPythonBoundaries(rel, text) {
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');
   if (/\bsubprocess\b/.test(text)) fail(rel, 'subprocess usage outside shell executor boundary');
   if (/\.write_text\(|\.write_bytes\(|open\([^\n]*['"]w/.test(text)) fail(rel, 'direct file write outside write boundary');
+}
+
+function checkP0LocalSecurity(rel, text) {
+  if (rel.startsWith('apps/desktop/src/') && !rel.includes('.test.')) {
+    if (/\b(?:window\.|globalThis\.)?fetch\s*\(/.test(text)) fail(rel, 'Renderer global fetch is forbidden');
+    if (/\bfetcher\s*=\s*fetch\b|\btransport\s*(?:=|\?\?)\s*fetch\b/.test(text)) fail(rel, 'Renderer fetch fallback is forbidden');
+  }
+  if (rel.startsWith('services/agent-core/src/bolt_core/')
+    && !rel.endsWith('windows_credential_store.py')
+    && !rel.endsWith('windows_dpapi.py')
+    && /(?:from|import) bolt_core\.windows_(?:credential_store|dpapi)/.test(text)) {
+    fail(rel, 'DPAPI file credential storage must not enter production composition');
+  }
+  if (rel === 'services/agent-core/src/bolt_core/desktop_settings.py'
+    && /_api_key_path|write_text\([^)]*api_key/.test(text)) {
+    fail(rel, 'normal plaintext desktop API key path is forbidden');
+  }
+  if (rel === 'services/agent-core/src/bolt_core/model_gateway.py' && /\bapi_key:\s*str/.test(text)) {
+    fail(rel, 'ModelConfig plaintext API key field is forbidden');
+  }
+}
+
+// Residual Agent Core URL authority must not live in production Renderer sources.
+// Provider model field is base_url (snake_case); camelCase baseUrl is intentionally banned.
+// Narrow exception: apps/desktop/src/desktopSession.ts may mention 'coreUrl' only as the
+// legacy localStorage migration detector (hasOwnProperty / purge). No panels are whitelisted.
+function checkRendererCoreUrlAuthority(rel, text) {
+  if (!rel.startsWith('apps/desktop/src/')) return;
+  if (rel.includes('.test.') || rel.endsWith('.test.ts') || rel.endsWith('.test.tsx')) return;
+
+  const allowLegacyCoreUrlDetector = rel === 'apps/desktop/src/desktopSession.ts';
+  if (/\bcoreUrl\b/.test(text) && !allowLegacyCoreUrlDetector) {
+    fail(rel, 'Renderer must not retain coreUrl');
+  }
+  if (/\bDEFAULT_CORE_URL\b/.test(text)) fail(rel, 'DEFAULT_CORE_URL is forbidden');
+  if (/\bhttp:\/\/core\b/.test(text)) fail(rel, 'http://core defaults are forbidden');
+  if (/\bagentCoreEndpoint\b/.test(text)) fail(rel, 'agentCoreEndpoint must not reappear in Renderer');
+  if (/\bbaseUrl\b/.test(text)) {
+    fail(rel, 'Agent Core baseUrl parameter/prop is forbidden in production Renderer sources');
+  }
 }
 
 function imports(text) {
