@@ -18,7 +18,7 @@ function json(value: unknown): Response {
 
 describe('M33 Chinese UI', () => {
   it('shows Chinese button labels in the toolbar', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     const zhButtons = ['开始任务', '创建目标', '执行一步', '刷新轨迹', '刷新记忆', '刷新权限', '整理文档', '时间线', '审查'];
@@ -28,7 +28,7 @@ describe('M33 Chinese UI', () => {
   });
 
   it('shows Chinese panel headings', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     const zhHeadings = ['任务日志', '执行轨迹', '自测工作流', '待批准权限', '记忆 / 感知'];
@@ -38,7 +38,7 @@ describe('M33 Chinese UI', () => {
   });
 
   it('shows Chinese empty-state text', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByText('暂无执行结果')).toBeInTheDocument();
@@ -49,31 +49,32 @@ describe('M33 Chinese UI', () => {
   });
 
   it('shows Chinese sidebar labels', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByText('Agent Core 状态')).toBeInTheDocument();
     expect(screen.getAllByText(/工作区/).length).toBeGreaterThan(0);
-    expect(screen.getByText('核心服务地址')).toBeInTheDocument();
+    expect(screen.queryByText('核心服务地址')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('核心服务地址')).not.toBeInTheDocument();
     expect(screen.getByText('当前运行')).toBeInTheDocument();
   });
 
   it('shows Chinese model panel labels', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByRole('button', { name: '保存模型设置' })).toBeInTheDocument();
   });
 
   it('shows Chinese API key status', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByText('API 密钥未配置')).toBeInTheDocument();
   });
 
   it('has no leftover English UI buttons', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     const enButtons = ['Start Run', 'Create Goal', 'Run Step', 'Refresh Trace', 'Run Gardener', 'Timeline', 'Review', 'Save Model Settings', 'Approve', 'Reject'];
@@ -91,7 +92,7 @@ describe('M33 UI workflow click path', () => {
       if (input.endsWith('/goals') && init?.method === 'POST') return Promise.resolve(json({ id: 'goal_33', objective: 'test', status: 'pending', criteria: [] }));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: '中文测试' } });
@@ -109,7 +110,7 @@ describe('M33 UI workflow click path', () => {
       if (input.includes('/permissions/perm_1/approve')) return Promise.resolve(json({ request_id: 'perm_1', status: 'approved' }));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.click(screen.getByRole('button', { name: '刷新权限' }));
@@ -122,7 +123,7 @@ describe('M33 UI workflow click path', () => {
   });
 
   it('shows tool flow inputs for file read and patch', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByLabelText('文件路径')).toBeInTheDocument();
@@ -142,7 +143,7 @@ describe('M33 UI workflow click path', () => {
       }
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_33' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', lastRunId: 'run_33' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.change(screen.getByLabelText('文件路径'), { target: { value: 'C:/Projects/Bolt/main.txt' } });
@@ -163,14 +164,14 @@ describe('M33 UI workflow click path', () => {
 
 describe('M35 Workspace binding', () => {
   it('shows 更换工作区 button in sidebar', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
     render(<App />);
 
     expect(screen.getByRole('button', { name: '更换工作区' })).toBeInTheDocument();
   });
 
   it('shows 工作区未选择 when workspace is empty', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '' }));
     render(<App />);
 
     expect(screen.getByText('工作区未选择')).toBeInTheDocument();
@@ -187,7 +188,7 @@ describe('M35 Workspace binding', () => {
       }
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core', lastRunId: 'run_35' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', lastRunId: 'run_35' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.change(screen.getByLabelText('文件路径'), { target: { value: 'README.md' } });
@@ -198,7 +199,7 @@ describe('M35 Workspace binding', () => {
   });
 
   it('disables tool actions when no workspace is selected', () => {
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core', lastRunId: 'run_stale' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', lastRunId: 'run_stale' }));
     render(<App />);
 
     expect(screen.getByRole('button', { name: '开始任务' })).toBeDisabled();
@@ -209,7 +210,7 @@ describe('M35 Workspace binding', () => {
 
   it('persists selected workspace from the workspace picker', async () => {
     const selectWorkspace = vi.fn().mockResolvedValue('D:/Projects/RealBolt');
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: '' }));
 
     render(<App selectWorkspace={selectWorkspace} />);
     fireEvent.click(screen.getByRole('button', { name: '选择工作区' }));
@@ -220,7 +221,7 @@ describe('M35 Workspace binding', () => {
 
   it('does not change workspace when picker returns null (cancel)', async () => {
     const selectWorkspace = vi.fn().mockResolvedValue(null);
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing' }));
 
     render(<App selectWorkspace={selectWorkspace} />);
     fireEvent.click(screen.getByRole('button', { name: '更换工作区' }));
@@ -233,7 +234,7 @@ describe('M35 Workspace binding', () => {
   it('uses window.bolt selectWorkspace by default when available', async () => {
     const originalBolt = window.bolt;
     window.bolt = { selectWorkspace: vi.fn().mockResolvedValue('E:/Native/Bolt') };
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Existing' }));
 
     try {
       render(<App />);
@@ -255,11 +256,11 @@ describe('M38 Goal Resume in App', () => {
       if (input.endsWith('/goals/unfinished')) return Promise.resolve(json([{ id: 'goal_38', objective: 'M38测试', criteria: [], status: 'paused', max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: 'C:/Projects/Bolt', step_count: 3 }]));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     expect(await screen.findByText('发现未完成长任务')).toBeInTheDocument();
-    expect(fetcher).toHaveBeenCalledWith('http://core/goals/unfinished');
+    expect(fetcher).toHaveBeenCalledWith('/goals/unfinished');
   });
 
   it('does not auto-call runAgentLoop for unfinished goals', async () => {
@@ -269,7 +270,7 @@ describe('M38 Goal Resume in App', () => {
       if (input.endsWith('/agent-loops') && init?.method === 'POST') return Promise.resolve(json({ status: 'executed', steps: 4 }));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     await screen.findByText('发现未完成长任务');
@@ -284,7 +285,7 @@ describe('M38 Goal Resume in App', () => {
       if (input.endsWith('/goals/unfinished')) return Promise.resolve(json([{ id: 'goal_38', objective: 'M38测试', criteria: [], status: 'paused', max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: 'C:/Projects/Bolt', step_count: 3 }]));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     expect(await screen.findByText('等待人工批准')).toBeInTheDocument();

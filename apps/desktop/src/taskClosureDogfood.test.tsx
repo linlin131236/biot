@@ -33,7 +33,7 @@ describe('M43 task closure dogfood', () => {
       if (input.endsWith('/planner/graphs')) return Promise.resolve(json([]));
       return Promise.resolve(json({}));
     });
-    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt', coreUrl: 'http://core' }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt' }));
 
     render(<App fetcher={fetcher} />);
     fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: '修复拼写错误' } });

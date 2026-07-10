@@ -48,11 +48,11 @@ describe('desktop dogfood smoke — full product path', () => {
 
     const fetcher = vi.fn().mockImplementation((input: string, init?: RequestInit) => {
       // 1. Create run
-      if (input === 'http://core/harness/runs' && init?.method === 'POST') {
+      if (input === '/harness/runs' && init?.method === 'POST') {
         return Promise.resolve(json({ id: runId, goal: 'dogfood smoke', workspace: 'C:/Workspace' }));
       }
       // 2. Create goal
-      if (input === 'http://core/goals' && init?.method === 'POST') {
+      if (input === '/goals' && init?.method === 'POST') {
         return Promise.resolve(json({
           id: goalId,
           objective: 'run dogfood smoke',
@@ -68,15 +68,15 @@ describe('desktop dogfood smoke — full product path', () => {
         }));
       }
       // 3. Create conversation
-      if (input === 'http://core/conversations' && init?.method === 'POST') {
+      if (input === '/conversations' && init?.method === 'POST') {
         return Promise.resolve(json({ id: convId }));
       }
       // 4. Add message
-      if (input === `http://core/conversations/${convId}/messages` && init?.method === 'POST') {
+      if (input === `/conversations/${convId}/messages` && init?.method === 'POST') {
         return Promise.resolve(json({ status: 'ok' }));
       }
       // 5. file.read — executed immediately
-      if (input === `http://core/harness/runs/${runId}/tool-requests` && init?.method === 'POST') {
+      if (input === `/harness/runs/${runId}/tool-requests` && init?.method === 'POST') {
         const body = JSON.parse((init as RequestInit & { body: string }).body as string);
         if (body.tool === 'file.read') {
           return Promise.resolve(json({
@@ -96,7 +96,7 @@ describe('desktop dogfood smoke — full product path', () => {
         }
       }
       // 7. Approve permission
-      if (input === `http://core/permissions/${requestId}/approve`) {
+      if (input === `/permissions/${requestId}/approve`) {
         return Promise.resolve(json({
           request_id: requestId,
           status: 'executed',
@@ -105,7 +105,7 @@ describe('desktop dogfood smoke — full product path', () => {
         }));
       }
       // 8. Create checkpoint
-      if (input === 'http://core/checkpoints' && init?.method === 'POST') {
+      if (input === '/checkpoints' && init?.method === 'POST') {
         return Promise.resolve(json({
           id: cpId,
           run_id: runId,
@@ -118,7 +118,7 @@ describe('desktop dogfood smoke — full product path', () => {
         }));
       }
       // 9. Load checkpoint
-      if (input === `http://core/checkpoints/${cpId}`) {
+      if (input === `/checkpoints/${cpId}`) {
         return Promise.resolve(json({
           id: cpId,
           run_id: runId,
@@ -131,36 +131,36 @@ describe('desktop dogfood smoke — full product path', () => {
         }));
       }
       // 10. Review evaluate
-      if (input === 'http://core/review/evaluate' && init?.method === 'POST') {
+      if (input === '/review/evaluate' && init?.method === 'POST') {
         return Promise.resolve(json({ passed: false, failures: ['desktop build'] }));
       }
       // 11. Timeline
-      if (input === `http://core/runs/${runId}/timeline`) {
+      if (input === `/runs/${runId}/timeline`) {
         return Promise.resolve(json([
           { run_id: runId, sequence: 1, type: 'run.created', payload: {} },
           { run_id: runId, sequence: 2, type: 'agent.loop.started', payload: {} },
         ]));
       }
       // Trace fallback
-      if (input === `http://core/harness/runs/${runId}/trace`) {
+      if (input === `/harness/runs/${runId}/trace`) {
         return Promise.resolve(json([
           { run_id: runId, sequence: 1, type: 'run.created', payload: {} },
         ]));
       }
       // Pending permissions fallback
-      if (input === 'http://core/permissions/pending') {
+      if (input === '/permissions/pending') {
         return Promise.resolve(json([]));
       }
       return Promise.resolve(json({}));
     });
 
     // Step 1: Create run
-    const run = await createHarnessRun('http://core', 'dogfood smoke', 'C:/Workspace', fetcher);
+    const run = await createHarnessRun('dogfood smoke', 'C:/Workspace', fetcher);
     expect(run.id).toBe(runId);
     expect(run.workspace).toBe('C:/Workspace');
 
     // Step 2: Create goal
-    const goal = await createGoal('http://core', {
+    const goal = await createGoal({
       objective: 'run dogfood smoke',
       criteria: ['file read', 'patch approved', 'checkpoint loaded'],
       max_steps: 10,
@@ -172,20 +172,20 @@ describe('desktop dogfood smoke — full product path', () => {
     expect(goal.status).toBe('pending');
 
     // Step 3: Create conversation + add message
-    const conv = await createConversation('http://core', { system_prompt: 'stay scoped' }, fetcher);
+    const conv = await createConversation({ system_prompt: 'stay scoped' }, fetcher);
     expect(conv.id).toBe(convId);
-    const msgResult = await addMessage('http://core', convId, { role: 'user', content: 'run smoke' }, fetcher);
+    const msgResult = await addMessage(convId, { role: 'user', content: 'run smoke' }, fetcher);
     expect(msgResult.status).toBe('ok');
 
     // Step 4: file.read — executed immediately
-    const readResult = await submitToolRequest('http://core', runId, {
+    const readResult = await submitToolRequest(runId, {
       tool: 'file.read', operation: 'read', payload: { path: 'C:/Workspace/main.txt' },
     }, fetcher);
     expect(readResult.status).toBe('executed');
     expect(readResult.output).toBe('hello bolt');
 
     // Step 5: file.patch → pending_permission
-    const patchResult = await submitToolRequest('http://core', runId, {
+    const patchResult = await submitToolRequest(runId, {
       tool: 'file.patch', operation: 'patch',
       payload: { path: 'C:/Workspace/main.txt', old_string: 'hello', new_string: 'hello bolt' },
     }, fetcher);
@@ -193,11 +193,11 @@ describe('desktop dogfood smoke — full product path', () => {
     expect(patchResult.request_id).toBe(requestId);
 
     // Step 6: Approve permission
-    const approved = await approvePermission('http://core', requestId, fetcher);
+    const approved = await approvePermission(requestId, fetcher);
     expect(approved.status).toBe('executed');
 
     // Step 7: Create and load checkpoint
-    const checkpoint = await createCheckpoint('http://core', {
+    const checkpoint = await createCheckpoint({
       run_id: runId, goal_id: goalId,
       changed_files: ['main.txt'],
       constraints: ['do not add new agent capability'],
@@ -208,12 +208,12 @@ describe('desktop dogfood smoke — full product path', () => {
     expect(checkpoint.file_contents?.['main.txt']).toBe('hello bolt');
     expect(checkpoint.constraints).toEqual(['do not add new agent capability']);
 
-    const loaded = await loadCheckpoint('http://core', cpId, fetcher);
+    const loaded = await loadCheckpoint(cpId, fetcher);
     expect(loaded?.file_contents?.['main.txt']).toBe('hello bolt');
     expect(loaded?.constraints).toEqual(['do not add new agent capability']);
 
     // Step 8: Review evaluate — intentional failure
-    const review = await evaluateReview('http://core', {
+    const review = await evaluateReview({
       items: ['pytest', 'desktop build'],
       results: { pytest: true, 'desktop build': false },
     }, fetcher);
@@ -221,14 +221,14 @@ describe('desktop dogfood smoke — full product path', () => {
     expect(review.failures).toEqual(['desktop build']);
 
     // Step 9: Fetch timeline
-    const timeline = await fetchRunTimeline('http://core', runId, fetcher);
+    const timeline = await fetchRunTimeline(runId, fetcher);
     expect(timeline.length).toBeGreaterThanOrEqual(2);
     expect((timeline as { type: string }[]).some((e) => e.type === 'agent.loop.started')).toBe(true);
   });
 
   it('unwired skill surface returns an empty list instead of crashing', async () => {
     const fetcher = vi.fn();
-    await expect(fetchSkills('http://core', fetcher)).resolves.toEqual([]);
+    await expect(fetchSkills(fetcher)).resolves.toEqual([]);
     expect(fetcher).not.toHaveBeenCalled();
   });
 });

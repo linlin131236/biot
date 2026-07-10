@@ -45,7 +45,7 @@ describe('LiquidGlassHome interaction cockpit', () => {
     expect(within(cockpit).getByText('运行状态')).toBeInTheDocument();
     expect(within(cockpit).getByText('正在运行')).toBeInTheDocument();
     expect(within(cockpit).getByText('核心服务')).toBeInTheDocument();
-    expect(within(cockpit).getByText('在线')).toBeInTheDocument();
+    expect(within(cockpit).getByText('本地')).toBeInTheDocument();
   });
 
   it('routes recommended task cards to existing safe actions', () => {
