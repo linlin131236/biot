@@ -2,15 +2,19 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
-async function settleNetwork(fetcher: { mock: { calls: unknown[] } }) {
-  // Root-cause stability: wait until mount-time panel fan-out stops, instead of raising global timeouts.
-  let previous = -1;
+async function settleNetwork(fetcher: { mock: { calls: unknown[][] } }) {
+  // Wait for initial health probe, then for a quiet window with no new panel fan-out calls.
   await waitFor(() => {
+    const hit = fetcher.mock.calls.some((call) => String(call[0] ?? '').includes('/health'));
+    if (!hit) throw new Error('waiting for health');
+  }, { timeout: 3000, interval: 20 });
+  let last = fetcher.mock.calls.length;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 75));
     const current = fetcher.mock.calls.length;
-    if (current === previous) return true;
-    previous = current;
-    throw new Error('panel network still settling');
-  }, { timeout: 2000, interval: 50 });
+    if (current === last) return;
+    last = current;
+  }
 }
 
 function emptyPanelPayload(input: string): unknown {
@@ -61,6 +65,8 @@ describe('M43 task closure dogfood', () => {
       if (input.endsWith('/local-release-checklist')) return Promise.resolve(json({ ready: true, items: [], blockers: [], warnings: [], next_step: '可以发布', disclaimer: '只读' }));
       if (input.endsWith('/recovery-policy')) return Promise.resolve(json({ scenarios: [], categories: {}, total: 0, disclaimer: '' }));
       if (input.endsWith('/planner/graphs')) return Promise.resolve(json([]));
+      if (input.endsWith('/desktop/settings')) return Promise.resolve(json({ theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false, credential_revision: 0 }));
+      if (input.endsWith('/model/settings')) return Promise.resolve(json({ provider: 'openai-compatible', base_url: 'http://localhost:11434/v1', model: 'fake-model', temperature: 0.2, has_api_key: false }));
       return Promise.resolve(json(emptyPanelPayload(input)));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt' }));
