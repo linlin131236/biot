@@ -3,22 +3,31 @@
  * These types are available when running inside the Electron desktop app.
  */
 
+type AgentCoreIpcResponse = {
+  requestId: string;
+  generationId: string;
+  status: number;
+  statusText: string;
+  headers: Array<[string, string]>;
+  body: string;
+};
+
+type AgentCoreBridgeHandle = {
+  requestId: string;
+  response: Promise<AgentCoreIpcResponse>;
+  cancel: () => Promise<'cancelled' | 'already_finished'>;
+};
+
 interface BoltBridge {
   selectWorkspace: () => Promise<string | null>;
-  agentCoreEndpoint?: () => Promise<{ port: number }> | { port: number };
-  agentCoreFetch?: (
+  agentCoreRequest?: (
     input: string,
     init?: {
       method?: string;
-      headers?: Record<string, string> | [string, string][];
+      headers?: [string, string][];
       body?: string;
     },
-  ) => Promise<{
-    status: number;
-    statusText: string;
-    headers: [string, string][];
-    body: string;
-  }>;
+  ) => AgentCoreBridgeHandle;
 }
 
 declare global {
