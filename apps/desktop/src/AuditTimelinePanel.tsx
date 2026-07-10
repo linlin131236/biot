@@ -25,10 +25,9 @@ interface TimelineData {
 }
 
 interface Props {
-  baseUrl: string;
   closureId?: string | null;
   api: {
-    fetchAuditTimeline: (baseUrl: string, closureId?: string) => Promise<Record<string, unknown>>;
+    fetchAuditTimeline: (closureId?: string) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -60,7 +59,7 @@ function mapEvents(raw: Record<string, unknown>): TimelineData {
   };
 }
 
-export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
+export function AuditTimelinePanel({ closureId, api }: Props) {
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +69,7 @@ export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchAuditTimeline(baseUrl, closureId || undefined, activeFilter || undefined);
+        const raw = await api.fetchAuditTimeline(closureId || undefined, activeFilter || undefined);
         if (cancelled) return;
         setData(mapEvents(raw));
       } catch (e) {
@@ -81,7 +80,7 @@ export function AuditTimelinePanel({ baseUrl, closureId, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl, closureId, activeFilter]);
+  }, [closureId, activeFilter]);
 
   if (loading) return <div className="auditTimelinePanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="auditTimelinePanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

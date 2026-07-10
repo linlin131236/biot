@@ -6,10 +6,9 @@
 import { useEffect, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    autoFixReviewFindings: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    autoFixReviewFindings: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -25,7 +24,7 @@ interface FixResult {
   message?: string;
 }
 
-export function AutoFixPanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function AutoFixPanel({ fetcher, api }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [findingsJson, setFindingsJson] = useState('');
   const [codeChanges, setCodeChanges] = useState('');
@@ -45,7 +44,7 @@ export function AutoFixPanel({ baseUrl, fetcher = fetch, api }: Props) {
       return;
     }
     try {
-      const res = await api.autoFixReviewFindings(baseUrl, {
+      const res = await api.autoFixReviewFindings({
         findings: parsedFindings,
         code_changes: codeChanges.trim(),
       }, fetcher);

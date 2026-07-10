@@ -11,17 +11,17 @@ import type { Goal, GoalStatus, TaskClosureEvidence, TimelineEvent, GoalEvidence
 import { TaskResultSummaryPanel } from './TaskResultSummaryPanel';
 
 interface GoalConsoleApi {
-  createGoal: (baseUrl: string, payload: Record<string, unknown>) => Promise<Goal>;
-  startRun: (baseUrl: string, goal: string, workspace: string) => Promise<{ id: string }>;
-  runAgentLoop: (baseUrl: string, runId: string, maxSteps: number) => Promise<AgentLoopResult>;
-  pauseGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
-  resumeGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
-  clearGoal: (baseUrl: string, goalId: string) => Promise<Goal>;
-  getGoal: (baseUrl: string, goalId: string) => Promise<Goal | null>;
-  fetchGoalEvidence: (baseUrl: string, goalId: string) => Promise<GoalEvidence[]>;
-  fetchRunTimeline: (baseUrl: string, runId: string) => Promise<TimelineEvent[]>;
-  fetchTaskResultSummary: (baseUrl: string, closureId: string) => Promise<Record<string, unknown>>;
-  getTaskClosureByRun: (baseUrl: string, runId: string) => Promise<TaskClosureEvidence>;
+  createGoal: (payload: Record<string, unknown>) => Promise<Goal>;
+  startRun: (goal: string, workspace: string) => Promise<{ id: string }>;
+  runAgentLoop: (runId: string, maxSteps: number) => Promise<AgentLoopResult>;
+  pauseGoal: (goalId: string) => Promise<Goal>;
+  resumeGoal: (goalId: string) => Promise<Goal>;
+  clearGoal: (goalId: string) => Promise<Goal>;
+  getGoal: (goalId: string) => Promise<Goal | null>;
+  fetchGoalEvidence: (goalId: string) => Promise<GoalEvidence[]>;
+  fetchRunTimeline: (runId: string) => Promise<TimelineEvent[]>;
+  fetchTaskResultSummary: (closureId: string) => Promise<Record<string, unknown>>;
+  getTaskClosureByRun: (runId: string) => Promise<TaskClosureEvidence>;
 }
 
 const STATUS_LABEL: Record<GoalStatus | 'rejected', string> = {
@@ -64,13 +64,12 @@ interface GoalConsoleProps {
   workspacePath: string;
   goal: Goal | null;
   api: GoalConsoleApi;
-  baseUrl?: string;
   maxSteps?: number;
   unfinishedGoals?: Goal[];
   onGoalChange?: (goal: Goal | null, runId: string | null) => void;
 }
 
-export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core', maxSteps = 10, unfinishedGoals, onGoalChange }: GoalConsoleProps) {
+export function GoalConsole({ workspacePath, goal, api, maxSteps = 10, unfinishedGoals, onGoalChange }: GoalConsoleProps) {
   const [objective, setObjective] = useState('');
   const [error, setError] = useState('');
   const [currentGoal, setCurrentGoal] = useState<Goal | null>(goal);
@@ -94,17 +93,17 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     const g = currentGoal || goal || (unfinishedGoals?.length ? unfinishedGoals[0] : null);
     if (!g) { setEvidence(null); return; }
     let active = true;
-    api.fetchGoalEvidence(baseUrl, g.id).then(e => { if (active) setEvidence(e); }).catch(() => {});
+    api.fetchGoalEvidence(g.id).then(e => { if (active) setEvidence(e); }).catch(() => {});
     return () => { active = false; };
-  }, [baseUrl, currentGoal?.id, goal?.id, unfinishedGoals, api]);
+  }, [currentGoal?.id, goal?.id, unfinishedGoals, api]);
 
   // Fetch timeline only when both goal + runId exist
   useEffect(() => {
     if (!currentRunId) { setTimeline(null); return; }
     let active = true;
-    api.fetchRunTimeline(baseUrl, currentRunId).then(t => { if (active) setTimeline(t); }).catch(() => {});
+    api.fetchRunTimeline(currentRunId).then(t => { if (active) setTimeline(t); }).catch(() => {});
     return () => { active = false; };
-  }, [baseUrl, currentRunId, api]);
+  }, [currentRunId, api]);
 
   // Fetch task result summary after a loop run completes
   useEffect(() => {
@@ -122,12 +121,12 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     let active = true;
     setResultSummaryLoading(true);
     setResultSummary(null);
-    api.getTaskClosureByRun(baseUrl, currentRunId)
+    api.getTaskClosureByRun(currentRunId)
       .then(closure => {
         if (!active) return Promise.resolve(null);
         const cid = typeof closure?.id === 'string' ? closure.id : null;
         if (!cid) return Promise.resolve(null);
-        return api.fetchTaskResultSummary(baseUrl, cid);
+        return api.fetchTaskResultSummary(cid);
       })
       .then(summary => {
         if (active) {
@@ -142,18 +141,18 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
         }
       });
     return () => { active = false; };
-  }, [baseUrl, currentRunId, loopStepCount, currentGoal?.status, api]);
+  }, [currentRunId, loopStepCount, currentGoal?.status, api]);
 
   async function handleStart() {
     setError('');
     if (!objective.trim()) { setError('请输入任务目标'); return; }
     if (objective.trim().length < 5) { setError('任务目标至少5个字'); return; }
     try {
-      const g = await api.createGoal(baseUrl, { objective: objective.trim(), criteria: ['任务完成'], max_steps: maxSteps, workspace: workspacePath });
+      const g = await api.createGoal({ objective: objective.trim(), criteria: ['任务完成'], max_steps: maxSteps, workspace: workspacePath });
       setCurrentGoal(g);
-      const run = await api.startRun(baseUrl, objective.trim(), workspacePath);
+      const run = await api.startRun(objective.trim(), workspacePath);
       setCurrentRunId(run.id);
-      const loopResult = await api.runAgentLoop(baseUrl, run.id, maxSteps);
+      const loopResult = await api.runAgentLoop(run.id, maxSteps);
       setLoopStepCount(loopResult.steps);
       const derivedStatus = loopStatusToGoalStatus(loopResult.status, loopResult.steps, maxSteps);
       setCurrentGoal(prev => prev ? { ...prev, status: derivedStatus, step_count: loopResult.steps } : prev);
@@ -163,7 +162,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
 
   async function handlePause() {
     if (!currentGoal) return;
-    try { const g = await api.pauseGoal(baseUrl, currentGoal.id); setCurrentGoal(g); } catch (e) { setError(String(e)); }
+    try { const g = await api.pauseGoal(currentGoal.id); setCurrentGoal(g); } catch (e) { setError(String(e)); }
   }
 
   /** Resume from unfinished-banner: need startRun for new runId if cold-start */
@@ -172,7 +171,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
     if (!target) return;
     setCurrentGoal(target);
     try {
-      const g = await api.resumeGoal(baseUrl, target.id);
+      const g = await api.resumeGoal(target.id);
       setCurrentGoal(g);
       if (g.status !== 'running') {
         setError('恢复被阻止，请检查工作区冲突');
@@ -181,11 +180,11 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
       // Cold-start: no currentRunId → start a new run to get one
       let runId = currentRunId;
       if (!runId) {
-        const run = await api.startRun(baseUrl, target.objective, workspacePath);
+        const run = await api.startRun(target.objective, workspacePath);
         runId = run.id;
         setCurrentRunId(runId);
       }
-      const loopResult = await api.runAgentLoop(baseUrl, runId, maxSteps);
+      const loopResult = await api.runAgentLoop(runId, maxSteps);
       setLoopStepCount(loopResult.steps);
       const derivedStatus = loopStatusToGoalStatus(loopResult.status, loopResult.steps, maxSteps);
       setCurrentGoal(prev => prev ? { ...prev, status: derivedStatus, step_count: loopResult.steps } : prev);
@@ -196,14 +195,14 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
   async function handleResume() {
     if (!currentGoal) return;
     try {
-      const g = await api.resumeGoal(baseUrl, currentGoal.id);
+      const g = await api.resumeGoal(currentGoal.id);
       setCurrentGoal(g);
       if (g.status !== 'running') {
         setError('恢复被阻止，请检查工作区冲突');
         return;
       }
       if (currentRunId) {
-        const loopResult = await api.runAgentLoop(baseUrl, currentRunId, maxSteps);
+        const loopResult = await api.runAgentLoop(currentRunId, maxSteps);
         setLoopStepCount(loopResult.steps);
         const derivedStatus = loopStatusToGoalStatus(loopResult.status, loopResult.steps, maxSteps);
         setCurrentGoal(prev => prev ? { ...prev, status: derivedStatus, step_count: loopResult.steps } : prev);
@@ -214,7 +213,7 @@ export function GoalConsole({ workspacePath, goal, api, baseUrl = 'http://core',
 
   async function handleStop() {
     if (!currentGoal) return;
-    try { const g = await api.clearGoal(baseUrl, currentGoal.id); setCurrentGoal(g); setCurrentRunId(null); } catch (e) { setError(String(e)); }
+    try { const g = await api.clearGoal(currentGoal.id); setCurrentGoal(g); setCurrentRunId(null); } catch (e) { setError(String(e)); }
   }
 
   const status = displayGoal?.status ?? null;

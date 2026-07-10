@@ -22,9 +22,8 @@ interface DiagnosticsData {
 }
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchDiagnosticsCenter: (baseUrl: string) => Promise<Record<string, unknown>>;
+    fetchDiagnosticsCenter: () => Promise<Record<string, unknown>>;
   };
 }
 
@@ -50,7 +49,7 @@ function mapData(raw: Record<string, unknown>): DiagnosticsData {
   };
 }
 
-export function DiagnosticsCenterPanel({ baseUrl, api }: Props) {
+export function DiagnosticsCenterPanel({ api }: Props) {
   const [data, setData] = useState<DiagnosticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +59,7 @@ export function DiagnosticsCenterPanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchDiagnosticsCenter(baseUrl);
+        const raw = await api.fetchDiagnosticsCenter();
         if (cancelled) return;
         setData(mapData(raw));
       } catch (e) {
@@ -71,7 +70,7 @@ export function DiagnosticsCenterPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   if (loading) return <div className="diagnosticsCenterPanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="diagnosticsCenterPanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

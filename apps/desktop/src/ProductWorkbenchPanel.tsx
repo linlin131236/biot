@@ -50,20 +50,19 @@ interface WorkbenchSnapshot {
 }
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchProductWorkbench: (baseUrl: string) => Promise<WorkbenchSnapshot>;
+    fetchProductWorkbench: () => Promise<WorkbenchSnapshot>;
   };
 }
 
-export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
+export function ProductWorkbenchPanel({ api }: Props) {
   const [data, setData] = useState<WorkbenchSnapshot | null>(null);
   const [error, setError] = useState('');
   const { fetchProductWorkbench } = api;
 
   useEffect(() => {
     let cancelled = false;
-    fetchProductWorkbench(baseUrl)
+    fetchProductWorkbench()
       .then((next) => {
         if (!cancelled) setData(next);
       })
@@ -71,7 +70,7 @@ export function ProductWorkbenchPanel({ baseUrl, api }: Props) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       });
     return () => { cancelled = true; };
-  }, [baseUrl, fetchProductWorkbench]);
+  }, [fetchProductWorkbench]);
 
   if (error) {
     return <section style={panelStyle}><p style={{ color: '#b91c1c' }}>加载 Agent 工作台失败：{error}</p></section>;

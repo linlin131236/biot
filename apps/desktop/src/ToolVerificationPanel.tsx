@@ -12,10 +12,9 @@ interface ToolResult {
 }
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    verifyTools: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    verifyTools: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -23,7 +22,7 @@ type Phase = 'idle' | 'running' | 'done' | 'error';
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export function ToolVerificationPanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function ToolVerificationPanel({ fetcher, api }: Props) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [results, setResults] = useState<ToolResult[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,7 @@ export function ToolVerificationPanel({ baseUrl, fetcher = fetch, api }: Props) 
     setResults([]);
     setPhase('running');
     try {
-      const res = await api.verifyTools(baseUrl, fetcher);
+      const res = await api.verifyTools(fetcher);
       const raw = (res as Record<string, unknown>).tools as Array<Record<string, unknown>> | undefined;
       const mapped: ToolResult[] = (raw || []).map((t) => ({
         tool_name: String(t.tool_name ?? t.name ?? 'unknown'),

@@ -20,14 +20,14 @@ const api = {
 
 describe('MultiAgentStatusPanel', () => {
   it('renders component with title', async () => {
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={api} />);
+    render(<MultiAgentStatusPanel api={api} />);
     await waitFor(() => {
       expect(screen.getByText('多 Agent 状态')).toBeDefined();
     });
   });
 
   it('renders subtasks when loaded', async () => {
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={api} />);
+    render(<MultiAgentStatusPanel api={api} />);
     await waitFor(() => {
       expect(screen.getByText('实现登录')).toBeDefined();
       expect(screen.getByText('代码审查')).toBeDefined();
@@ -35,14 +35,14 @@ describe('MultiAgentStatusPanel', () => {
   });
 
   it('shows source_refs', async () => {
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={api} />);
+    render(<MultiAgentStatusPanel api={api} />);
     await waitFor(() => {
       expect(screen.getByText(/docs\/spec\.md/)).toBeDefined();
     });
   });
 
   it('shows read-only note', async () => {
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={api} />);
+    render(<MultiAgentStatusPanel api={api} />);
     await waitFor(() => {
       expect(screen.getByText(/只读状态展示/)).toBeDefined();
     });
@@ -50,12 +50,12 @@ describe('MultiAgentStatusPanel', () => {
 
   it('handles loading state', () => {
     const slowApi = { ...api, fetchRoles: vi.fn(() => new Promise(() => {})) };
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={slowApi} />);
+    render(<MultiAgentStatusPanel api={slowApi} />);
     expect(screen.getByText('加载中…')).toBeDefined();
   });
 
   it('no dangerous objects exposed', async () => {
-    render(<MultiAgentStatusPanel baseUrl="http://test" api={api} />);
+    render(<MultiAgentStatusPanel api={api} />);
     expect((globalThis as Record<string, unknown>).ipcRenderer).toBeUndefined();
   });
 });

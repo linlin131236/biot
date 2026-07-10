@@ -34,11 +34,10 @@ interface PermissionSummary {
 }
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchPermissionCenter: (baseUrl: string) => Promise<Record<string, unknown>>;
-    grantPermission: (baseUrl: string, requestId: string) => Promise<Record<string, unknown>>;
-    denyPermission: (baseUrl: string, requestId: string) => Promise<Record<string, unknown>>;
+    fetchPermissionCenter: () => Promise<Record<string, unknown>>;
+    grantPermission: (requestId: string) => Promise<Record<string, unknown>>;
+    denyPermission: (requestId: string) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -73,7 +72,7 @@ function mapSummary(raw: Record<string, unknown>): PermissionSummary {
   };
 }
 
-export function PermissionCenterPanel({ baseUrl, api }: Props) {
+export function PermissionCenterPanel({ api }: Props) {
   const [data, setData] = useState<PermissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +83,7 @@ export function PermissionCenterPanel({ baseUrl, api }: Props) {
   async function load() {
     setLoading(true);
     try {
-      const raw = await api.fetchPermissionCenter(baseUrl);
+      const raw = await api.fetchPermissionCenter();
       setData(mapSummary(raw));
       setError(null);
     } catch (e) {
@@ -99,7 +98,7 @@ export function PermissionCenterPanel({ baseUrl, api }: Props) {
     async function loadIfMounted() {
       setLoading(true);
       try {
-        const raw = await api.fetchPermissionCenter(baseUrl);
+        const raw = await api.fetchPermissionCenter();
         if (!cancelled) {
           setData(mapSummary(raw));
           setError(null);
@@ -112,7 +111,7 @@ export function PermissionCenterPanel({ baseUrl, api }: Props) {
     }
     loadIfMounted();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   async function decide(item: PermissionItem, approved: boolean) {
     setProcessingId(item.request_id);
@@ -120,10 +119,10 @@ export function PermissionCenterPanel({ baseUrl, api }: Props) {
     setError(null);
     try {
       if (approved) {
-        await api.grantPermission(baseUrl, item.request_id);
+        await api.grantPermission(item.request_id);
         setMessage(`已批准并执行：${item.tool_cn || item.tool}`);
       } else {
-        await api.denyPermission(baseUrl, item.request_id);
+        await api.denyPermission(item.request_id);
         setMessage(`已拒绝：${item.tool_cn || item.tool}`);
       }
       await load();

@@ -2,8 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ExecutionQueueItem } from '@bolt/shared/autonomy';
 import ExecutionQueuePanel, { type ExecutionQueuePanelApi } from './ExecutionQueuePanel';
-
-const baseUrl = 'http://core';
 const fetcher = vi.fn();
 
 function item(overrides: Partial<ExecutionQueueItem> = {}): ExecutionQueueItem {
@@ -36,7 +34,7 @@ function apiFixture(overrides: Partial<ExecutionQueuePanelApi> = {}): ExecutionQ
 
 describe('ExecutionQueuePanel', () => {
   it('无 closureId 显示暂无闭环任务', () => {
-    render(<ExecutionQueuePanel baseUrl={baseUrl} api={apiFixture()} />);
+    render(<ExecutionQueuePanel api={apiFixture()} />);
 
     expect(screen.getByText('安全执行队列')).toBeInTheDocument();
     expect(screen.getByText('暂无闭环任务')).toBeInTheDocument();
@@ -44,17 +42,17 @@ describe('ExecutionQueuePanel', () => {
 
   it('propose 后显示队列项', async () => {
     const api = apiFixture();
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(screen.getByRole('button', { name: '生成待处理动作' }));
 
-    await vi.waitFor(() => expect(api.proposeExecutionQueue).toHaveBeenCalledWith(baseUrl, 'cl_1', fetcher));
+    await vi.waitFor(() => expect(api.proposeExecutionQueue).toHaveBeenCalledWith('cl_1', fetcher));
     expect(await screen.findByText('记录验证命令')).toBeInTheDocument();
     expect(screen.getByText('风险等级：验证命令')).toBeInTheDocument();
   });
 
   it('verification_command 显示命令建议且不出现执行按钮', async () => {
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={apiFixture()} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={apiFixture()} />);
 
     expect(await screen.findByText('命令建议：pytest（不执行命令）')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '执行命令' })).not.toBeInTheDocument();
@@ -62,11 +60,11 @@ describe('ExecutionQueuePanel', () => {
 
   it('approve 调用 approve API', async () => {
     const api = apiFixture();
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '批准' }));
 
-    await vi.waitFor(() => expect(api.approveExecutionQueueItem).toHaveBeenCalledWith(baseUrl, 'eq_1', fetcher));
+    await vi.waitFor(() => expect(api.approveExecutionQueueItem).toHaveBeenCalledWith('eq_1', fetcher));
     expect(await screen.findByText('已批准')).toBeInTheDocument();
   });
 
@@ -74,7 +72,7 @@ describe('ExecutionQueuePanel', () => {
     const api = apiFixture();
     const onApprovedItemChange = vi.fn();
     const createExecutionHandoff = vi.fn();
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} onApprovedItemChange={onApprovedItemChange} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} onApprovedItemChange={onApprovedItemChange} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '批准' }));
 
@@ -84,33 +82,33 @@ describe('ExecutionQueuePanel', () => {
 
   it('reject 调用 reject API', async () => {
     const api = apiFixture();
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '拒绝' }));
 
-    await vi.waitFor(() => expect(api.rejectExecutionQueueItem).toHaveBeenCalledWith(baseUrl, 'eq_1', '用户拒绝', fetcher));
+    await vi.waitFor(() => expect(api.rejectExecutionQueueItem).toHaveBeenCalledWith('eq_1', '用户拒绝', fetcher));
   });
 
   it('complete 调用 complete API', async () => {
     const api = apiFixture({ fetchExecutionQueue: vi.fn().mockResolvedValue([item({ status: 'approved' })]) });
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '标记完成' }));
 
-    await vi.waitFor(() => expect(api.completeExecutionQueueItem).toHaveBeenCalledWith(baseUrl, 'eq_1', '用户已完成', fetcher));
+    await vi.waitFor(() => expect(api.completeExecutionQueueItem).toHaveBeenCalledWith('eq_1', '用户已完成', fetcher));
   });
 
   it('fail 调用 fail API', async () => {
     const api = apiFixture({ fetchExecutionQueue: vi.fn().mockResolvedValue([item({ status: 'approved' })]) });
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '标记失败' }));
 
-    await vi.waitFor(() => expect(api.failExecutionQueueItem).toHaveBeenCalledWith(baseUrl, 'eq_1', '用户标记失败', fetcher));
+    await vi.waitFor(() => expect(api.failExecutionQueueItem).toHaveBeenCalledWith('eq_1', '用户标记失败', fetcher));
   });
 
   it('verification_command pending 只显示批准和拒绝', async () => {
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={apiFixture()} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={apiFixture()} />);
 
     expect(await screen.findByRole('button', { name: '批准' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '拒绝' })).toBeInTheDocument();
@@ -120,7 +118,7 @@ describe('ExecutionQueuePanel', () => {
 
   it('read_only pending 可直接标记完成', async () => {
     const api = apiFixture({ fetchExecutionQueue: vi.fn().mockResolvedValue([item({ kind: 'manual_review', risk: 'read_only' })]) });
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByRole('button', { name: '标记完成' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '标记失败' })).not.toBeInTheDocument();
@@ -128,7 +126,7 @@ describe('ExecutionQueuePanel', () => {
 
   it('approved 显示完成和失败操作', async () => {
     const api = apiFixture({ fetchExecutionQueue: vi.fn().mockResolvedValue([item({ status: 'approved' })]) });
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByRole('button', { name: '标记完成' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '标记失败' })).toBeInTheDocument();
@@ -138,7 +136,7 @@ describe('ExecutionQueuePanel', () => {
 
   it('终态不显示操作按钮', async () => {
     const api = apiFixture({ fetchExecutionQueue: vi.fn().mockResolvedValue([item({ status: 'completed' })]) });
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('已完成')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '批准' })).not.toBeInTheDocument();
@@ -151,7 +149,7 @@ describe('ExecutionQueuePanel', () => {
     const runAgentLoop = vi.fn();
     const approvePermission = vi.fn();
     const shell = vi.fn();
-    render(<ExecutionQueuePanel baseUrl={baseUrl} closureId="cl_1" api={apiFixture()} />);
+    render(<ExecutionQueuePanel closureId="cl_1" api={apiFixture()} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '批准' }));
 

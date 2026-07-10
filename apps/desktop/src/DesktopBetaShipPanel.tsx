@@ -22,20 +22,19 @@ interface ShipResult {
 }
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    fetchBetaShip: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    fetchBetaShip: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
-export function DesktopBetaShipPanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function DesktopBetaShipPanel({ fetcher, api }: Props) {
   const [result, setResult] = useState<ShipResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchBetaShip(baseUrl, fetcher)
+    api.fetchBetaShip(fetcher)
       .then(data => {
         if (!cancelled) setResult(data as ShipResult);
       })
@@ -43,7 +42,7 @@ export function DesktopBetaShipPanel({ baseUrl, fetcher = fetch, api }: Props) {
         if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       });
     return () => { cancelled = true; };
-  }, [baseUrl, fetcher, api]);
+  }, [fetcher, api]);
 
   const ready = Boolean(result?.ready ?? result?.all_passed);
   const checks = result?.checks ?? [];

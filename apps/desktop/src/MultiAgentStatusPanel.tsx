@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react';
 import type { MultiAgentRoleStatus, MultiAgentSubtask, AgentRole, SubtaskStatus } from '@bolt/shared/autonomy';
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchRoles: (baseUrl: string) => Promise<Record<string, unknown>[]>;
-    fetchBoard: (baseUrl: string) => Promise<Record<string, unknown>>;
-    fetchSubtasks: (baseUrl: string, role?: string, status?: string) => Promise<Record<string, unknown>[]>;
+    fetchRoles: () => Promise<Record<string, unknown>[]>;
+    fetchBoard: () => Promise<Record<string, unknown>>;
+    fetchSubtasks: (role?: string, status?: string) => Promise<Record<string, unknown>[]>;
   };
 }
 
@@ -18,7 +17,7 @@ const ROLE_LABELS: Record<string, string> = {
   skill_learner: '技能学习者',
 };
 
-export function MultiAgentStatusPanel({ baseUrl, api }: Props) {
+export function MultiAgentStatusPanel({ api }: Props) {
   const [roles, setRoles] = useState<MultiAgentRoleStatus[]>([]);
   const [subtasks, setSubtasks] = useState<MultiAgentSubtask[]>([]);
   const [summary, setSummary] = useState<Record<string, unknown> | null>(null);
@@ -32,9 +31,9 @@ export function MultiAgentStatusPanel({ baseUrl, api }: Props) {
     async function load() {
       try {
         const [rolesData, boardData, subtasksData] = await Promise.all([
-          api.fetchRoles(baseUrl),
-          api.fetchBoard(baseUrl),
-          api.fetchSubtasks(baseUrl),
+          api.fetchRoles(),
+          api.fetchBoard(),
+          api.fetchSubtasks(),
         ]);
         if (cancelled) return;
         const roleList: MultiAgentRoleStatus[] = Array.isArray(rolesData) ? rolesData.map((r: Record<string, unknown>) => ({
@@ -64,7 +63,7 @@ export function MultiAgentStatusPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   const filtered = subtasks.filter(t => {
     if (filterRole !== 'all' && t.assigned_role !== filterRole) return false;

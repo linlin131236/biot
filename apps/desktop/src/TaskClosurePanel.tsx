@@ -8,20 +8,19 @@ type CreateTaskClosurePayload = { objective: string; template_id: TaskTemplateId
 type ClosureEventPayload = { type: 'command'; command: string; result: string };
 
 export interface TaskClosurePanelApi {
-  fetchTaskTemplates: (b: string, f?: Fetcher) => Promise<TaskTemplate[]>;
-  createTaskClosure: (b: string, p: CreateTaskClosurePayload, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  getTaskClosure: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  addClosureEvent: (b: string, id: string, p: ClosureEventPayload, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  addClosureReview: (b: string, id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  bindTaskClosureRun: (b: string, id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  bindTaskClosureGoal: (b: string, id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
-  fetchTaskClosureVerificationPlan: (b: string, id: string, f?: Fetcher) => Promise<VerificationPlan>;
-  fetchTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<VerificationAssessment>;
-  updateTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  fetchTaskTemplates: (f?: Fetcher) => Promise<TaskTemplate[]>;
+  createTaskClosure: (p: CreateTaskClosurePayload, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  getTaskClosure: (id: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  addClosureEvent: (id: string, p: ClosureEventPayload, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  addClosureReview: (id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  bindTaskClosureRun: (id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  bindTaskClosureGoal: (id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
+  fetchTaskClosureVerificationPlan: (id: string, f?: Fetcher) => Promise<VerificationPlan>;
+  fetchTaskClosureAssessment: (id: string, f?: Fetcher) => Promise<VerificationAssessment>;
+  updateTaskClosureAssessment: (id: string, f?: Fetcher) => Promise<TaskClosureEvidence>;
 }
 
 export interface TaskClosurePanelProps {
-  baseUrl: string;
   workspace: string;
   fetcher?: Fetcher;
   runId?: string | null;
@@ -57,7 +56,7 @@ function assessmentLabel(assessment: VerificationAssessment): string {
 
 const defaultApi = { fetchTaskTemplates, createTaskClosure, getTaskClosure, addClosureEvent, addClosureReview, bindTaskClosureRun, bindTaskClosureGoal, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment };
 
-export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, goalId, api, onClosureChange }: TaskClosurePanelProps) {
+export default function TaskClosurePanel({ workspace, fetcher, runId, goalId, api, onClosureChange }: TaskClosurePanelProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplateId>('bugfix');
   const [objective, setObjective] = useState('');
   const [closure, setClosure] = useState<TaskClosureEvidence | null>(null);
@@ -73,12 +72,12 @@ export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, g
 
   const loadVerification = useCallback(async (closureId: string) => {
     const [nextPlan, nextAssessment] = await Promise.all([
-      call.fetchTaskClosureVerificationPlan(baseUrl, closureId, fetcher),
-      call.fetchTaskClosureAssessment(baseUrl, closureId, fetcher),
+      call.fetchTaskClosureVerificationPlan(closureId, fetcher),
+      call.fetchTaskClosureAssessment(closureId, fetcher),
     ]);
     setPlan(nextPlan);
     setAssessment(nextAssessment);
-  }, [baseUrl, fetcher, call]);
+  }, [fetcher, call]);
 
   const setClosureAndVerification = useCallback(async (next: TaskClosureEvidence) => {
     setClosure(next);
@@ -89,53 +88,53 @@ export default function TaskClosurePanel({ baseUrl, workspace, fetcher, runId, g
   const handleCreate = useCallback(async () => {
     if (!objective.trim()) { setError('请输入任务目标'); return; }
     try {
-      const data = await call.createTaskClosure(baseUrl, { objective, template_id: selectedTemplate, run_id: runId ?? undefined, goal_id: goalId ?? undefined }, fetcher);
+      const data = await call.createTaskClosure({ objective, template_id: selectedTemplate, run_id: runId ?? undefined, goal_id: goalId ?? undefined }, fetcher);
       await setClosureAndVerification(data);
       setError('');
     } catch (e) { setError(errorMessage(e, '创建失败')); }
-  }, [objective, selectedTemplate, baseUrl, fetcher, runId, goalId, call, setClosureAndVerification]);
+  }, [objective, selectedTemplate, fetcher, runId, goalId, call, setClosureAndVerification]);
 
   const handleRefresh = useCallback(async () => {
     if (!closure) return;
-    try { await setClosureAndVerification(await call.getTaskClosure(baseUrl, closure.id, fetcher)); } catch (e) { setError(errorMessage(e, '刷新失败')); }
-  }, [closure, baseUrl, fetcher, call, setClosureAndVerification]);
+    try { await setClosureAndVerification(await call.getTaskClosure(closure.id, fetcher)); } catch (e) { setError(errorMessage(e, '刷新失败')); }
+  }, [closure, fetcher, call, setClosureAndVerification]);
 
   const handleAssess = useCallback(async () => {
     if (!closure) return;
     try {
-      const updated = await call.updateTaskClosureAssessment(baseUrl, closure.id, fetcher);
+      const updated = await call.updateTaskClosureAssessment(closure.id, fetcher);
       setClosure(updated);
       onClosureChange?.(updated.id);
       await loadVerification(updated.id);
     } catch (e) { setError(errorMessage(e, '评估失败')); }
-  }, [closure, baseUrl, fetcher, call, loadVerification]);
+  }, [closure, fetcher, call, loadVerification]);
 
   const handleBindRun = useCallback(async () => {
     if (!closure || !runId) return;
-    try { await setClosureAndVerification(await call.bindTaskClosureRun(baseUrl, closure.id, runId, fetcher)); } catch (e) { setError(errorMessage(e, '绑定失败')); }
-  }, [closure, runId, baseUrl, fetcher, call, setClosureAndVerification]);
+    try { await setClosureAndVerification(await call.bindTaskClosureRun(closure.id, runId, fetcher)); } catch (e) { setError(errorMessage(e, '绑定失败')); }
+  }, [closure, runId, fetcher, call, setClosureAndVerification]);
 
   const handleBindGoal = useCallback(async () => {
     if (!closure || !goalId) return;
-    try { await setClosureAndVerification(await call.bindTaskClosureGoal(baseUrl, closure.id, goalId, fetcher)); } catch (e) { setError(errorMessage(e, '绑定失败')); }
-  }, [closure, goalId, baseUrl, fetcher, call, setClosureAndVerification]);
+    try { await setClosureAndVerification(await call.bindTaskClosureGoal(closure.id, goalId, fetcher)); } catch (e) { setError(errorMessage(e, '绑定失败')); }
+  }, [closure, goalId, fetcher, call, setClosureAndVerification]);
 
   const handleRecordCommand = useCallback(async () => {
     if (!closure || !cmdText.trim()) return;
     try {
-      await setClosureAndVerification(await call.addClosureEvent(baseUrl, closure.id, { type: 'command', command: cmdText, result: cmdResult }, fetcher));
+      await setClosureAndVerification(await call.addClosureEvent(closure.id, { type: 'command', command: cmdText, result: cmdResult }, fetcher));
       setCmdText('');
       setCmdResult('');
     } catch (e) { setError(errorMessage(e, '记录失败')); }
-  }, [closure, cmdText, cmdResult, baseUrl, fetcher, call, setClosureAndVerification]);
+  }, [closure, cmdText, cmdResult, fetcher, call, setClosureAndVerification]);
 
   const handleRecordReview = useCallback(async () => {
     if (!closure) return;
     try {
-      await setClosureAndVerification(await call.addClosureReview(baseUrl, closure.id, { summary: reviewSummary, passed: reviewPassed }, fetcher));
+      await setClosureAndVerification(await call.addClosureReview(closure.id, { summary: reviewSummary, passed: reviewPassed }, fetcher));
       setReviewSummary('');
     } catch (e) { setError(errorMessage(e, '记录失败')); }
-  }, [closure, reviewSummary, reviewPassed, baseUrl, fetcher, call, setClosureAndVerification]);
+  }, [closure, reviewSummary, reviewPassed, fetcher, call, setClosureAndVerification]);
 
   const currentStatus = closure ? closureStatus(closure) : null;
   const hint = currentStatus ? statusHint(currentStatus) : null;

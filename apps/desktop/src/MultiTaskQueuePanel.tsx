@@ -18,8 +18,7 @@ interface QueueData {
 }
 
 interface Props {
-  baseUrl: string;
-  api: { fetchMultiTaskQueue: (b: string) => Promise<Record<string, unknown>> };
+  api: { fetchMultiTaskQueue: () => Promise<Record<string, unknown>> };
 }
 
 const TYPE_CN: Record<string, string> = { closure: '闭环', goal: '目标', graph: '任务图' };
@@ -28,7 +27,7 @@ const STATUS_CN: Record<string, string> = {
   paused: '已暂停', active: '活跃', stopped: '已停止',
 };
 
-export function MultiTaskQueuePanel({ baseUrl, api }: Props) {
+export function MultiTaskQueuePanel({ api }: Props) {
   const [data, setData] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +37,7 @@ export function MultiTaskQueuePanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchMultiTaskQueue(baseUrl);
+        const raw = await api.fetchMultiTaskQueue();
         if (cancelled) return;
         const tasks: TaskItem[] = Array.isArray(raw.tasks)
           ? (raw.tasks as Record<string, unknown>[]).map((t: Record<string, unknown>) => ({
@@ -61,7 +60,7 @@ export function MultiTaskQueuePanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   if (loading) return <div className="multiTaskQueuePanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="multiTaskQueuePanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

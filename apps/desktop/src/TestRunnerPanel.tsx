@@ -21,17 +21,16 @@ interface TestRunResult {
 }
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchAvailableTests: (baseUrl: string) => Promise<Record<string, unknown>>;
-    runTest: (baseUrl: string, testId: string, extraArgs?: string[]) => Promise<Record<string, unknown>>;
-    fetchTestHistory: (baseUrl: string) => Promise<Record<string, unknown>>;
+    fetchAvailableTests: () => Promise<Record<string, unknown>>;
+    runTest: (testId: string, extraArgs?: string[]) => Promise<Record<string, unknown>>;
+    fetchTestHistory: () => Promise<Record<string, unknown>>;
   };
 }
 
 type RunState = 'idle' | 'confirming' | 'running' | 'done';
 
-export function TestRunnerPanel({ baseUrl, api }: Props) {
+export function TestRunnerPanel({ api }: Props) {
   const [tests, setTests] = useState<TestOption[]>([]);
   const [selectedTest, setSelectedTest] = useState<string>('');
   const [runState, setRunState] = useState<RunState>('idle');
@@ -41,7 +40,7 @@ export function TestRunnerPanel({ baseUrl, api }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchAvailableTests(baseUrl)
+    api.fetchAvailableTests()
       .then((data) => {
         if (cancelled) return;
         const available = (data as Record<string, unknown>).available_tests as Record<string, { description: string; timeout_seconds: number }> | undefined;
@@ -57,11 +56,11 @@ export function TestRunnerPanel({ baseUrl, api }: Props) {
         if (!cancelled) setError(`加载失败：${e instanceof Error ? e.message : String(e)}`);
       });
     return () => { cancelled = true; };
-  }, [baseUrl, api]);
+  }, [api]);
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchTestHistory(baseUrl)
+    api.fetchTestHistory()
       .then((data) => {
         if (cancelled) return;
         const hist = (data as Record<string, unknown>).history as TestRunResult[] | undefined;
@@ -69,7 +68,7 @@ export function TestRunnerPanel({ baseUrl, api }: Props) {
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [baseUrl, api, runState]);
+  }, [api, runState]);
 
   function handleRun() {
     if (!selectedTest) return;
@@ -80,7 +79,7 @@ export function TestRunnerPanel({ baseUrl, api }: Props) {
 
   function confirmRun() {
     setRunState('running');
-    api.runTest(baseUrl, selectedTest)
+    api.runTest(selectedTest)
       .then((data) => {
         const res = (data as Record<string, unknown>).result as TestRunResult;
         setResult(res);

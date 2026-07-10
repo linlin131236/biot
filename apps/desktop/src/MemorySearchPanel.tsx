@@ -8,15 +8,14 @@ import { useState, useCallback } from 'react';
 import type { MemorySearchResult, MemorySearchCategory } from '@bolt/shared/autonomy';
 
 interface MemorySearchApi {
-  fetchDecisions: (baseUrl: string, keyword: string) => Promise<Record<string, unknown>[]>;
-  fetchFailures: (baseUrl: string, keyword: string) => Promise<Record<string, unknown>[]>;
-  fetchPreferences: (baseUrl: string, keyword: string) => Promise<Record<string, unknown>[]>;
-  fetchProfile: (baseUrl: string) => Promise<Record<string, unknown>>;
-  fetchCodeMap: (baseUrl: string, keyword: string) => Promise<Record<string, unknown>[]>;
+  fetchDecisions: (keyword: string) => Promise<Record<string, unknown>[]>;
+  fetchFailures: (keyword: string) => Promise<Record<string, unknown>[]>;
+  fetchPreferences: (keyword: string) => Promise<Record<string, unknown>[]>;
+  fetchProfile: () => Promise<Record<string, unknown>>;
+  fetchCodeMap: (keyword: string) => Promise<Record<string, unknown>[]>;
 }
 
 interface MemorySearchPanelProps {
-  baseUrl?: string;
   api: MemorySearchApi;
 }
 
@@ -34,8 +33,7 @@ function mapResults(
   type: MemorySearchCategory,
   idField: string,
   titleField: string,
-  summaryField: string,
-): MemorySearchResult[] {
+  summaryField: string): MemorySearchResult[] {
   return items.map((item: Record<string, unknown>) => ({
     type,
     id: String(item[idField] ?? ''),
@@ -46,7 +44,7 @@ function mapResults(
   }));
 }
 
-export function MemorySearchPanel({ baseUrl = 'http://core', api }: MemorySearchPanelProps) {
+export function MemorySearchPanel({ api }: MemorySearchPanelProps) {
   const [keyword, setKeyword] = useState('');
   const [activeTab, setActiveTab] = useState<MemorySearchCategory>('all');
   const [results, setResults] = useState<MemorySearchResult[]>([]);
@@ -64,24 +62,24 @@ export function MemorySearchPanel({ baseUrl = 'http://core', api }: MemorySearch
 
     try {
       if (activeTab === 'all' || activeTab === 'decision') {
-        const items = await api.fetchDecisions(baseUrl, kw);
+        const items = await api.fetchDecisions(kw);
         all.push(...mapResults(items, 'decision', 'decision_id', 'title', 'summary_cn'));
       }
       if (activeTab === 'all' || activeTab === 'failure') {
-        const items = await api.fetchFailures(baseUrl, kw);
+        const items = await api.fetchFailures(kw);
         all.push(...mapResults(items, 'failure', 'failure_id', 'symptom_cn', 'fix_summary_cn'));
       }
       if (activeTab === 'all' || activeTab === 'preference') {
-        const items = await api.fetchPreferences(baseUrl, kw);
+        const items = await api.fetchPreferences(kw);
         all.push(...mapResults(items, 'preference', 'preference_id', 'statement_cn', 'statement_cn'));
       }
       if (activeTab === 'all' || activeTab === 'code_map') {
-        const items = await api.fetchCodeMap(baseUrl, kw);
+        const items = await api.fetchCodeMap(kw);
         all.push(...mapResults(items, 'code_map', 'entry_id', 'file_path', 'summary'));
       }
       if (activeTab === 'all' || activeTab === 'project') {
         try {
-          const profile = await api.fetchProfile(baseUrl);
+          const profile = await api.fetchProfile();
           if (profile && typeof profile === 'object') {
             const profileText = JSON.stringify(profile).toLowerCase();
             if (profileText.includes(kw.toLowerCase())) {
@@ -102,7 +100,7 @@ export function MemorySearchPanel({ baseUrl = 'http://core', api }: MemorySearch
     } finally {
       setSearching(false);
     }
-  }, [keyword, activeTab, baseUrl, api]);
+  }, [keyword, activeTab, api]);
 
   const filteredResults = activeTab === 'all'
     ? results

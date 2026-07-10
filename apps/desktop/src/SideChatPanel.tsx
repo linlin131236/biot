@@ -8,18 +8,17 @@ import { useState } from 'react';
 import type { SteeringResult } from '@bolt/shared/autonomy';
 
 interface SideChatPanelApi {
-  steerRun: (baseUrl: string, runId: string, content: string) => Promise<SteeringResult>;
+  steerRun: (runId: string, content: string) => Promise<SteeringResult>;
 }
 
 interface SideChatPanelProps {
   runId: string | null;
   api: SideChatPanelApi;
-  baseUrl?: string;
 }
 
 interface ChatEntry { content: string; time: number; status: 'sent' | 'error' }
 
-export function SideChatPanel({ runId, api, baseUrl = 'http://core' }: SideChatPanelProps) {
+export function SideChatPanel({ runId, api }: SideChatPanelProps) {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<ChatEntry[]>([]);
   const [error, setError] = useState('');
@@ -31,7 +30,7 @@ export function SideChatPanel({ runId, api, baseUrl = 'http://core' }: SideChatP
     const content = input.trim();
     setInput('');
     try {
-      await api.steerRun(baseUrl, runId, content);
+      await api.steerRun(runId, content);
       setEntries(prev => [...prev, { content, time: Date.now(), status: 'sent' }]);
     } catch { setError('发送失败'); setEntries(prev => [...prev, { content, time: Date.now(), status: 'error' }]); }
   }

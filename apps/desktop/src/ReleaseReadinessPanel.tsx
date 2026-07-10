@@ -17,15 +17,14 @@ interface ReleaseData {
 }
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchReleaseReadiness: (baseUrl: string) => Promise<Record<string, unknown>>;
-    fetchLocalChecklist: (baseUrl: string) => Promise<Record<string, unknown>>;
-    fetchRecoveryPolicy: (baseUrl: string) => Promise<Record<string, unknown>>;
+    fetchReleaseReadiness: () => Promise<Record<string, unknown>>;
+    fetchLocalChecklist: () => Promise<Record<string, unknown>>;
+    fetchRecoveryPolicy: () => Promise<Record<string, unknown>>;
   };
 }
 
-export function ReleaseReadinessPanel({ baseUrl, api }: Props) {
+export function ReleaseReadinessPanel({ api }: Props) {
   const [data, setData] = useState<ReleaseData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,9 +34,9 @@ export function ReleaseReadinessPanel({ baseUrl, api }: Props) {
     async function load() {
       try {
         const [readiness, checklist, recovery] = await Promise.all([
-          api.fetchReleaseReadiness(baseUrl),
-          api.fetchLocalChecklist(baseUrl),
-          api.fetchRecoveryPolicy(baseUrl),
+          api.fetchReleaseReadiness(),
+          api.fetchLocalChecklist(),
+          api.fetchRecoveryPolicy(),
         ]);
         if (!cancelled) setData({ readiness, checklist, recovery });
       } catch (e) {
@@ -48,7 +47,7 @@ export function ReleaseReadinessPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [api, baseUrl]);
+  }, [api]);
 
   const checks = useMemo(() => normalizeChecks(data?.checklist), [data?.checklist]);
   const blockers = checks.filter((check) => !check.passed);

@@ -22,12 +22,11 @@ interface ResearchResult {
 }
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    createBrief: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    executeResearch: (baseUrl: string, briefId: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    fetchScopes: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    createBrief: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    executeResearch: (briefId: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    fetchScopes: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -43,7 +42,7 @@ const SCOPES = [
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export function ResearcherPanel({ baseUrl, api, fetcher = fetch }: Props) {
+export function ResearcherPanel({ api, fetcher }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [title, setTitle] = useState('');
   const [question, setQuestion] = useState('');
@@ -55,7 +54,7 @@ export function ResearcherPanel({ baseUrl, api, fetcher = fetch }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchScopes(baseUrl, fetcher)
+    api.fetchScopes(fetcher)
       .then((data) => {
         if (cancelled) return;
         const raw = (data as Record<string, unknown>).scopes as Array<Record<string, unknown>> | undefined;
@@ -65,13 +64,13 @@ export function ResearcherPanel({ baseUrl, api, fetcher = fetch }: Props) {
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [baseUrl, api]);
+  }, [api]);
 
   function handleCreateBrief() {
     if (!title.trim() || !question.trim() || !scope) return;
     setError('');
     setPhase('creating');
-    api.createBrief(baseUrl, { title: title.trim(), question: question.trim(), scope }, fetcher)
+    api.createBrief({ title: title.trim(), question: question.trim(), scope }, fetcher)
       .then((data) => {
         const b = data as Record<string, unknown>;
         const briefRecord: Brief = {
@@ -94,7 +93,7 @@ export function ResearcherPanel({ baseUrl, api, fetcher = fetch }: Props) {
     if (!brief?.brief_id) return;
     setError('');
     setPhase('executing');
-    api.executeResearch(baseUrl, brief.brief_id, fetcher)
+    api.executeResearch(brief.brief_id, fetcher)
       .then((data) => {
         const r = data as Record<string, unknown>;
         const rawRefs = r.source_refs as Array<Record<string, unknown>> | undefined;

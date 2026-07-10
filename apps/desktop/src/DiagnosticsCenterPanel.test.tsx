@@ -15,32 +15,32 @@ const blockerData = {
 
 describe('DiagnosticsCenterPanel', () => {
   it('renders loading', () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(emptyData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(emptyData)} />);
     expect(screen.getByText('加载中…')).toBeTruthy();
   });
 
   it('renders empty', async () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(emptyData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(emptyData)} />);
     await waitFor(() => expect(screen.getByText(/暂无诊断项/)).toBeTruthy());
   });
 
   it('shows blocker', async () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(blockerData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(blockerData)} />);
     await waitFor(() => expect(screen.getByText('测试阻断')).toBeTruthy());
   });
 
   it('shows suggestion', async () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(blockerData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(blockerData)} />);
     await waitFor(() => expect(screen.getByText(/修复建议/)).toBeTruthy());
   });
 
   it('shows summary counts', async () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(blockerData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(blockerData)} />);
     await waitFor(() => expect(screen.getByText('1')).toBeTruthy());
   });
 
   it('has read-only note', async () => {
-    render(<DiagnosticsCenterPanel baseUrl="http://t" api={fakeApi(emptyData)} />);
+    render(<DiagnosticsCenterPanel api={fakeApi(emptyData)} />);
     await waitFor(() => expect(screen.getByText(/只读/)).toBeTruthy());
   });
 });

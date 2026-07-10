@@ -13,7 +13,7 @@ function apiFixture(toolsData: Array<Record<string, unknown>> = []) {
 
 describe('ToolVerificationPanel', () => {
   it('renders title', () => {
-    render(<ToolVerificationPanel baseUrl="http://test" api={apiFixture()} />);
+    render(<ToolVerificationPanel api={apiFixture()} />);
     expect(screen.getByText('工具验证')).toBeTruthy();
   });
 
@@ -23,9 +23,9 @@ describe('ToolVerificationPanel', () => {
       { tool_name: 'node', status: 'error', message: '未安装' },
     ]);
     const fetcher = vi.fn();
-    render(<ToolVerificationPanel baseUrl="http://test" fetcher={fetcher} api={api} />);
+    render(<ToolVerificationPanel fetcher={fetcher} api={api} />);
     fireEvent.click(screen.getByRole('button', { name: '验证工具链' }));
-    await waitFor(() => expect(api.verifyTools).toHaveBeenCalledWith('http://test', fetcher));
+    await waitFor(() => expect(api.verifyTools).toHaveBeenCalledWith(fetcher));
     expect(await screen.findByText('git')).toBeTruthy();
     expect(screen.getByText('消息：可用')).toBeTruthy();
     expect(screen.getByText('消息：未安装')).toBeTruthy();
@@ -34,7 +34,7 @@ describe('ToolVerificationPanel', () => {
 
   it('shows empty results message when no tools returned', async () => {
     const api = apiFixture([]);
-    render(<ToolVerificationPanel baseUrl="http://test" api={api} />);
+    render(<ToolVerificationPanel api={api} />);
     fireEvent.click(screen.getByText('验证工具链'));
     expect(await screen.findByText('未返回任何工具结果。')).toBeTruthy();
   });
@@ -42,13 +42,13 @@ describe('ToolVerificationPanel', () => {
   it('shows error on failure', async () => {
     const api = apiFixture();
     api.verifyTools.mockRejectedValueOnce(new Error('网络错误'));
-    render(<ToolVerificationPanel baseUrl="http://test" api={api} />);
+    render(<ToolVerificationPanel api={api} />);
     fireEvent.click(screen.getByText('验证工具链'));
     expect(await screen.findByText('验证失败：网络错误')).toBeTruthy();
   });
 
   it('has no dangerous buttons', async () => {
-    render(<ToolVerificationPanel baseUrl="http://test" api={apiFixture()} />);
+    render(<ToolVerificationPanel api={apiFixture()} />);
     const dangerous = screen.queryAllByText(/push|release|tag|delete|destroy|kill/);
     expect(dangerous.length).toBe(0);
   });

@@ -18,7 +18,7 @@ function fakeApi(executionResult: Record<string, unknown> = {
 
 describe('BuilderPanel', () => {
   it('renders title', () => {
-    render(<BuilderPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<BuilderPanel api={fakeApi()} />);
     expect(screen.getByText('构建引擎')).toBeTruthy();
     expect(screen.getByText('产生代码变更提案，需人工审批后应用。')).toBeTruthy();
   });
@@ -29,7 +29,7 @@ describe('BuilderPanel', () => {
       output: { code_changes: 'diff', tests: 'pytest', evidence_refs: [], source_refs: [] },
       proposals: [],
     });
-    render(<BuilderPanel baseUrl="http://test" api={api} />);
+    render(<BuilderPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入任务 ID'), { target: { value: 't1' } });
     fireEvent.change(screen.getByPlaceholderText('输入构建任务描述'), { target: { value: 'desc' } });
     fireEvent.change(screen.getByPlaceholderText('输入工作区路径'), { target: { value: '/ws' } });
@@ -42,7 +42,7 @@ describe('BuilderPanel', () => {
   it('shows error state', async () => {
     const api = fakeApi();
     api.executeTask.mockRejectedValueOnce(new Error('网络错误'));
-    render(<BuilderPanel baseUrl="http://test" api={api} />);
+    render(<BuilderPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入任务 ID'), { target: { value: 't1' } });
     fireEvent.change(screen.getByPlaceholderText('输入构建任务描述'), { target: { value: 'desc' } });
     fireEvent.change(screen.getByPlaceholderText('输入工作区路径'), { target: { value: '/ws' } });
@@ -56,7 +56,7 @@ describe('BuilderPanel', () => {
       output: { code_changes: 'diff', tests: 'pytest', evidence_refs: [], source_refs: [] },
       proposals: ['p1: pending'],
     });
-    render(<BuilderPanel baseUrl="http://test" api={api} />);
+    render(<BuilderPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入任务 ID'), { target: { value: 't1' } });
     fireEvent.change(screen.getByPlaceholderText('输入构建任务描述'), { target: { value: 'desc' } });
     fireEvent.change(screen.getByPlaceholderText('输入工作区路径'), { target: { value: '/ws' } });
@@ -66,7 +66,7 @@ describe('BuilderPanel', () => {
   });
 
   it('has no dangerous buttons', async () => {
-    render(<BuilderPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<BuilderPanel api={fakeApi()} />);
     expect(screen.getByText('执行构建')).toBeTruthy();
     const dangerous = screen.queryAllByText(/push|release|tag|delete|rm -rf|format/);
     expect(dangerous.length).toBe(0);

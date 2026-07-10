@@ -26,12 +26,12 @@ describe('CheckpointPanel', () => {
 
   it('creates checkpoint and shows summary', async () => {
     mockApi.createCheckpoint.mockResolvedValue(sampleCp);
-    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
     fireEvent.click(screen.getByRole('button', { name: '创建检查点' }));
     await waitFor(() => expect(screen.getByText(/cp_abc12345/)).toBeInTheDocument());
     expect(screen.getByText('2 个变更文件')).toBeInTheDocument();
     expect(screen.getByText('1 个待审批')).toBeInTheDocument();
-    expect(mockApi.createCheckpoint).toHaveBeenCalledWith('http://core', { run_id: 'run_1', goal_id: 'goal_1' });
+    expect(mockApi.createCheckpoint).toHaveBeenCalledWith({ run_id: 'run_1', goal_id: 'goal_1' });
   });
 
   it('shows error on create failure', async () => {
@@ -43,16 +43,16 @@ describe('CheckpointPanel', () => {
 
   it('loads checkpoint and shows summary', async () => {
     mockApi.loadCheckpoint.mockResolvedValue(sampleCp);
-    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
     const input = screen.getByLabelText('检查点 ID');
     fireEvent.change(input, { target: { value: 'cp_abc12345' } });
     fireEvent.click(screen.getByRole('button', { name: '加载检查点' }));
     await waitFor(() => expect(screen.getByText(/cp_abc12345/)).toBeInTheDocument());
-    expect(mockApi.loadCheckpoint).toHaveBeenCalledWith('http://core', 'cp_abc12345');
+    expect(mockApi.loadCheckpoint).toHaveBeenCalledWith('cp_abc12345');
   });
 
   it('does not show 未找到检查点 before clicking load', () => {
-    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
     const input = screen.getByLabelText('检查点 ID');
     fireEvent.change(input, { target: { value: 'cp_maybe' } });
     expect(screen.queryByText('未找到检查点')).toBeNull();
@@ -60,7 +60,7 @@ describe('CheckpointPanel', () => {
 
   it('shows 未找到检查点 for null result after clicking load', async () => {
     mockApi.loadCheckpoint.mockResolvedValue(null);
-    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} baseUrl="http://core" />);
+    render(<CheckpointPanel runId="run_1" goalId="goal_1" api={mockApi} />);
     const input = screen.getByLabelText('检查点 ID');
     fireEvent.change(input, { target: { value: 'cp_bad' } });
     fireEvent.click(screen.getByRole('button', { name: '加载检查点' }));

@@ -6,26 +6,26 @@ import { completeExecutionHandoff, createExecutionHandoff, failExecutionHandoff,
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
 export interface ExecutionHandoffPanelApi {
-  fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>;
-  fetchExecutionAuditTimeline: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>;
-  fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>;
-  fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>;
-  fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>;
-  fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>;
-  fetchRecoveryPolicy: (b: string, f?: Fetcher) => Promise<RecoveryPolicy>;
-  fetchPlannerGraphs: (b: string, f?: Fetcher) => Promise<TaskGraphSummary[]>;
-  createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
-  completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
-  failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
-  requestExecutionHandoffPermission: (b: string, handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  fetchExecutionHandoffs: (closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>;
+  fetchExecutionAuditTimeline: (closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>;
+  fetchExecutionAuditDiagnostics: (closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>;
+  fetchExecutionAuditIntegrity: (f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>;
+  fetchReleaseReadiness: (f?: Fetcher) => Promise<ReleaseReadiness>;
+  fetchLocalReleaseChecklist: (f?: Fetcher) => Promise<LocalReleaseChecklist>;
+  fetchRecoveryPolicy: (f?: Fetcher) => Promise<RecoveryPolicy>;
+  fetchPlannerGraphs: (f?: Fetcher) => Promise<TaskGraphSummary[]>;
+  createExecutionHandoff: (itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  completeExecutionHandoff: (handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  failExecutionHandoff: (handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
+  requestExecutionHandoffPermission: (handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>;
 }
 
-interface Props { baseUrl: string; closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
+interface Props { closureId?: string | null; selectedQueueItemId?: string | null; fetcher?: Fetcher; api?: ExecutionHandoffPanelApi; }
 
 const defaultApi = { fetchExecutionHandoffs, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, fetchExecutionAuditIntegrity, fetchReleaseReadiness, fetchLocalReleaseChecklist, fetchRecoveryPolicy, fetchPlannerGraphs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, requestExecutionHandoffPermission };
 const terminal = new Set(['completed', 'failed']);
 
-export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueueItemId, fetcher, api }: Props) {
+export default function ExecutionHandoffPanel({ closureId, selectedQueueItemId, fetcher, api }: Props) {
   const [records, setRecords] = useState<ExecutionHandoffRecord[]>([]);
   const [timeline, setTimeline] = useState<ExecutionAuditTimelineEvent[]>([]);
   const [diagnostics, setDiagnostics] = useState<ExecutionAuditDiagnostic[]>([]);
@@ -39,41 +39,41 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   const refresh = useCallback(async () => {
     if (!closureId) return;
     const [nextRecords, nextTimeline, nextDiagnostics] = await Promise.all([
-      call.fetchExecutionHandoffs(baseUrl, closureId, fetcher),
-      call.fetchExecutionAuditTimeline(baseUrl, closureId, fetcher),
-      call.fetchExecutionAuditDiagnostics(baseUrl, closureId, fetcher),
+      call.fetchExecutionHandoffs(closureId, fetcher),
+      call.fetchExecutionAuditTimeline(closureId, fetcher),
+      call.fetchExecutionAuditDiagnostics(closureId, fetcher),
     ]);
     setRecords(nextRecords);
     setTimeline(nextTimeline);
     setDiagnostics(nextDiagnostics);
-  }, [baseUrl, closureId, fetcher, call]);
+  }, [closureId, fetcher, call]);
 
   useEffect(() => { refresh().catch(() => setError('加载失败')); }, [refresh]);
 
   useEffect(() => {
-    call.fetchExecutionAuditIntegrity(baseUrl, fetcher).then(data => setIntegrity(Array.isArray(data) ? data : [])).catch(() => { /* integrity fetch is best-effort */ });
-  }, [baseUrl, fetcher, call]);
+    call.fetchExecutionAuditIntegrity(fetcher).then(data => setIntegrity(Array.isArray(data) ? data : [])).catch(() => { /* integrity fetch is best-effort */ });
+  }, [fetcher, call]);
 
   useEffect(() => {
-    call.fetchReleaseReadiness(baseUrl, fetcher).then(setReadiness).catch(() => { /* readiness fetch is best-effort */ });
-  }, [baseUrl, fetcher, call]);
+    call.fetchReleaseReadiness(fetcher).then(setReadiness).catch(() => { /* readiness fetch is best-effort */ });
+  }, [fetcher, call]);
 
   useEffect(() => {
-    call.fetchLocalReleaseChecklist(baseUrl, fetcher).then(setChecklist).catch(() => { /* checklist fetch is best-effort */ });
-  }, [baseUrl, fetcher, call]);
+    call.fetchLocalReleaseChecklist(fetcher).then(setChecklist).catch(() => { /* checklist fetch is best-effort */ });
+  }, [fetcher, call]);
 
   useEffect(() => {
-    call.fetchRecoveryPolicy(baseUrl, fetcher).then(setRecovery).catch(() => { /* recovery policy fetch is best-effort */ });
-  }, [baseUrl, fetcher, call]);
+    call.fetchRecoveryPolicy(fetcher).then(setRecovery).catch(() => { /* recovery policy fetch is best-effort */ });
+  }, [fetcher, call]);
 
   useEffect(() => {
-    call.fetchPlannerGraphs(baseUrl, fetcher).then(data => setPlannerGraphs(Array.isArray(data) ? data : [])).catch(() => { /* planner graphs fetch is best-effort */ });
-  }, [baseUrl, fetcher, call]);
+    call.fetchPlannerGraphs(fetcher).then(data => setPlannerGraphs(Array.isArray(data) ? data : [])).catch(() => { /* planner graphs fetch is best-effort */ });
+  }, [fetcher, call]);
 
   async function createHandoff() {
     if (!selectedQueueItemId) { setError('请先选择已批准队列项'); return; }
     try {
-      const next = await call.createExecutionHandoff(baseUrl, selectedQueueItemId, fetcher);
+      const next = await call.createExecutionHandoff(selectedQueueItemId, fetcher);
       if (next.closure_id !== closureId) { setError('交接记录不属于当前闭环任务'); return; }
       setRecords(current => current.some(record => record.id === next.id) ? current : [...current, next]);
       setError('');
@@ -88,13 +88,13 @@ export default function ExecutionHandoffPanel({ baseUrl, closureId, selectedQueu
   }
 
   if (!closureId) return <aside className="panel"><h2>安全交接</h2><p>暂无闭环任务</p></aside>;
-  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} baseUrl={baseUrl} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Checklist data={checklist} /><RecoveryPanel data={recovery} /><PlannerGraphs graphs={plannerGraphs} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
+  return <aside className="panel"><h2>安全交接</h2><button type="button" onClick={createHandoff}>生成安全交接</button>{records.length ? records.map(record => <HandoffItem key={record.id} record={record} update={update} api={call} fetcher={fetcher} />) : <p>需要人工处理</p>}<Timeline events={timeline} /><Integrity items={integrity} /><Readiness data={readiness} /><Checklist data={checklist} /><RecoveryPanel data={recovery} /><PlannerGraphs graphs={plannerGraphs} /><Diagnostics items={diagnostics} />{error ? <p>{error}</p> : null}</aside>;
 }
 
-function HandoffItem({ record, update, api, baseUrl, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; baseUrl: string; fetcher?: Fetcher }) {
+function HandoffItem({ record, update, api, fetcher }: { record: ExecutionHandoffRecord; update: (a: () => Promise<ExecutionHandoffRecord>) => void; api: ExecutionHandoffPanelApi; fetcher?: Fetcher }) {
   const [note, setNote] = useState('');
   const active = !terminal.has(record.status);
-  return <div className="stack"><strong>{record.title}</strong><span>{instruction(record)}</span>{record.command ? <code>{record.command}</code> : null}{record.permission_status === 'pending_permission' ? <span>等待人工执行权限</span> : null}{record.bridge_error ? <span>申请失败：{record.bridge_error}</span> : null}{record.goal_objective ? <span>建议目标：{record.goal_objective}</span> : null}{record.handoff_type === 'manual_verification' && record.status === 'ready_for_manual_action' ? <button type="button" onClick={() => update(() => api.requestExecutionHandoffPermission(baseUrl, record.id, fetcher))}>申请人工执行权限</button> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已复制为目标草稿')}>复制为目标草稿</button> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已记录为待创建目标')}>记录为待创建目标</button> : null}{note ? <span>{note}</span> : null}{active ? <div className="actions"><button type="button" onClick={() => update(() => api.completeExecutionHandoff(baseUrl, record.id, '用户已完成', fetcher))}>标记完成</button><button type="button" onClick={() => update(() => api.failExecutionHandoff(baseUrl, record.id, '用户标记失败', fetcher))}>标记失败</button></div> : null}</div>;
+  return <div className="stack"><strong>{record.title}</strong><span>{instruction(record)}</span>{record.command ? <code>{record.command}</code> : null}{record.permission_status === 'pending_permission' ? <span>等待人工执行权限</span> : null}{record.bridge_error ? <span>申请失败：{record.bridge_error}</span> : null}{record.goal_objective ? <span>建议目标：{record.goal_objective}</span> : null}{record.handoff_type === 'manual_verification' && record.status === 'ready_for_manual_action' ? <button type="button" onClick={() => update(() => api.requestExecutionHandoffPermission(record.id, fetcher))}>申请人工执行权限</button> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已复制为目标草稿')}>复制为目标草稿</button> : null}{record.handoff_type === 'goal_input' && active ? <button type="button" onClick={() => setNote('已记录为待创建目标')}>记录为待创建目标</button> : null}{note ? <span>{note}</span> : null}{active ? <div className="actions"><button type="button" onClick={() => update(() => api.completeExecutionHandoff(record.id, '用户已完成', fetcher))}>标记完成</button><button type="button" onClick={() => update(() => api.failExecutionHandoff(record.id, '用户标记失败', fetcher))}>标记失败</button></div> : null}</div>;
 }
 
 function Timeline({ events }: { events: ExecutionAuditTimelineEvent[] }) {

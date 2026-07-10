@@ -6,11 +6,10 @@
 import { useEffect, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    autoContinue: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    fetchAutoContinueStatus: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    autoContinue: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    fetchAutoContinueStatus: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -21,7 +20,7 @@ interface AutoContinueStatus {
   updated_at?: string;
 }
 
-export function AutoContinuePanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function AutoContinuePanel({ fetcher, api }: Props) {
   const [status, setStatus] = useState<AutoContinueStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +29,7 @@ export function AutoContinuePanel({ baseUrl, fetcher = fetch, api }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.fetchAutoContinueStatus(baseUrl, fetcher);
+      const res = await api.fetchAutoContinueStatus(fetcher);
       setStatus(res as AutoContinueStatus);
     } catch (e) {
       setError(`加载状态失败：${e instanceof Error ? e.message : String(e)}`);
@@ -41,13 +40,13 @@ export function AutoContinuePanel({ baseUrl, fetcher = fetch, api }: Props) {
 
   useEffect(() => {
     loadStatus();
-  }, [baseUrl]);
+  }, []);
 
   async function handleToggle() {
     setError(null);
     const nextEnabled = !(status?.enabled ?? false);
     try {
-      const res = await api.autoContinue(baseUrl, { enabled: nextEnabled }, fetcher);
+      const res = await api.autoContinue({ enabled: nextEnabled }, fetcher);
       setStatus(res as AutoContinueStatus);
     } catch (e) {
       setError(`切换失败：${e instanceof Error ? e.message : String(e)}`);

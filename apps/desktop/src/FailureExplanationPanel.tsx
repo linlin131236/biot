@@ -11,11 +11,10 @@ interface FailureItem {
 }
 
 interface Props {
-  baseUrl: string;
-  api: { fetchFailureExplanation: (b: string) => Promise<Record<string, unknown>> };
+  api: { fetchFailureExplanation: () => Promise<Record<string, unknown>> };
 }
 
-export function FailureExplanationPanel({ baseUrl, api }: Props) {
+export function FailureExplanationPanel({ api }: Props) {
   const [items, setItems] = useState<FailureItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -25,7 +24,7 @@ export function FailureExplanationPanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchFailureExplanation(baseUrl);
+        const raw = await api.fetchFailureExplanation();
         if (cancelled) return;
         setItems(Array.isArray(raw.failures) ? (raw.failures as Record<string, unknown>[]).map((f: Record<string, unknown>) => ({
           id: (f.id as string) || '', category: (f.category as string) || '',
@@ -42,7 +41,7 @@ export function FailureExplanationPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   if (loading) return <div className="failureExplanationPanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="failureExplanationPanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

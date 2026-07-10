@@ -10,18 +10,18 @@ const apiFixture = () => ({
 
 describe('SleepWakePanel', () => {
   it('renders title', () => {
-    render(<SleepWakePanel baseUrl="http://core" api={apiFixture()} />);
+    render(<SleepWakePanel api={apiFixture()} />);
     expect(screen.getByText('待机控制')).toBeInTheDocument();
   });
 
   it('shows awake status initially', async () => {
-    render(<SleepWakePanel baseUrl="http://core" api={apiFixture()} />);
+    render(<SleepWakePanel api={apiFixture()} />);
     expect(await screen.findByText(/awake/)).toBeInTheDocument();
   });
 
   it('sleeps and shows sleeping state', async () => {
     const api = apiFixture();
-    render(<SleepWakePanel baseUrl="http://core" api={api} />);
+    render(<SleepWakePanel api={api} />);
     await screen.findByText(/awake/);
     fireEvent.click(screen.getByRole('button', { name: '进入待机' }));
     await waitFor(() => expect(api.sleep).toHaveBeenCalled());
@@ -30,7 +30,7 @@ describe('SleepWakePanel', () => {
 
   it('wakes and shows awake state', async () => {
     const api = apiFixture();
-    render(<SleepWakePanel baseUrl="http://core" api={api} />);
+    render(<SleepWakePanel api={api} />);
     await screen.findByText(/awake/);
     fireEvent.click(screen.getByRole('button', { name: '进入待机' }));
     await waitFor(() => expect(api.sleep).toHaveBeenCalled());
@@ -42,7 +42,7 @@ describe('SleepWakePanel', () => {
 
   it('shows history', async () => {
     const api = apiFixture();
-    render(<SleepWakePanel baseUrl="http://core" api={api} />);
+    render(<SleepWakePanel api={api} />);
     await screen.findByText(/awake/);
     fireEvent.click(screen.getByRole('button', { name: '进入待机' }));
     await waitFor(() => expect(api.sleep).toHaveBeenCalled());
@@ -53,7 +53,7 @@ describe('SleepWakePanel', () => {
   });
 
   it('has no dangerous buttons', () => {
-    render(<SleepWakePanel baseUrl="http://core" api={apiFixture()} />);
+    render(<SleepWakePanel api={apiFixture()} />);
     const dangerous = ['push', 'release', 'tag', 'delete', 'destroy', 'kill'];
     dangerous.forEach((text) => {
       expect(screen.queryByRole('button', { name: new RegExp(text, 'i') })).toBeNull();

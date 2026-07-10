@@ -43,34 +43,33 @@ export interface PanelsProps {
   goalInfo: Goal | null;
   unfinishedGoals: Goal[];
   workspace: string;
-  baseUrl: string;
-  fetcher?: Fetcher;
+  fetcher: Fetcher;
   onGoalChange: (g: Goal | null, rId: string | null) => void;
   api: {
-    checkpoint: { createCheckpoint: (url: string, p: Record<string, unknown>) => Promise<unknown>; loadCheckpoint: (url: string, cpId: string) => Promise<unknown> };
-    goal: { createGoal: (url: string, p: Record<string, unknown>) => Promise<Goal>; startRun: (url: string, g: string, ws: string) => Promise<{ id: string }>; runAgentLoop: (url: string, runId: string, steps: number) => Promise<AgentLoopResult>; pauseGoal: (url: string, id: string) => Promise<Goal>; resumeGoal: (url: string, id: string) => Promise<Goal>; clearGoal: (url: string, id: string) => Promise<Goal>; getGoal: (_url: string, _id: string) => Promise<Goal | null>; fetchGoalEvidence: (url: string, id: string) => Promise<GoalEvidence[]>; fetchRunTimeline: (url: string, runId: string) => Promise<TimelineEvent[]>; fetchTaskResultSummary: (url: string, closureId: string) => Promise<Record<string, unknown>>; getTaskClosureByRun: (url: string, runId: string) => Promise<TaskClosureEvidence> };
-    sideChat: { steerRun: (url: string, rId: string, content: string) => Promise<SteeringResult> };
-    taskClosure: { fetchTaskTemplates: (b: string, f?: Fetcher) => Promise<TaskTemplate[]>; createTaskClosure: (b: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; getTaskClosure: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureEvent: (b: string, id: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureReview: (b: string, id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureRun: (b: string, id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureGoal: (b: string, id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; fetchTaskClosureVerificationPlan: (b: string, id: string, f?: Fetcher) => Promise<VerificationPlan>; fetchTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<VerificationAssessment>; updateTaskClosureAssessment: (b: string, id: string, f?: Fetcher) => Promise<TaskClosureEvidence> };
-    executionQueue: { fetchExecutionQueue: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; proposeExecutionQueue: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; approveExecutionQueueItem: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionQueueItem>; rejectExecutionQueueItem: (b: string, itemId: string, reason: string, f?: Fetcher) => Promise<ExecutionQueueItem>; completeExecutionQueueItem: (b: string, itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem>; failExecutionQueueItem: (b: string, itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem> };
-    executionHandoff: { fetchExecutionHandoffs: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>; fetchExecutionAuditTimeline: (b: string, closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>; fetchExecutionAuditDiagnostics: (b: string, closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>; fetchExecutionAuditIntegrity: (b: string, f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>; fetchReleaseReadiness: (b: string, f?: Fetcher) => Promise<ReleaseReadiness>; fetchLocalReleaseChecklist: (b: string, f?: Fetcher) => Promise<LocalReleaseChecklist>; fetchRecoveryPolicy: (b: string, f?: Fetcher) => Promise<RecoveryPolicy>; fetchPlannerGraphs: (b: string, f?: Fetcher) => Promise<TaskGraphSummary[]>; createExecutionHandoff: (b: string, itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; completeExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; failExecutionHandoff: (b: string, handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; requestExecutionHandoffPermission: (b: string, handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord> };
-    researcher: { createBrief: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; executeResearch: (b: string, briefId: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchScopes: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    builder: { executeTask: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchProposals: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    reviewer: { reviewOutput: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (b: string, verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    skilllearner: { autoScan: (b: string, k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
-    orchestrator: { runOrchestration: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchRoles: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    sleepWake: { sleep: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; wake: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    gateFreeze: { freezeGate: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; unfreezeGate: (b: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    toolVerification: { verifyTools: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    autoFix: { autoFixReviewFindings: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
-    autoContinue: { autoContinue: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
-    autonomousLoop: { runLoop: (b: string, p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
-    desktopBetaShip?: { fetchBetaShip: (b: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    checkpoint: { createCheckpoint: (p: Record<string, unknown>) => Promise<unknown>; loadCheckpoint: (cpId: string) => Promise<unknown> };
+    goal: { createGoal: (p: Record<string, unknown>) => Promise<Goal>; startRun: (g: string, ws: string) => Promise<{ id: string }>; runAgentLoop: (runId: string, steps: number) => Promise<AgentLoopResult>; pauseGoal: (id: string) => Promise<Goal>; resumeGoal: (id: string) => Promise<Goal>; clearGoal: (id: string) => Promise<Goal>; getGoal: (_id: string) => Promise<Goal | null>; fetchGoalEvidence: (id: string) => Promise<GoalEvidence[]>; fetchRunTimeline: (runId: string) => Promise<TimelineEvent[]>; fetchTaskResultSummary: (closureId: string) => Promise<Record<string, unknown>>; getTaskClosureByRun: (runId: string) => Promise<TaskClosureEvidence> };
+    sideChat: { steerRun: (rId: string, content: string) => Promise<SteeringResult> };
+    taskClosure: { fetchTaskTemplates: (f?: Fetcher) => Promise<TaskTemplate[]>; createTaskClosure: (p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; getTaskClosure: (id: string, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureEvent: (id: string, p: Record<string, unknown>, f?: Fetcher) => Promise<TaskClosureEvidence>; addClosureReview: (id: string, p: { summary: string; passed: boolean }, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureRun: (id: string, runId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; bindTaskClosureGoal: (id: string, goalId: string, f?: Fetcher) => Promise<TaskClosureEvidence>; fetchTaskClosureVerificationPlan: (id: string, f?: Fetcher) => Promise<VerificationPlan>; fetchTaskClosureAssessment: (id: string, f?: Fetcher) => Promise<VerificationAssessment>; updateTaskClosureAssessment: (id: string, f?: Fetcher) => Promise<TaskClosureEvidence> };
+    executionQueue: { fetchExecutionQueue: (closureId?: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; proposeExecutionQueue: (closureId: string, f?: Fetcher) => Promise<ExecutionQueueItem[]>; approveExecutionQueueItem: (itemId: string, f?: Fetcher) => Promise<ExecutionQueueItem>; rejectExecutionQueueItem: (itemId: string, reason: string, f?: Fetcher) => Promise<ExecutionQueueItem>; completeExecutionQueueItem: (itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem>; failExecutionQueueItem: (itemId: string, result: string, f?: Fetcher) => Promise<ExecutionQueueItem> };
+    executionHandoff: { fetchExecutionHandoffs: (closureId?: string, f?: Fetcher) => Promise<ExecutionHandoffRecord[]>; fetchExecutionAuditTimeline: (closureId: string, f?: Fetcher) => Promise<ExecutionAuditTimelineEvent[]>; fetchExecutionAuditDiagnostics: (closureId?: string, f?: Fetcher) => Promise<ExecutionAuditDiagnostic[]>; fetchExecutionAuditIntegrity: (f?: Fetcher) => Promise<ExecutionAuditIntegrity[]>; fetchReleaseReadiness: (f?: Fetcher) => Promise<ReleaseReadiness>; fetchLocalReleaseChecklist: (f?: Fetcher) => Promise<LocalReleaseChecklist>; fetchRecoveryPolicy: (f?: Fetcher) => Promise<RecoveryPolicy>; fetchPlannerGraphs: (f?: Fetcher) => Promise<TaskGraphSummary[]>; createExecutionHandoff: (itemId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; completeExecutionHandoff: (handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; failExecutionHandoff: (handoffId: string, result: string, f?: Fetcher) => Promise<ExecutionHandoffRecord>; requestExecutionHandoffPermission: (handoffId: string, f?: Fetcher) => Promise<ExecutionHandoffRecord> };
+    researcher: { createBrief: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; executeResearch: (briefId: string, f: Fetcher) => Promise<Record<string, unknown>>; fetchScopes: (f: Fetcher) => Promise<Record<string, unknown>> };
+    builder: { executeTask: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchProposals: (f: Fetcher) => Promise<Record<string, unknown>> };
+    reviewer: { reviewOutput: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchVerdictLabel: (verdict: string, f: Fetcher) => Promise<Record<string, unknown>> };
+    skilllearner: { autoScan: (k: string, f: Fetcher) => Promise<Record<string, unknown>>; recordFailure: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    orchestrator: { runOrchestration: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchRoles: (f: Fetcher) => Promise<Record<string, unknown>> };
+    sleepWake: { sleep: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; wake: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (f: Fetcher) => Promise<Record<string, unknown>> };
+    gateFreeze: { freezeGate: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; unfreezeGate: (f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (f: Fetcher) => Promise<Record<string, unknown>> };
+    toolVerification: { verifyTools: (f: Fetcher) => Promise<Record<string, unknown>> };
+    autoFix: { autoFixReviewFindings: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    autoContinue: { autoContinue: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>>; fetchStatus: (f: Fetcher) => Promise<Record<string, unknown>> };
+    autonomousLoop: { runLoop: (p: Record<string, unknown>, f: Fetcher) => Promise<Record<string, unknown>> };
+    desktopBetaShip?: { fetchBetaShip: (f: Fetcher) => Promise<Record<string, unknown>> };
   };
 }
 
 export type PanelsApi = PanelsProps['api'];
 
-export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, baseUrl, fetcher, onGoalChange, api }: PanelsProps) {
+export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, fetcher, onGoalChange, api }: PanelsProps) {
   const [closureId, setClosureId] = useState<string | null>(null);
   const [approvedQueueItemId, setApprovedQueueItemId] = useState<string | null>(null);
   function handleClosureChange(nextClosureId: string | null) {
@@ -79,59 +78,63 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, bas
   }
   return (
     <>
-      <ProductWorkbenchPanel baseUrl={baseUrl} api={{ fetchProductWorkbench }} />
-      <TaskHomePanel baseUrl={baseUrl} api={{ fetchTaskHome }} />
-      <PermissionCenterPanel baseUrl={baseUrl} api={{
-        fetchPermissionCenter,
-        grantPermission: (url, requestId) => approvePermissionFromCenter(url, requestId, fetcher),
-        denyPermission: (url, requestId) => rejectPermissionFromCenter(url, requestId, fetcher),
+      <ProductWorkbenchPanel api={{ fetchProductWorkbench: () => fetchProductWorkbench(fetcher) }} />
+      <TaskHomePanel api={{ fetchTaskHome: () => fetchTaskHome(fetcher) }} />
+      <PermissionCenterPanel api={{
+        fetchPermissionCenter: () => fetchPermissionCenter(fetcher),
+        grantPermission: (requestId) => approvePermissionFromCenter(requestId, fetcher),
+        denyPermission: (requestId) => rejectPermissionFromCenter(requestId, fetcher),
       }} />
-      <AuditTimelinePanel baseUrl={baseUrl} closureId={closureId} api={{ fetchAuditTimeline }} />
-      <DiagnosticsCenterPanel baseUrl={baseUrl} api={{ fetchDiagnosticsCenter }} />
-      <ReleaseReadinessPanel baseUrl={baseUrl} api={{
+      <AuditTimelinePanel closureId={closureId} api={{ fetchAuditTimeline: (id) => fetchAuditTimeline(id, undefined, fetcher) }} />
+      <DiagnosticsCenterPanel api={{ fetchDiagnosticsCenter: () => fetchDiagnosticsCenter(fetcher) }} />
+      <ReleaseReadinessPanel api={{
         fetchReleaseReadiness: api.executionHandoff.fetchReleaseReadiness,
         fetchLocalChecklist: api.executionHandoff.fetchLocalReleaseChecklist,
         fetchRecoveryPolicy: api.executionHandoff.fetchRecoveryPolicy,
       }} />
-      <MultiTaskQueuePanel baseUrl={baseUrl} api={{ fetchMultiTaskQueue }} />
-      <FailureExplanationPanel baseUrl={baseUrl} api={{ fetchFailureExplanation }} />
-      <SessionRecoveryPanel baseUrl={baseUrl} api={{ fetchSessionRecovery }} />
-      <SettingsToolsPanel baseUrl={baseUrl} api={{ fetchSettingsTools }} />
+      <MultiTaskQueuePanel api={{ fetchMultiTaskQueue: () => fetchMultiTaskQueue(fetcher) }} />
+      <FailureExplanationPanel api={{ fetchFailureExplanation: () => fetchFailureExplanation(fetcher) }} />
+      <SessionRecoveryPanel api={{ fetchSessionRecovery: () => fetchSessionRecovery(fetcher) }} />
+      <SettingsToolsPanel api={{ fetchSettingsTools: () => fetchSettingsTools(fetcher) }} />
       <PatchPreviewPanel
-        fetchPatchList={() => fetchPatchList(baseUrl, fetcher) as Promise<{ patches: { patch_id: string; description: string; risk_level: string; risk_label: string; status: string; status_label: string; total_files: number; total_lines: number; audit_hash: string }[] }>}
-        fetchPatchPreview={(patchId: string) => fetchPatchPreview(baseUrl, patchId, fetcher) as Promise<{ patch_id: string; description: string; risk_level: string; risk_label: string; total_files: number; total_lines: number; files: { path: string; operation: string; hunk_count: number }[]; unified_diff: string; disclaimer: string }>}
+        fetchPatchList={() => fetchPatchList(fetcher) as Promise<{ patches: { patch_id: string; description: string; risk_level: string; risk_label: string; status: string; status_label: string; total_files: number; total_lines: number; audit_hash: string }[] }>}
+        fetchPatchPreview={(patchId: string) => fetchPatchPreview(patchId, fetcher) as Promise<{ patch_id: string; description: string; risk_level: string; risk_label: string; total_files: number; total_lines: number; files: { path: string; operation: string; hunk_count: number }[]; unified_diff: string; disclaimer: string }>}
       />
-      <TestRunnerPanel baseUrl={baseUrl} api={{ fetchAvailableTests: fetchTestRunnerAvailable, runTest, fetchTestHistory: fetchTestRunnerHistory }} />
-      <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} baseUrl={baseUrl} />
-      <GoalConsole workspacePath={workspace} goal={goalInfo} api={{ ...api.goal, fetchTaskResultSummary: (url, closureId) => fetchTaskResultSummary(url, closureId, fetcher), getTaskClosureByRun: (url, runId) => getTaskClosureByRun(url, runId, fetcher) }} baseUrl={baseUrl} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
-      <SideChatPanel runId={runId} api={api.sideChat} baseUrl={baseUrl} />
-      <TaskClosurePanel baseUrl={baseUrl} workspace={workspace} fetcher={fetcher} runId={runId} goalId={goalInfo?.id ?? null} api={api.taskClosure} onClosureChange={handleClosureChange} />
-      <ExecutionQueuePanel baseUrl={baseUrl} closureId={closureId} fetcher={fetcher} api={api.executionQueue} onApprovedItemChange={setApprovedQueueItemId} />
-      <ExecutionHandoffPanel baseUrl={baseUrl} closureId={closureId} selectedQueueItemId={approvedQueueItemId} fetcher={fetcher} api={api.executionHandoff} />
-      <MemorySearchPanel baseUrl={baseUrl} api={{
-        fetchDecisions: fetchMemoryDecisions,
-        fetchFailures: fetchMemoryFailures,
-        fetchPreferences: fetchMemoryPreferences,
-        fetchProfile: fetchProjectProfile,
-        fetchCodeMap: fetchCodeMapEntries,
+      <TestRunnerPanel api={{
+        fetchAvailableTests: () => fetchTestRunnerAvailable(fetcher),
+        runTest: (id, args) => runTest(id, args, fetcher),
+        fetchTestHistory: () => fetchTestRunnerHistory(fetcher),
       }} />
-      <MultiAgentStatusPanel baseUrl={baseUrl} api={{
-        fetchRoles: fetchMultiAgentRoles,
-        fetchBoard: fetchSubtasksBoard,
-        fetchSubtasks: fetchSubtasks,
+      <CheckpointPanel runId={runId} goalId={goalInfo?.id ?? null} api={api.checkpoint} />
+      <GoalConsole workspacePath={workspace} goal={goalInfo} api={{ ...api.goal, fetchTaskResultSummary: (closureId) => fetchTaskResultSummary(closureId, fetcher), getTaskClosureByRun: (runId) => getTaskClosureByRun(runId, fetcher) }} unfinishedGoals={unfinishedGoals} onGoalChange={onGoalChange} />
+      <SideChatPanel runId={runId} api={api.sideChat} />
+      <TaskClosurePanel workspace={workspace} fetcher={fetcher} runId={runId} goalId={goalInfo?.id ?? null} api={api.taskClosure} onClosureChange={handleClosureChange} />
+      <ExecutionQueuePanel closureId={closureId} fetcher={fetcher} api={api.executionQueue} onApprovedItemChange={setApprovedQueueItemId} />
+      <ExecutionHandoffPanel closureId={closureId} selectedQueueItemId={approvedQueueItemId} fetcher={fetcher} api={api.executionHandoff} />
+      <MemorySearchPanel api={{
+        fetchDecisions: (keyword) => fetchMemoryDecisions(keyword, fetcher),
+        fetchFailures: (keyword) => fetchMemoryFailures(keyword, fetcher),
+        fetchPreferences: (keyword) => fetchMemoryPreferences(keyword, fetcher),
+        fetchProfile: () => fetchProjectProfile(fetcher),
+        fetchCodeMap: (keyword) => fetchCodeMapEntries(keyword, fetcher),
       }} />
-      <ResearcherPanel baseUrl={baseUrl} fetcher={fetcher} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
-      <BuilderPanel baseUrl={baseUrl} fetcher={fetcher} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
-      <ReviewerPanel baseUrl={baseUrl} fetcher={fetcher} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
-      <SkillLearnerPanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
-      <OrchestratorPanel baseUrl={baseUrl} fetcher={fetcher} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
-      <SleepWakePanel baseUrl={baseUrl} api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
-      <GateFreezePanel baseUrl={baseUrl} fetcher={fetcher} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
-      <ToolVerificationPanel baseUrl={baseUrl} fetcher={fetcher} api={{ verifyTools: api.toolVerification.verifyTools }} />
-      <AutoFixPanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
-      <AutoContinuePanel baseUrl={baseUrl} fetcher={fetcher} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
-      <AutonomousLoopPanel baseUrl={baseUrl} fetcher={fetcher} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
-      {api.desktopBetaShip && <DesktopBetaShipPanel baseUrl={baseUrl} fetcher={fetcher} api={{ fetchBetaShip: api.desktopBetaShip.fetchBetaShip }} />}
+      <MultiAgentStatusPanel api={{
+        fetchRoles: () => fetchMultiAgentRoles(fetcher),
+        fetchBoard: () => fetchSubtasksBoard(fetcher),
+        fetchSubtasks: (role, status) => fetchSubtasks(role, status, fetcher),
+      }} />
+      <ResearcherPanel fetcher={fetcher} api={{ createBrief: createResearchBrief, executeResearch, fetchScopes: fetchResearchScopes }} />
+      <BuilderPanel fetcher={fetcher} api={{ executeTask: executeBuilderTask, fetchProposals: fetchBuilderProposals }} />
+      <ReviewerPanel fetcher={fetcher} api={{ reviewOutput: reviewBuilderOutput, fetchVerdictLabel: fetchReviewVerdictLabel }} />
+      <SkillLearnerPanel fetcher={fetcher} api={{ autoScan: api.skilllearner.autoScan, recordFailure: api.skilllearner.recordFailure }} />
+      <OrchestratorPanel fetcher={fetcher} api={{ runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles }} />
+      <SleepWakePanel api={{ sleep: api.sleepWake.sleep, wake: api.sleepWake.wake, fetchStatus: api.sleepWake.fetchStatus }} />
+      <GateFreezePanel fetcher={fetcher} api={{ freezeGate: api.gateFreeze.freezeGate, unfreezeGate: api.gateFreeze.unfreezeGate, fetchGateStatus: api.gateFreeze.fetchStatus }} />
+      <ToolVerificationPanel fetcher={fetcher} api={{ verifyTools: api.toolVerification.verifyTools }} />
+      <AutoFixPanel fetcher={fetcher} api={{ autoFixReviewFindings: api.autoFix.autoFixReviewFindings }} />
+      <AutoContinuePanel fetcher={fetcher} api={{ autoContinue: api.autoContinue.autoContinue, fetchAutoContinueStatus: api.autoContinue.fetchStatus }} />
+      <AutonomousLoopPanel fetcher={fetcher} api={{ runAutonomousLoop: api.autonomousLoop.runLoop }} />
+      {api.desktopBetaShip && <DesktopBetaShipPanel fetcher={fetcher} api={{ fetchBetaShip: api.desktopBetaShip.fetchBetaShip }} />}
     </>
   );
 }

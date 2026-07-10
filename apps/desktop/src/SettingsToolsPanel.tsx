@@ -7,11 +7,10 @@
 import { useEffect, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
-  api: { fetchSettingsTools: (b: string) => Promise<Record<string, unknown>> };
+  api: { fetchSettingsTools: () => Promise<Record<string, unknown>> };
 }
 
-export function SettingsToolsPanel({ baseUrl, api }: Props) {
+export function SettingsToolsPanel({ api }: Props) {
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +19,7 @@ export function SettingsToolsPanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchSettingsTools(baseUrl);
+        const raw = await api.fetchSettingsTools();
         if (cancelled) return;
         setData(raw);
       } catch (e) {
@@ -31,7 +30,7 @@ export function SettingsToolsPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   if (loading) return <div className="settingsToolsPanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="settingsToolsPanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

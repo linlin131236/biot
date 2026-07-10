@@ -188,7 +188,7 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
         toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
         modelPanel={<ModelPanel model={model} setModel={setModel} apiKey={apiKey} setApiKey={setApiKey} saveModel={saveModel} status={state.modelSettingsStatus} />}
-        legacyPanels={<><PanelsSection runId={runId} goalInfo={goalInfo} unfinishedGoals={unfinishedGoals} workspace={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''} baseUrl={session.coreUrl} fetcher={fetcher} onGoalChange={handleGoalConsoleChange} api={panelsApi} /><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></>}
+        legacyPanels={<><PanelsSection runId={runId} goalInfo={goalInfo} unfinishedGoals={unfinishedGoals} workspace={hasWorkspace ? (state.workspacePath || session.workspacePath) : ''} fetcher={fetcher} onGoalChange={handleGoalConsoleChange} api={panelsApi} /><TaskLog state={state} /><TracePanel state={state} /><DogfoodPanel goalInfo={goalInfo} reviewResult={reviewResult} timeline={timeline} /><PermissionsPanel permissions={state.pendingPermissions} onDecision={onPermission} /><MemoryPanel snapshot={state.memorySnapshot} /></>}
       />
   );
 

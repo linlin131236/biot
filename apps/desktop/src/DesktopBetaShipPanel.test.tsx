@@ -25,9 +25,9 @@ describe('fetchDesktopBetaShip', () => {
   it('uses the authenticated fetcher and reads the beta ship endpoint', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(resultFixture()), { status: 200 }));
 
-    const result = await fetchDesktopBetaShip('http://core', fetcher);
+    const result = await fetchDesktopBetaShip(fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('http://core/desktop/beta-ship');
+    expect(fetcher).toHaveBeenCalledWith('/desktop/beta-ship');
     expect(result.ready).toBe(true);
   });
 });
@@ -37,9 +37,9 @@ describe('DesktopBetaShipPanel', () => {
     const api = { fetchBetaShip: vi.fn().mockResolvedValue(resultFixture()) };
     const fetcher = vi.fn();
 
-    render(<DesktopBetaShipPanel baseUrl="http://core" fetcher={fetcher} api={api} />);
+    render(<DesktopBetaShipPanel fetcher={fetcher} api={api} />);
 
-    await waitFor(() => expect(api.fetchBetaShip).toHaveBeenCalledWith('http://core', fetcher));
+    await waitFor(() => expect(api.fetchBetaShip).toHaveBeenCalledWith(fetcher));
     expect(await screen.findByText('桌面 Beta 发布候选')).toBeTruthy();
     expect(screen.getByText('可以进入人工复审')).toBeTruthy();
     expect(screen.getByText('M171 桌面打包 smoke 就绪')).toBeTruthy();
@@ -57,7 +57,7 @@ describe('DesktopBetaShipPanel', () => {
       })),
     };
 
-    render(<DesktopBetaShipPanel baseUrl="http://core" fetcher={vi.fn()} api={api} />);
+    render(<DesktopBetaShipPanel fetcher={vi.fn()} api={api} />);
 
     expect(await screen.findByText('存在阻断项')).toBeTruthy();
     expect(screen.getAllByText('M178 安装包发布前检查就绪').length).toBeGreaterThanOrEqual(1);

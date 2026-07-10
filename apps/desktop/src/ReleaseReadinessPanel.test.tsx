@@ -24,28 +24,28 @@ const notReadyData = {
 
 describe('ReleaseReadinessPanel', () => {
   it('renders loading', () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(readyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(readyData)} />);
     expect(screen.getByText('加载中...')).toBeTruthy();
   });
 
   it('shows ready state', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(readyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(readyData)} />);
     await waitFor(() => expect(screen.getByText(/已准备好发布/)).toBeTruthy());
   });
 
   it('shows not ready state', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(notReadyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(notReadyData)} />);
     await waitFor(() => expect(screen.getByText(/尚未准备好发布/)).toBeTruthy());
   });
 
   it('shows blocker reason and recommendation from checklist items', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(notReadyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(notReadyData)} />);
     await waitFor(() => expect(screen.getByText(/3 tests failed/)).toBeTruthy());
     expect(screen.getByText(/修复测试/)).toBeTruthy();
   });
 
   it('supports legacy checks shape', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi({
+    render(<ReleaseReadinessPanel api={fakeApi({
       readiness: { ready: false },
       checklist: { checks: [{ label: 'legacy', passed: false, reason: 'old reason', suggestion: 'old suggestion' }] },
     })} />);
@@ -54,17 +54,17 @@ describe('ReleaseReadinessPanel', () => {
   });
 
   it('shows recovery summary', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(readyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(readyData)} />);
     await waitFor(() => expect(screen.getByText(/恢复策略只读参考/)).toBeTruthy());
   });
 
   it('has read-only note', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(readyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(readyData)} />);
     await waitFor(() => expect(screen.getByText(/只读发布准备检查/)).toBeTruthy());
   });
 
   it('no release buttons', async () => {
-    render(<ReleaseReadinessPanel baseUrl="http://t" api={fakeApi(readyData)} />);
+    render(<ReleaseReadinessPanel api={fakeApi(readyData)} />);
     await waitFor(() => expect(screen.getByText(/只读发布准备检查/)).toBeTruthy());
     const buttons = document.querySelectorAll('button');
     const texts = Array.from(buttons).map((button) => button.textContent?.toLowerCase() || '');

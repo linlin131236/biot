@@ -6,13 +6,12 @@
 import { useEffect, useState } from 'react';
 
 interface SleepWakeApi {
-  sleep: (baseUrl: string, payload: Record<string, unknown>, fetcher?: Fetcher) => Promise<Record<string, unknown>>;
-  wake: (baseUrl: string, payload: Record<string, unknown>, fetcher?: Fetcher) => Promise<Record<string, unknown>>;
-  fetchStatus: (baseUrl: string, fetcher?: Fetcher) => Promise<Record<string, unknown>>;
+  sleep: (payload: Record<string, unknown>, fetcher?: Fetcher) => Promise<Record<string, unknown>>;
+  wake: (payload: Record<string, unknown>, fetcher?: Fetcher) => Promise<Record<string, unknown>>;
+  fetchStatus: (fetcher?: Fetcher) => Promise<Record<string, unknown>>;
 }
 
 interface Props {
-  baseUrl: string;
   api: SleepWakeApi;
 }
 
@@ -23,7 +22,7 @@ interface HistoryEntry {
   at: string;
 }
 
-export function SleepWakePanel({ baseUrl, api }: Props) {
+export function SleepWakePanel({ api }: Props) {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +35,7 @@ export function SleepWakePanel({ baseUrl, api }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.fetchStatus(baseUrl);
+      const res = await api.fetchStatus();
       setStatus(res);
     } catch (e) {
       setError(`加载失败：${e instanceof Error ? e.message : String(e)}`);
@@ -47,12 +46,12 @@ export function SleepWakePanel({ baseUrl, api }: Props) {
 
   useEffect(() => {
     loadStatus();
-  }, [baseUrl]);
+  }, []);
 
   async function handleSleep() {
     setError(null);
     try {
-      const res = await api.sleep(baseUrl, {
+      const res = await api.sleep({
         duration_seconds: Number(duration) || 60,
         reason: reason || undefined,
       });
@@ -66,7 +65,7 @@ export function SleepWakePanel({ baseUrl, api }: Props) {
   async function handleWake() {
     setError(null);
     try {
-      const res = await api.wake(baseUrl, { trigger: trigger || undefined });
+      const res = await api.wake({ trigger: trigger || undefined });
       setStatus(res);
       setHistory(prev => [{ action: 'wake', state: String(res.state ?? ''), is_sleeping: Boolean(res.is_sleeping), at: new Date().toLocaleString() }, ...prev].slice(0, 5));
     } catch (e) {

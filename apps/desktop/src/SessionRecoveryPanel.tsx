@@ -4,11 +4,10 @@
 import { useEffect, useMemo, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
-  api: { fetchSessionRecovery: (baseUrl: string) => Promise<Record<string, unknown>> };
+  api: { fetchSessionRecovery: () => Promise<Record<string, unknown>> };
 }
 
-export function SessionRecoveryPanel({ baseUrl, api }: Props) {
+export function SessionRecoveryPanel({ api }: Props) {
   const [tasks, setTasks] = useState<Record<string, unknown>[]>([]);
   const [policy, setPolicy] = useState<Record<string, unknown> | null>(null);
   const [total, setTotal] = useState(0);
@@ -19,7 +18,7 @@ export function SessionRecoveryPanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchSessionRecovery(baseUrl);
+        const raw = await api.fetchSessionRecovery();
         if (cancelled) return;
         setTasks(Array.isArray(raw.paused_tasks) ? raw.paused_tasks as Record<string, unknown>[] : []);
         setTotal(typeof raw.total_paused === 'number' ? raw.total_paused : 0);
@@ -32,7 +31,7 @@ export function SessionRecoveryPanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [api, baseUrl]);
+  }, [api]);
 
   const policyText = useMemo(() => formatPolicy(policy), [policy]);
 

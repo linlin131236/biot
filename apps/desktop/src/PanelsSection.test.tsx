@@ -30,7 +30,7 @@ function apiFixture() {
     goal: { createGoal: vi.fn(), startRun: vi.fn(), runAgentLoop: vi.fn(), pauseGoal: vi.fn(), resumeGoal: vi.fn(), clearGoal: vi.fn(), getGoal: vi.fn(), fetchGoalEvidence: vi.fn(), fetchRunTimeline: vi.fn() },
     sideChat: { steerRun: vi.fn() },
     taskClosure: { fetchTaskTemplates: vi.fn(), createTaskClosure: vi.fn().mockResolvedValue(closure), getTaskClosure: vi.fn().mockResolvedValue(closure), addClosureEvent: vi.fn(), addClosureReview: vi.fn(), bindTaskClosureRun: vi.fn(), bindTaskClosureGoal: vi.fn(), fetchTaskClosureVerificationPlan: vi.fn(), fetchTaskClosureAssessment: vi.fn(), updateTaskClosureAssessment: vi.fn() },
-    executionQueue: { fetchExecutionQueue: vi.fn().mockImplementation((_baseUrl: string, closureId?: string) => Promise.resolve(closureId === 'cl_a' ? [{ id: 'eq_a', closure_id: 'cl_a', kind: 'verification_command', title: '记录验证命令', description: '缺少测试', risk: 'verification_command', status: 'approved', command: 'pytest', reason: '', result: '' }] : [])), proposeExecutionQueue: vi.fn().mockResolvedValue([]), approveExecutionQueueItem: vi.fn(), rejectExecutionQueueItem: vi.fn(), completeExecutionQueueItem: vi.fn(), failExecutionQueueItem: vi.fn() },
+    executionQueue: { fetchExecutionQueue: vi.fn().mockImplementation((closureId?: string) => Promise.resolve(closureId === 'cl_a' ? [{ id: 'eq_a', closure_id: 'cl_a', kind: 'verification_command', title: '记录验证命令', description: '缺少测试', risk: 'verification_command', status: 'approved', command: 'pytest', reason: '', result: '' }] : [])), proposeExecutionQueue: vi.fn().mockResolvedValue([]), approveExecutionQueueItem: vi.fn(), rejectExecutionQueueItem: vi.fn(), completeExecutionQueueItem: vi.fn(), failExecutionQueueItem: vi.fn() },
     executionHandoff: { fetchExecutionHandoffs: vi.fn().mockResolvedValue([]), fetchExecutionAuditTimeline: vi.fn().mockResolvedValue([]), fetchExecutionAuditDiagnostics: vi.fn().mockResolvedValue([]), fetchExecutionAuditIntegrity: vi.fn().mockResolvedValue([]), fetchReleaseReadiness: vi.fn().mockResolvedValue({ ready: true, checks: [], blockers: [], warnings: [] }), fetchLocalReleaseChecklist: vi.fn().mockResolvedValue({ ready: true, items: [], blockers: [], warnings: [], next_step: '', disclaimer: '' }), fetchRecoveryPolicy: vi.fn().mockResolvedValue({ scenarios: [], categories: {}, total: 0, disclaimer: '' }), fetchPlannerGraphs: vi.fn().mockResolvedValue([]), createExecutionHandoff: vi.fn(), completeExecutionHandoff: vi.fn(), failExecutionHandoff: vi.fn(), requestExecutionHandoffPermission: vi.fn() },
     researcher: { createBrief: vi.fn(), executeResearch: vi.fn(), fetchScopes: vi.fn() },
     builder: { executeTask: vi.fn(), fetchProposals: vi.fn() },
@@ -49,7 +49,7 @@ function apiFixture() {
 describe('PanelsSection', () => {
   it('切换闭环时清空已批准队列项，避免旧队列项生成交接', async () => {
     const api = apiFixture();
-    render(<PanelsSection runId={null} goalInfo={null} unfinishedGoals={[]} workspace="D:/Bolt/Bolt" baseUrl="http://core" onGoalChange={vi.fn()} api={api} />);
+    render(<PanelsSection runId={null} goalInfo={null} unfinishedGoals={[]} workspace="D:/Bolt/Bolt" onGoalChange={vi.fn()} api={api} />);
 
     fireEvent.click(screen.getByRole('button', { name: '切换闭环A' }));
     fireEvent.click(await screen.findByRole('button', { name: '用于交接' }));

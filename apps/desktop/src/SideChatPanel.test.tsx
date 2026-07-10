@@ -26,12 +26,12 @@ describe('SideChatPanel', () => {
 
   it('sends steering message and shows it in chat entries', async () => {
     mockApi.steerRun.mockResolvedValue(okResult);
-    render(<SideChatPanel runId="run_1" api={mockApi} baseUrl="http://core" />);
+    render(<SideChatPanel runId="run_1" api={mockApi} />);
     const input = screen.getByLabelText('侧聊内容');
     fireEvent.change(input, { target: { value: '请先修测试' } });
     fireEvent.click(screen.getByRole('button', { name: '发送指令' }));
     await waitFor(() => expect(screen.getByText('请先修测试')).toBeInTheDocument());
-    expect(mockApi.steerRun).toHaveBeenCalledWith('http://core', 'run_1', '请先修测试');
+    expect(mockApi.steerRun).toHaveBeenCalledWith('run_1', '请先修测试');
     // Input cleared after send
     expect(input).toHaveValue('');
   });
@@ -58,7 +58,7 @@ describe('SideChatPanel', () => {
 
   it('does not call runAgentLoop or approve permission after steering', async () => {
     mockApi.steerRun.mockResolvedValue(okResult);
-    render(<SideChatPanel runId="run_1" api={mockApi} baseUrl="http://core" />);
+    render(<SideChatPanel runId="run_1" api={mockApi} />);
     fireEvent.change(screen.getByLabelText('侧聊内容'), { target: { value: '修正方向' } });
     fireEvent.click(screen.getByRole('button', { name: '发送指令' }));
     await waitFor(() => expect(mockApi.steerRun).toHaveBeenCalled());

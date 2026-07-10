@@ -50,19 +50,19 @@ const fullData = {
 
 describe('TaskHomePanel', () => {
   it('renders loading state initially', () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<TaskHomePanel api={fakeApi(emptyData)} />);
     expect(screen.getByText('加载中…')).toBeTruthy();
   });
 
   it('renders empty state', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<TaskHomePanel api={fakeApi(emptyData)} />);
     await waitFor(() => {
       expect(screen.getByText('暂无进行中的目标。')).toBeTruthy();
     });
   });
 
   it('renders full data', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       expect(screen.getByText('重构权限模块')).toBeTruthy();
       const statusElements = screen.getAllByText(/运行中/);
@@ -71,7 +71,7 @@ describe('TaskHomePanel', () => {
   });
 
   it('shows blocker count when present', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       const matches = screen.getAllByText(/阻断/);
       expect(matches.length).toBeGreaterThan(0);
@@ -79,42 +79,42 @@ describe('TaskHomePanel', () => {
   });
 
   it('shows pending permission count', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       expect(screen.getByText(/权限待批/)).toBeTruthy();
     });
   });
 
   it('shows suggestions', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       expect(screen.getByText(/权限请求等待批准/)).toBeTruthy();
     });
   });
 
   it('shows recent events', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       expect(screen.getByText(/审计文件损坏/)).toBeTruthy();
     });
   });
 
   it('shows error state', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApiRejects('网络错误')} />);
+    render(<TaskHomePanel api={fakeApiRejects('网络错误')} />);
     await waitFor(() => {
       expect(screen.getByText(/加载失败/)).toBeTruthy();
     });
   });
 
   it('has Chinese read-only note', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<TaskHomePanel api={fakeApi(emptyData)} />);
     await waitFor(() => {
       expect(screen.getByText(/只读/)).toBeTruthy();
     });
   });
 
   it('has no approve/execute/delete buttons', async () => {
-    render(<TaskHomePanel baseUrl="http://test" api={fakeApi(fullData)} />);
+    render(<TaskHomePanel api={fakeApi(fullData)} />);
     await waitFor(() => {
       expect(screen.getByText('重构权限模块')).toBeTruthy();
     });

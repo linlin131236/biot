@@ -22,18 +22,18 @@ const availableData = {
 
 describe('TestRunnerPanel', () => {
   it('renders loading state', () => {
-    render(<TestRunnerPanel baseUrl="http://test" api={fakeApi(availableData)} />);
+    render(<TestRunnerPanel api={fakeApi(availableData)} />);
     expect(screen.getByText('安全测试运行器')).toBeTruthy();
   });
 
   it('renders test options after loading', async () => {
-    render(<TestRunnerPanel baseUrl="http://test" api={fakeApi(availableData)} />);
+    render(<TestRunnerPanel api={fakeApi(availableData)} />);
     expect(await screen.findByText('后端单元测试')).toBeTruthy();
     expect(screen.getByText('桌面端测试')).toBeTruthy();
   });
 
   it('shows confirmation dialog after clicking run', async () => {
-    render(<TestRunnerPanel baseUrl="http://test" api={fakeApi(availableData)} />);
+    render(<TestRunnerPanel api={fakeApi(availableData)} />);
     await screen.findByText('后端单元测试');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'backend_unit' } });
     fireEvent.click(screen.getByText('运行'));
@@ -43,7 +43,7 @@ describe('TestRunnerPanel', () => {
 
   it('runs test and shows passed result', async () => {
     const api = fakeApi(availableData);
-    render(<TestRunnerPanel baseUrl="http://test" api={api} />);
+    render(<TestRunnerPanel api={api} />);
     await screen.findByText('后端单元测试');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'backend_unit' } });
     fireEvent.click(screen.getByText('运行'));
@@ -54,7 +54,7 @@ describe('TestRunnerPanel', () => {
   it('shows error state on failure', async () => {
     const api = fakeApi(availableData);
     api.runTest.mockRejectedValueOnce(new Error('网络错误'));
-    render(<TestRunnerPanel baseUrl="http://test" api={api} />);
+    render(<TestRunnerPanel api={api} />);
     await screen.findByText('后端单元测试');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'backend_unit' } });
     fireEvent.click(screen.getByText('运行'));
@@ -63,7 +63,7 @@ describe('TestRunnerPanel', () => {
   });
 
   it('shows whitelist disclaimer', async () => {
-    render(<TestRunnerPanel baseUrl="http://test" api={fakeApi(availableData)} />);
+    render(<TestRunnerPanel api={fakeApi(availableData)} />);
     expect(await screen.findByText(/仅白名单命令可运行/)).toBeTruthy();
   });
 
@@ -76,7 +76,7 @@ describe('TestRunnerPanel', () => {
         evidence_hash: 'abc123',
       },
     });
-    render(<TestRunnerPanel baseUrl="http://test" api={api} />);
+    render(<TestRunnerPanel api={api} />);
     await screen.findByText('后端单元测试');
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'backend_unit' } });
     fireEvent.click(screen.getByText('运行'));
@@ -87,7 +87,7 @@ describe('TestRunnerPanel', () => {
   });
 
   it('has no dangerous operation buttons', async () => {
-    render(<TestRunnerPanel baseUrl="http://test" api={fakeApi(availableData)} />);
+    render(<TestRunnerPanel api={fakeApi(availableData)} />);
     await screen.findByText('后端单元测试');
     const dangerous = screen.queryAllByText(/push|release|tag|delete|rm -rf|format/);
     expect(dangerous.length).toBe(0);

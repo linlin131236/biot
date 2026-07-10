@@ -8,9 +8,8 @@ import { useEffect, useState } from 'react';
 import type { TaskHomeSummary, TaskHomeEvent } from '@bolt/shared/autonomy';
 
 interface Props {
-  baseUrl: string;
   api: {
-    fetchTaskHome: (baseUrl: string) => Promise<Record<string, unknown>>;
+    fetchTaskHome: () => Promise<Record<string, unknown>>;
   };
 }
 
@@ -39,7 +38,7 @@ function mapSummary(raw: Record<string, unknown>): TaskHomeSummary {
   };
 }
 
-export function TaskHomePanel({ baseUrl, api }: Props) {
+export function TaskHomePanel({ api }: Props) {
   const [data, setData] = useState<TaskHomeSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +47,7 @@ export function TaskHomePanel({ baseUrl, api }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const raw = await api.fetchTaskHome(baseUrl);
+        const raw = await api.fetchTaskHome();
         if (cancelled) return;
         setData(mapSummary(raw));
       } catch (e) {
@@ -59,7 +58,7 @@ export function TaskHomePanel({ baseUrl, api }: Props) {
     }
     load();
     return () => { cancelled = true; };
-  }, [baseUrl]);
+  }, []);
 
   if (loading) return <div className="taskHomePanel" style={{ padding: '1rem', color: '#888' }}>加载中…</div>;
   if (error) return <div className="taskHomePanel" style={{ padding: '1rem', color: '#c44' }}>{error}</div>;

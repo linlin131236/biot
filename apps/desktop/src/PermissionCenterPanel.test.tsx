@@ -78,19 +78,19 @@ const pendingData = {
 
 describe('PermissionCenterPanel', () => {
   it('renders loading state', () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<PermissionCenterPanel api={fakeApi(emptyData)} />);
     expect(screen.getByText('加载中...')).toBeTruthy();
   });
 
   it('renders empty state', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<PermissionCenterPanel api={fakeApi(emptyData)} />);
     await waitFor(() => {
       expect(screen.getByText(/没有待处理的权限请求/)).toBeTruthy();
     });
   });
 
   it('renders pending permissions', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    render(<PermissionCenterPanel api={fakeApi(pendingData)} />);
     await waitFor(() => {
       expect(screen.getByText('命令行执行')).toBeTruthy();
       expect(screen.getByText('网络搜索')).toBeTruthy();
@@ -98,7 +98,7 @@ describe('PermissionCenterPanel', () => {
   });
 
   it('shows high risk badge', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    render(<PermissionCenterPanel api={fakeApi(pendingData)} />);
     await waitFor(() => {
       const badges = screen.getAllByText('高风险');
       expect(badges.length).toBeGreaterThanOrEqual(2);
@@ -106,28 +106,28 @@ describe('PermissionCenterPanel', () => {
   });
 
   it('shows risk explanation', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    render(<PermissionCenterPanel api={fakeApi(pendingData)} />);
     await waitFor(() => {
       expect(screen.getByText(/修改文件系统/)).toBeTruthy();
     });
   });
 
   it('shows impact description', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(pendingData)} />);
+    render(<PermissionCenterPanel api={fakeApi(pendingData)} />);
     await waitFor(() => {
       expect(screen.getByText(/实际变更/)).toBeTruthy();
     });
   });
 
   it('shows error state', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApiRejects('网络错误')} />);
+    render(<PermissionCenterPanel api={fakeApiRejects('网络错误')} />);
     await waitFor(() => {
       expect(screen.getByText(/加载失败/)).toBeTruthy();
     });
   });
 
   it('shows PermissionGate note', async () => {
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(emptyData)} />);
+    render(<PermissionCenterPanel api={fakeApi(emptyData)} />);
     await waitFor(() => {
       expect(screen.getByText(/所有批准和拒绝都会走 PermissionGate/)).toBeTruthy();
     });
@@ -138,13 +138,13 @@ describe('PermissionCenterPanel', () => {
     api.fetchPermissionCenter
       .mockResolvedValueOnce(pendingData)
       .mockResolvedValueOnce(emptyData);
-    render(<PermissionCenterPanel baseUrl="http://test" api={api} />);
+    render(<PermissionCenterPanel api={api} />);
     await screen.findByText('命令行执行');
 
     fireEvent.click(screen.getAllByText('批准并执行')[0]);
 
     await waitFor(() => {
-      expect(api.grantPermission).toHaveBeenCalledWith('http://test', 'p1');
+      expect(api.grantPermission).toHaveBeenCalledWith('p1');
       expect(api.fetchPermissionCenter).toHaveBeenCalledTimes(2);
     });
     expect(screen.getByText(/已批准并执行/)).toBeTruthy();
@@ -155,13 +155,13 @@ describe('PermissionCenterPanel', () => {
     api.fetchPermissionCenter
       .mockResolvedValueOnce(pendingData)
       .mockResolvedValueOnce(emptyData);
-    render(<PermissionCenterPanel baseUrl="http://test" api={api} />);
+    render(<PermissionCenterPanel api={api} />);
     await screen.findByText('命令行执行');
 
     fireEvent.click(screen.getAllByText('拒绝')[0]);
 
     await waitFor(() => {
-      expect(api.denyPermission).toHaveBeenCalledWith('http://test', 'p1');
+      expect(api.denyPermission).toHaveBeenCalledWith('p1');
       expect(api.fetchPermissionCenter).toHaveBeenCalledTimes(2);
     });
     expect(screen.getByText(/已拒绝/)).toBeTruthy();
@@ -177,7 +177,7 @@ describe('PermissionCenterPanel', () => {
         },
       ],
     };
-    render(<PermissionCenterPanel baseUrl="http://test" api={fakeApi(redactedData)} />);
+    render(<PermissionCenterPanel api={fakeApi(redactedData)} />);
     await waitFor(() => {
       expect(screen.getByText('命令行执行')).toBeTruthy();
     });

@@ -8,35 +8,35 @@ function fakeApi(data: Record<string, unknown>) {
 
 describe('AuditTimelinePanel', () => {
   it('renders loading', () => {
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events: [], total: 0 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events: [], total: 0 })} />);
     expect(screen.getByText('加载中…')).toBeTruthy();
   });
 
   it('renders empty', async () => {
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events: [], total: 0 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events: [], total: 0 })} />);
     await waitFor(() => expect(screen.getByText(/暂无审计事件/)).toBeTruthy());
   });
 
   it('renders events', async () => {
     const events = [{ id: 'e1', source: 'queue', label: '测试事件', summary: '详情', status: 'completed', occurred_at: 1234567890 }];
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events, total: 1 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events, total: 1 })} />);
     await waitFor(() => expect(screen.getByText('测试事件')).toBeTruthy());
   });
 
   it('shows Chinese source labels in event rows', async () => {
     const events = [{ id: 'e1', source: 'queue', label: '事件', summary: '', status: 'completed', occurred_at: 1234567890 }];
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events, total: 1 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events, total: 1 })} />);
     // Match the [执行队列] tag inside an event row, not the filter button
     await waitFor(() => expect(screen.getByText(/\[执行队列\]/)).toBeTruthy());
   });
 
   it('has read-only note', async () => {
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events: [], total: 0 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events: [], total: 0 })} />);
     await waitFor(() => expect(screen.getByText(/只读/)).toBeTruthy());
   });
 
   it('no execute action buttons (filter buttons are ok)', async () => {
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events: [], total: 0 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events: [], total: 0 })} />);
     await waitFor(() => expect(screen.getByText(/只读/)).toBeTruthy());
     // Filter buttons are expected; verify no action buttons like 批准/拒绝
     expect(screen.queryByText('批准')).toBeNull();
@@ -45,7 +45,7 @@ describe('AuditTimelinePanel', () => {
 
   it('renders type filter buttons', async () => {
     const events = [{ id: 'e1', source: 'queue', label: '事件', summary: '', status: 'completed', occurred_at: 1234567890 }];
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events, total: 1 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events, total: 1 })} />);
     await waitFor(() => expect(screen.getByText('全部')).toBeTruthy());
     expect(screen.getByText('执行队列')).toBeTruthy();
     expect(screen.getByText('人工交接')).toBeTruthy();
@@ -60,13 +60,13 @@ describe('AuditTimelinePanel', () => {
     ];
     // Mock returns filtered data based on source parameter
     const api = {
-      fetchAuditTimeline: vi.fn().mockImplementation((_baseUrl: string, _closureId?: string, source?: string) => {
+      fetchAuditTimeline: vi.fn().mockImplementation((_closureId?: string, source?: string) => {
         if (source === 'queue') return Promise.resolve({ events: [allEvents[0]], total: 1 });
         if (source === 'handoff') return Promise.resolve({ events: [allEvents[1]], total: 1 });
         return Promise.resolve({ events: allEvents, total: 2 });
       }),
     };
-    render(<AuditTimelinePanel baseUrl="http://t" api={api} />);
+    render(<AuditTimelinePanel api={api} />);
     await waitFor(() => expect(screen.getByText('队列事件')).toBeTruthy());
 
     fireEvent.click(screen.getByText('执行队列'));
@@ -80,7 +80,7 @@ describe('AuditTimelinePanel', () => {
     const events = [
       { id: 'e1', source: 'queue', label: '队列项已由人工批准', summary: '队列项已由人工批准：[已脱敏]', status: 'completed', occurred_at: 1234567890 },
     ];
-    render(<AuditTimelinePanel baseUrl="http://t" api={fakeApi({ events, total: 1 })} />);
+    render(<AuditTimelinePanel api={fakeApi({ events, total: 1 })} />);
     // Use getAllByText since label and summary both contain the same text
     await waitFor(() => expect(screen.getAllByText(/队列项已由人工批准/).length).toBeGreaterThanOrEqual(1));
     // Raw secret must never appear in rendered output

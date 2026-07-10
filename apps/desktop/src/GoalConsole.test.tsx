@@ -130,7 +130,7 @@ describe('M37 Goal Console', () => {
     const api = { ...noopApi, pauseGoal: vi.fn().mockResolvedValue({ ...baseGoal, status: 'paused' }) };
     render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={{ ...baseGoal, status: 'running' }} api={api} />);
     fireEvent.click(screen.getByRole('button', { name: '暂停任务' }));
-    expect(api.pauseGoal).toHaveBeenCalledWith('http://core', 'goal_test1234');
+    expect(api.pauseGoal).toHaveBeenCalledWith('goal_test1234');
   });
 
   it('no ipcRenderer/shell/process/fs in rendered HTML', () => {
@@ -179,7 +179,7 @@ describe('M38 Goal Resume & Diagnostics', () => {
     fireEvent.click(screen.getByRole('button', { name: '恢复任务' }));
     await vi.waitFor(() => expect(api.resumeGoal).toHaveBeenCalled());
     await vi.waitFor(() => expect(api.startRun).toHaveBeenCalled());
-    await vi.waitFor(() => expect(api.runAgentLoop).toHaveBeenCalledWith('http://core', 'run_resume38', 10));
+    await vi.waitFor(() => expect(api.runAgentLoop).toHaveBeenCalledWith('run_resume38', 10));
   });
 
   it('does not call startRun/runAgentLoop when resumeGoal returns paused (blocked)', async () => {
@@ -234,7 +234,7 @@ describe('M38 Goal Resume & Diagnostics', () => {
     const api = { ...noopApi, fetchGoalEvidence: vi.fn().mockResolvedValue(evidence) };
     const unfinished = [{ ...baseGoal, status: 'paused', step_count: 3 }];
     render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={api} unfinishedGoals={unfinished} />);
-    await waitFor(() => expect(api.fetchGoalEvidence).toHaveBeenCalledWith('http://core', 'goal_test1234'));
+    await waitFor(() => expect(api.fetchGoalEvidence).toHaveBeenCalledWith('goal_test1234'));
     expect(screen.getByText('1 条证据')).toBeInTheDocument();
     expect(screen.getByText('299 ok')).toBeInTheDocument();
   });
@@ -260,7 +260,7 @@ describe('M38 Goal Resume & Diagnostics', () => {
     render(<GoalConsole workspacePath="D:/Projects/Bolt" goal={null} api={api} />);
     fireEvent.change(screen.getByLabelText('长任务目标'), { target: { value: '修复拼写错误' } });
     fireEvent.click(screen.getByRole('button', { name: '开始长任务' }));
-    await waitFor(() => expect(api.fetchRunTimeline).toHaveBeenCalledWith('http://core', 'run_tl1'));
+    await waitFor(() => expect(api.fetchRunTimeline).toHaveBeenCalledWith('run_tl1'));
     await waitFor(() => expect(screen.getByText('8 条记录')).toBeInTheDocument());
   });
 });

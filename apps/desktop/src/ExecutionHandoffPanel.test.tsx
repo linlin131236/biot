@@ -2,8 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ExecutionAuditDiagnostic, ExecutionAuditTimelineEvent, ExecutionHandoffRecord } from '@bolt/shared/autonomy';
 import ExecutionHandoffPanel, { type ExecutionHandoffPanelApi } from './ExecutionHandoffPanel';
-
-const baseUrl = 'http://core';
 const fetcher = vi.fn();
 
 function record(overrides: Partial<ExecutionHandoffRecord> = {}): ExecutionHandoffRecord {
@@ -80,14 +78,14 @@ function apiFixture(overrides: Partial<ExecutionHandoffPanelApi> = {}): Executio
 
 describe('ExecutionHandoffPanel', () => {
   it('没有 closureId 显示暂无闭环任务', () => {
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} api={apiFixture()} />);
+    render(<ExecutionHandoffPanel api={apiFixture()} />);
 
     expect(screen.getByText('安全交接')).toBeInTheDocument();
     expect(screen.getByText('暂无闭环任务')).toBeInTheDocument();
   });
 
   it('manual_verification 显示人工运行命令且不出现执行命令按钮', async () => {
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" selectedQueueItemId="eq_1" api={apiFixture()} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" selectedQueueItemId="eq_1" api={apiFixture()} />);
 
     expect(await screen.findByText('请在外部终端人工运行')).toBeInTheDocument();
     expect(screen.getByText('pytest')).toBeInTheDocument();
@@ -96,7 +94,7 @@ describe('ExecutionHandoffPanel', () => {
 
   it('permission_panel 不出现批准权限按钮', async () => {
     const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([record({ handoff_type: 'permission_panel', status: 'waiting_permission' })]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('请到权限面板处理原始权限请求')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '批准权限' })).not.toBeInTheDocument();
@@ -106,7 +104,7 @@ describe('ExecutionHandoffPanel', () => {
     const runAgentLoop = vi.fn();
     const createGoal = vi.fn();
     const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([record({ kind: 'repair_suggestion', handoff_type: 'goal_input', status: 'linked_to_goal', goal_objective: '修复失败测试' })]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('建议目标：修复失败测试')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '复制为目标草稿' })).toBeInTheDocument();
@@ -121,16 +119,16 @@ describe('ExecutionHandoffPanel', () => {
 
   it('点击生成安全交接使用注入 fetcher', async () => {
     const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" selectedQueueItemId="eq_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" selectedQueueItemId="eq_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(screen.getByRole('button', { name: '生成安全交接' }));
 
-    await vi.waitFor(() => expect(api.createExecutionHandoff).toHaveBeenCalledWith(baseUrl, 'eq_1', fetcher));
+    await vi.waitFor(() => expect(api.createExecutionHandoff).toHaveBeenCalledWith('eq_1', fetcher));
   });
 
   it('生成交接返回其他闭环时不追加记录', async () => {
     const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([]), createExecutionHandoff: vi.fn().mockResolvedValue(record({ closure_id: 'cl_old' })) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" selectedQueueItemId="eq_old" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" selectedQueueItemId="eq_old" api={api} />);
 
     fireEvent.click(screen.getByRole('button', { name: '生成安全交接' }));
 
@@ -140,15 +138,15 @@ describe('ExecutionHandoffPanel', () => {
 
   it('可标记完成和失败', async () => {
     const api = apiFixture();
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '标记完成' }));
-    await vi.waitFor(() => expect(api.completeExecutionHandoff).toHaveBeenCalledWith(baseUrl, 'eh_1', '用户已完成', fetcher));
+    await vi.waitFor(() => expect(api.completeExecutionHandoff).toHaveBeenCalledWith('eh_1', '用户已完成', fetcher));
   });
 
   it('终态不显示操作按钮', async () => {
     const api = apiFixture({ fetchExecutionHandoffs: vi.fn().mockResolvedValue([record({ status: 'completed' })]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('记录验证命令')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '标记完成' })).not.toBeInTheDocument();
@@ -160,11 +158,11 @@ describe('ExecutionHandoffPanel', () => {
     const approvePermission = vi.fn();
     const shell = vi.fn();
     const api = apiFixture();
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" fetcher={fetcher} api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" fetcher={fetcher} api={api} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '申请人工执行权限' }));
 
-    await vi.waitFor(() => expect(api.requestExecutionHandoffPermission).toHaveBeenCalledWith(baseUrl, 'eh_1', fetcher));
+    await vi.waitFor(() => expect(api.requestExecutionHandoffPermission).toHaveBeenCalledWith('eh_1', fetcher));
     expect(runAgentLoop).not.toHaveBeenCalled();
     expect(approvePermission).not.toHaveBeenCalled();
     expect(shell).not.toHaveBeenCalled();
@@ -175,7 +173,7 @@ describe('ExecutionHandoffPanel', () => {
       record({ status: 'waiting_permission', permission_status: 'pending_permission', permission_request_id: 'tool_1' }),
       record({ id: 'eh_2', status: 'failed', permission_status: 'denied', bridge_error: '危险命令被拒绝' }),
     ]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('等待人工执行权限')).toBeInTheDocument();
     expect(await screen.findByText('申请失败：危险命令被拒绝')).toBeInTheDocument();
@@ -189,7 +187,7 @@ describe('ExecutionHandoffPanel', () => {
     const fs = vi.fn();
     const process = vi.fn();
     const ipcRenderer = vi.fn();
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={apiFixture()} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={apiFixture()} />);
 
     fireEvent.click(await screen.findByRole('button', { name: '标记完成' }));
 
@@ -209,7 +207,7 @@ describe('ExecutionHandoffPanel', () => {
         timelineEvent({ id: 'audit_3', status: 'executed', label: '已执行', summary: '权限执行已返回结果' }),
       ]),
     });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('执行审计时间线')).toBeInTheDocument();
     expect(screen.getByText('已批准队列')).toBeInTheDocument();
@@ -221,7 +219,7 @@ describe('ExecutionHandoffPanel', () => {
 
   it('只读展示审计一致性诊断，不提供自动修复能力', async () => {
     const api = apiFixture({ fetchExecutionAuditDiagnostics: vi.fn().mockResolvedValue([diagnostic()]) });
-    render(<ExecutionHandoffPanel baseUrl={baseUrl} closureId="cl_1" api={api} />);
+    render(<ExecutionHandoffPanel closureId="cl_1" api={api} />);
 
     expect(await screen.findByText('审计一致性诊断')).toBeInTheDocument();
     expect(screen.getByText('阻断')).toBeInTheDocument();

@@ -25,13 +25,13 @@ function fakeApi(briefData: Record<string, unknown> = { brief_id: 'b1', title: '
 
 describe('ResearcherPanel', () => {
   it('renders title', () => {
-    render(<ResearcherPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<ResearcherPanel api={fakeApi()} />);
     expect(screen.getByText('研究员')).toBeTruthy();
     expect(screen.getByText('只读研究，不修改文件。')).toBeTruthy();
   });
 
   it('shows scope options', async () => {
-    render(<ResearcherPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<ResearcherPanel api={fakeApi()} />);
     expect(await screen.findByText('项目文档')).toBeTruthy();
     expect(screen.getByText('BinCloud 参考资料')).toBeTruthy();
     expect(screen.getByText('代码地图')).toBeTruthy();
@@ -41,7 +41,7 @@ describe('ResearcherPanel', () => {
 
   it('creates brief and shows it', async () => {
     const api = fakeApi();
-    render(<ResearcherPanel baseUrl="http://test" api={api} />);
+    render(<ResearcherPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入研究标题'), { target: { value: 'title' } });
     fireEvent.change(screen.getByPlaceholderText('输入研究问题'), { target: { value: 'question' } });
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'code_map' } });
@@ -54,7 +54,7 @@ describe('ResearcherPanel', () => {
     const api = fakeApi();
     const resultData = { brief_id: 'b1', summary_cn: '研究摘要内容', principles_cn: ['原则1'], risks_cn: ['风险1'], source_refs: [{ title: '来源A', url: 'http://a' }] };
     api.executeResearch.mockResolvedValueOnce(resultData);
-    render(<ResearcherPanel baseUrl="http://test" api={api} />);
+    render(<ResearcherPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入研究标题'), { target: { value: 'title' } });
     fireEvent.change(screen.getByPlaceholderText('输入研究问题'), { target: { value: 'question' } });
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'code_map' } });
@@ -71,7 +71,7 @@ describe('ResearcherPanel', () => {
   it('shows error state', async () => {
     const api = fakeApi();
     api.createBrief.mockRejectedValueOnce(new Error('网络错误'));
-    render(<ResearcherPanel baseUrl="http://test" api={api} />);
+    render(<ResearcherPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入研究标题'), { target: { value: 'title' } });
     fireEvent.change(screen.getByPlaceholderText('输入研究问题'), { target: { value: 'question' } });
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'code_map' } });
@@ -80,7 +80,7 @@ describe('ResearcherPanel', () => {
   });
 
   it('has no dangerous buttons', async () => {
-    render(<ResearcherPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<ResearcherPanel api={fakeApi()} />);
     expect(screen.getByText('创建摘要')).toBeTruthy();
     const dangerous = screen.queryAllByText(/push|release|tag|delete|rm -rf|format/);
     expect(dangerous.length).toBe(0);

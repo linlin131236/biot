@@ -57,7 +57,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders loading state', () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => new Promise(() => {}) }}
       />
     );
@@ -68,7 +67,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders Chinese workflow stages and safety boundary', async () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
       />
     );
@@ -84,7 +82,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders patch approval checklist without approval controls', async () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
       />
     );
@@ -98,7 +95,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders test feedback whitelist without arbitrary command input', async () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
       />
     );
@@ -112,7 +108,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders failure recovery checks without retry controls', async () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
       />
     );
@@ -126,7 +121,6 @@ describe('ProductWorkbenchPanel', () => {
   it('renders lane summaries and next actions', async () => {
     render(
       <ProductWorkbenchPanel
-        baseUrl="http://core"
         api={{ fetchProductWorkbench: () => Promise.resolve(snapshot) }}
       />
     );

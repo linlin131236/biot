@@ -21,7 +21,7 @@ function fakeApi(reviewData: Record<string, unknown> = {
 
 describe('ReviewerPanel', () => {
   it('renders title', () => {
-    render(<ReviewerPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<ReviewerPanel api={fakeApi()} />);
     expect(screen.getByText('审查引擎')).toBeTruthy();
     expect(screen.getByText('独立审查，严格 Gate。P0/P1 阻止批准，P2 触发需修改。')).toBeTruthy();
   });
@@ -35,7 +35,7 @@ describe('ReviewerPanel', () => {
       verdict: 'blocked',
       source_refs: [],
     });
-    render(<ReviewerPanel baseUrl="http://test" api={api} />);
+    render(<ReviewerPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入代码变更内容'), { target: { value: 'code' } });
     fireEvent.click(screen.getByText('执行审查'));
     await waitFor(() => expect(screen.getByText('审查结果')).toBeTruthy());
@@ -53,7 +53,7 @@ describe('ReviewerPanel', () => {
       verdict: 'changes_requested',
       source_refs: [],
     });
-    render(<ReviewerPanel baseUrl="http://test" api={api} />);
+    render(<ReviewerPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入代码变更内容'), { target: { value: 'code' } });
     fireEvent.click(screen.getByText('执行审查'));
     await waitFor(() => expect(screen.getByText('审查结果')).toBeTruthy());
@@ -70,7 +70,7 @@ describe('ReviewerPanel', () => {
       verdict: 'approved',
       source_refs: [],
     });
-    render(<ReviewerPanel baseUrl="http://test" api={api} />);
+    render(<ReviewerPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入代码变更内容'), { target: { value: 'clean code' } });
     fireEvent.click(screen.getByText('执行审查'));
     await waitFor(() => expect(screen.getByText('审查结果')).toBeTruthy());
@@ -88,7 +88,7 @@ describe('ReviewerPanel', () => {
       verdict: 'changes_requested',
       source_refs: ['src/db.ts'],
     });
-    render(<ReviewerPanel baseUrl="http://test" api={api} />);
+    render(<ReviewerPanel api={api} />);
     fireEvent.change(screen.getByPlaceholderText('输入代码变更内容'), { target: { value: 'code' } });
     fireEvent.click(screen.getByText('执行审查'));
     await waitFor(() => expect(screen.getByText('审查发现')).toBeTruthy());
@@ -103,7 +103,7 @@ describe('ReviewerPanel', () => {
   });
 
   it('has no dangerous buttons', async () => {
-    render(<ReviewerPanel baseUrl="http://test" api={fakeApi()} />);
+    render(<ReviewerPanel api={fakeApi()} />);
     expect(screen.getByText('执行审查')).toBeTruthy();
     const dangerous = screen.queryAllByText(/push|release|tag|delete|rm -rf|format/);
     expect(dangerous.length).toBe(0);

@@ -6,10 +6,9 @@
 import { useEffect, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    runAutonomousLoop: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    runAutonomousLoop: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -25,7 +24,7 @@ interface LoopResult {
   message?: string;
 }
 
-export function AutonomousLoopPanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function AutonomousLoopPanel({ fetcher, api }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [maxRounds, setMaxRounds] = useState('5');
   const [result, setResult] = useState<LoopResult | null>(null);
@@ -36,7 +35,7 @@ export function AutonomousLoopPanel({ baseUrl, fetcher = fetch, api }: Props) {
     setResult(null);
     setPhase('running');
     try {
-      const res = await api.runAutonomousLoop(baseUrl, {
+      const res = await api.runAutonomousLoop({
         max_rounds: Math.min(Number(maxRounds) || 5, 100),
       }, fetcher);
       const r = res as Record<string, unknown>;

@@ -6,12 +6,11 @@
 import { useEffect, useState } from 'react';
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    freezeGate: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    unfreezeGate: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    fetchGateStatus: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    freezeGate: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    unfreezeGate: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    fetchGateStatus: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -23,7 +22,7 @@ interface GateStatus {
   updated_at?: string;
 }
 
-export function GateFreezePanel({ baseUrl, fetcher = fetch, api }: Props) {
+export function GateFreezePanel({ fetcher, api }: Props) {
   const [status, setStatus] = useState<GateStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +32,7 @@ export function GateFreezePanel({ baseUrl, fetcher = fetch, api }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.fetchGateStatus(baseUrl, fetcher);
+      const res = await api.fetchGateStatus(fetcher);
       setStatus(res as GateStatus);
     } catch (e) {
       setError(`加载状态失败：${e instanceof Error ? e.message : String(e)}`);
@@ -44,12 +43,12 @@ export function GateFreezePanel({ baseUrl, fetcher = fetch, api }: Props) {
 
   useEffect(() => {
     loadStatus();
-  }, [baseUrl]);
+  }, []);
 
   async function handleFreeze() {
     setError(null);
     try {
-      const res = await api.freezeGate(baseUrl, { reason: reason || undefined }, fetcher);
+      const res = await api.freezeGate({ reason: reason || undefined }, fetcher);
       setStatus(res as GateStatus);
       setReason('');
     } catch (e) {
@@ -60,7 +59,7 @@ export function GateFreezePanel({ baseUrl, fetcher = fetch, api }: Props) {
   async function handleUnfreeze() {
     setError(null);
     try {
-      const res = await api.unfreezeGate(baseUrl, fetcher);
+      const res = await api.unfreezeGate(fetcher);
       setStatus(res as GateStatus);
     } catch (e) {
       setError(`解冻 Gate 失败：${e instanceof Error ? e.message : String(e)}`);

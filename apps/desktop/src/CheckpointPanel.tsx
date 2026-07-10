@@ -8,18 +8,17 @@ import { useState } from 'react';
 import type { Checkpoint } from '@bolt/shared/autonomy';
 
 interface CheckpointPanelApi {
-  createCheckpoint: (baseUrl: string, payload: Record<string, unknown>) => Promise<Checkpoint>;
-  loadCheckpoint: (baseUrl: string, cpId: string) => Promise<Checkpoint | null>;
+  createCheckpoint: (payload: Record<string, unknown>) => Promise<Checkpoint>;
+  loadCheckpoint: (cpId: string) => Promise<Checkpoint | null>;
 }
 
 interface CheckpointPanelProps {
   runId: string | null;
   goalId: string | null;
   api: CheckpointPanelApi;
-  baseUrl?: string;
 }
 
-export function CheckpointPanel({ runId, goalId, api, baseUrl = 'http://core' }: CheckpointPanelProps) {
+export function CheckpointPanel({ runId, goalId, api }: CheckpointPanelProps) {
   const [cp, setCp] = useState<Checkpoint | null>(null);
   const [cpInput, setCpInput] = useState('');
   const [loadResult, setLoadResult] = useState<Checkpoint | null>(null);
@@ -30,7 +29,7 @@ export function CheckpointPanel({ runId, goalId, api, baseUrl = 'http://core' }:
   async function handleCreate() {
     if (!runId || !goalId) return;
     setError(''); try {
-      const result = await api.createCheckpoint(baseUrl, { run_id: runId, goal_id: goalId });
+      const result = await api.createCheckpoint({ run_id: runId, goal_id: goalId });
       setCp(result);
     } catch { setError('检查点创建失败'); }
   }
@@ -38,7 +37,7 @@ export function CheckpointPanel({ runId, goalId, api, baseUrl = 'http://core' }:
   async function handleLoad() {
     setError(''); if (!cpInput.trim()) return;
     setLoadAttempted(true);
-    try { const result = await api.loadCheckpoint(baseUrl, cpInput.trim()); setLoadResult(result); }
+    try { const result = await api.loadCheckpoint(cpInput.trim()); setLoadResult(result); }
     catch { setError('检查点加载失败'); }
   }
 

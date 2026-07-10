@@ -22,11 +22,10 @@ interface OrchestratorResult {
 }
 
 interface Props {
-  baseUrl: string;
   fetcher?: Fetcher;
   api: {
-    runOrchestration: (baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
-    fetchRoles: (baseUrl: string, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    runOrchestration: (payload: Record<string, unknown>, fetcher: Fetcher) => Promise<Record<string, unknown>>;
+    fetchRoles: (fetcher: Fetcher) => Promise<Record<string, unknown>>;
   };
 }
 
@@ -57,7 +56,7 @@ const STATUS_COLORS: Record<string, string> = {
   failed: '#dc2626',
 };
 
-export function OrchestratorPanel({ baseUrl, api, fetcher = fetch }: Props) {
+export function OrchestratorPanel({ api, fetcher }: Props) {
   const [phase, setPhase] = useState<Phase>('form');
   const [roles, setRoles] = useState<RoleInfo[]>([]);
   const [taskDescription, setTaskDescription] = useState('');
@@ -67,7 +66,7 @@ export function OrchestratorPanel({ baseUrl, api, fetcher = fetch }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    api.fetchRoles(baseUrl, fetcher)
+    api.fetchRoles(fetcher)
       .then((data) => {
         if (cancelled) return;
         const raw = (data as Record<string, unknown>).roles as Array<Record<string, unknown>> | undefined;
@@ -100,7 +99,7 @@ export function OrchestratorPanel({ baseUrl, api, fetcher = fetch }: Props) {
         }
       });
     return () => { cancelled = true; };
-  }, [baseUrl, api]);
+  }, [api]);
 
   function handleReset() {
     setPhase('form');
@@ -115,7 +114,7 @@ export function OrchestratorPanel({ baseUrl, api, fetcher = fetch }: Props) {
     setError('');
     setPhase('running');
     setResult(null);
-    api.runOrchestration(baseUrl, { task_description: taskDescription.trim(), workspace: workspace.trim() }, fetcher)
+    api.runOrchestration({ task_description: taskDescription.trim(), workspace: workspace.trim() }, fetcher)
       .then((data) => {
         const r = data as Record<string, unknown>;
         const trace = Array.isArray(r.trace) ? (r.trace as Array<Record<string, unknown>>) : [];
