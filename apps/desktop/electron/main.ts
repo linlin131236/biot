@@ -8,6 +8,7 @@ import { startDesktopWindow } from './desktopStartup.js';
 import { registerAgentCoreIpc } from './agentCoreIpc.js';
 import { registerDiagnosticsIpc } from './diagnosticsIpc.js';
 import { registerUpdateIpc } from './updateIpc.js';
+import { recordMainException, recordRendererGone, recordStartupFailure } from './crashDiagnostics.js';
 
 // ESM does not expose __dirname; reconstruct it from import.meta.url.
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +17,7 @@ const __dirname = path.dirname(__filename);
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 let agentCore: AgentCoreSupervisor | null = null;
 let trustedWebContentsId: number | null = null;
+let diagnosticsStore: ReturnType<typeof registerDiagnosticsIpc> | null = null;
 
 async function createWindow() {
   const window = new BrowserWindow({
@@ -31,6 +33,12 @@ async function createWindow() {
   });
 
   trustedWebContentsId = window.webContents.id;
+  window.webContents.on('render-process-gone', (_event, details) => {
+    recordRendererGone(diagnosticsStore, details);
+  });
+  window.webContents.on('unresponsive', () => {
+    recordStartupFailure(diagnosticsStore, 'Renderer became unresponsive');
+  });
   window.webContents.once('destroyed', () => {
     if (trustedWebContentsId === window.webContents.id) trustedWebContentsId = null;
   });
@@ -66,7 +74,7 @@ app.whenReady().then(async () => {
     fetch,
   });
   const isTrustedSender = (event: { sender: { id: number } }) => event.sender.id === trustedWebContentsId;
-  registerDiagnosticsIpc(ipcMain, {
+  diagnosticsStore = registerDiagnosticsIpc(ipcMain, {
     userDataPath: app.getPath('userData'),
     isTrustedSender,
   });
@@ -76,8 +84,18 @@ app.whenReady().then(async () => {
     productionChannelEnabled: false,
     coreBusy: () => agentCore?.getVerifiedGeneration() != null,
   });
-  await startDesktopWindow({ startCore: startAgentCore, createWindow });
+  await startDesktopWindow({
+    startCore: async () => {
+      const status = await startAgentCore();
+      if (status.status !== 'ok') {
+        recordStartupFailure(diagnosticsStore, status.error ?? 'Agent Core startup failed');
+      }
+      return status;
+    },
+    createWindow,
+  });
 }).catch((error) => {
+  recordStartupFailure(diagnosticsStore, error instanceof Error ? error.message : 'desktop startup failed');
   console.error(error);
   app.quit();
 });
@@ -88,4 +106,12 @@ app.on('before-quit', () => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+process.on('uncaughtException', (error) => {
+  recordMainException(diagnosticsStore, error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  recordMainException(diagnosticsStore, reason instanceof Error ? reason : new Error('unhandledRejection'));
 });

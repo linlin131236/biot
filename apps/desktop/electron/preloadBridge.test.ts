@@ -23,6 +23,17 @@ type Bridge = {
     response: Promise<unknown>;
     cancel: () => Promise<'cancelled' | 'already_finished'>;
   };
+  diagnostics: {
+    exportSummary: () => Promise<string>;
+    openDir: () => Promise<void>;
+    setEnabled: (enabled: boolean) => Promise<boolean>;
+    getEnabled: () => Promise<boolean>;
+    record: (payload: { component: string; message: string; details?: Record<string, unknown> }) => Promise<unknown>;
+  };
+  update: {
+    status: () => Promise<Record<string, unknown>>;
+    check: (manifestUrl?: string) => Promise<Record<string, unknown>>;
+  };
 };
 
 async function loadBridge() {
@@ -47,10 +58,41 @@ describe('preload Agent Core DTO facade', () => {
   it('exposes no endpoint, token, fetch, or raw ipcRenderer capability', async () => {
     const bridge = await loadBridge();
 
-    expect(Object.keys(bridge)).toEqual(['selectWorkspace', 'agentCoreRequest']);
+    expect(Object.keys(bridge).sort()).toEqual(['agentCoreRequest', 'diagnostics', 'selectWorkspace', 'update'].sort());
     expect(bridge).not.toHaveProperty('agentCoreEndpoint');
     expect(bridge).not.toHaveProperty('agentCoreFetch');
     expect(bridge).not.toHaveProperty('ipcRenderer');
+    expect(Object.keys(bridge.diagnostics).sort()).toEqual(['exportSummary', 'getEnabled', 'openDir', 'record', 'setEnabled'].sort());
+    expect(Object.keys(bridge.update).sort()).toEqual(['check', 'status'].sort());
+    // Narrow surfaces only: no raw invoke/fetch/token/endpoint on nested facades.
+    expect(bridge.diagnostics).not.toHaveProperty('invoke');
+    expect(bridge.update).not.toHaveProperty('invoke');
+    expect(bridge.diagnostics).not.toHaveProperty('fetch');
+    expect(bridge.update).not.toHaveProperty('fetch');
+  });
+
+  it('routes diagnostics and update through fixed channels only', async () => {
+    const bridge = await loadBridge();
+    electron.invoke.mockResolvedValue('ok');
+    await bridge.diagnostics.exportSummary();
+    await bridge.diagnostics.openDir();
+    await bridge.diagnostics.setEnabled(false);
+    await bridge.diagnostics.getEnabled();
+    await bridge.diagnostics.record({ component: 'renderer', message: 'boom' });
+    await bridge.update.status();
+    await bridge.update.check('https://updates.bolt.local/m.json');
+    const channels = electron.invoke.mock.calls.map((call) => call[0]);
+    expect(channels).toEqual([
+      'bolt:diagnostics:export-summary',
+      'bolt:diagnostics:open-dir',
+      'bolt:diagnostics:set-enabled',
+      'bolt:diagnostics:get-enabled',
+      'bolt:diagnostics:record',
+      'bolt:update:status',
+      'bolt:update:check',
+    ]);
+    // No generic invoke API is exposed on the bridge itself.
+    expect(bridge).not.toHaveProperty('invoke');
   });
 
   it('returns the request handle synchronously and invokes request and cancel channels', async () => {

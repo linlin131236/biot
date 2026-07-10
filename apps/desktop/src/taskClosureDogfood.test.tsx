@@ -1,6 +1,36 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from './App';
+
+async function settleNetwork(fetcher: { mock: { calls: unknown[] } }) {
+  // Root-cause stability: wait until mount-time panel fan-out stops, instead of raising global timeouts.
+  let previous = -1;
+  await waitFor(() => {
+    const current = fetcher.mock.calls.length;
+    if (current === previous) return true;
+    previous = current;
+    throw new Error('panel network still settling');
+  }, { timeout: 2000, interval: 50 });
+}
+
+function emptyPanelPayload(input: string): unknown {
+  if (input.includes('/health')) return { status: 'ok', service: 'bolt-agent-core' };
+  if (input.includes('/goals/unfinished')) return [];
+  if (input.includes('/execution-audit/integrity')) return [];
+  if (input.includes('/planner/graphs')) return [];
+  if (input.includes('/release-readiness')) return { ready: true, checks: [], blockers: [], warnings: [] };
+  if (input.includes('/local-release-checklist')) return { ready: true, items: [], blockers: [], warnings: [], next_step: '可以发布', disclaimer: '只读' };
+  if (input.includes('/recovery-policy')) return { scenarios: [], categories: {}, total: 0, disclaimer: '' };
+  if (input.includes('/diagnostics-center')) return { diagnostics: [], integrity: [], total_blockers: 0, total_warnings: 0, total_infos: 0 };
+  if (input.includes('/execution-queue')) return [];
+  if (input.includes('/execution-handoffs')) return [];
+  if (input.includes('/multi-task-queue')) return [];
+  if (input.includes('/permissions')) return [];
+  if (input.includes('/memory')) return { entries: [] };
+  if (input.includes('/skills')) return [];
+  if (input.includes('/desktop/settings') || input.includes('/settings/desktop')) return { theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false };
+  return {};
+}
 
 function json(value: unknown): Response {
   return new Response(JSON.stringify(value), { headers: { 'content-type': 'application/json' } });
@@ -31,11 +61,12 @@ describe('M43 task closure dogfood', () => {
       if (input.endsWith('/local-release-checklist')) return Promise.resolve(json({ ready: true, items: [], blockers: [], warnings: [], next_step: '可以发布', disclaimer: '只读' }));
       if (input.endsWith('/recovery-policy')) return Promise.resolve(json({ scenarios: [], categories: {}, total: 0, disclaimer: '' }));
       if (input.endsWith('/planner/graphs')) return Promise.resolve(json([]));
-      return Promise.resolve(json({}));
+      return Promise.resolve(json(emptyPanelPayload(input)));
     });
     localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'D:/Bolt/Bolt' }));
 
     render(<App fetcher={fetcher} />);
+    await settleNetwork(fetcher);
     fireEvent.change(screen.getByLabelText('任务目标'), { target: { value: '修复拼写错误' } });
     fireEvent.click(screen.getByRole('button', { name: '开始任务' }));
     expect(await screen.findByText('run_43')).toBeInTheDocument();

@@ -43,10 +43,36 @@ export function listFilesRecursive(root) {
   return out;
 }
 
+export function resolveAsarModule() {
+  const candidates = [
+    '@electron/asar',
+    join(process.cwd(), 'node_modules/.pnpm/@electron+asar@3.4.1/node_modules/@electron/asar'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      return require(candidate);
+    } catch {
+      // continue
+    }
+  }
+  return null;
+}
+
 export function listAsarEntries(asarPath) {
+  const asar = resolveAsarModule();
+  if (!asar) return null;
   try {
-    const asar = require('@electron/asar');
-    return asar.listPackage(asarPath).map((entry) => String(entry).split(chr(92)).join("/"));
+    return asar.listPackage(asarPath).map((entry) => String(entry).split(String.fromCharCode(92)).join('/'));
+  } catch (error) {
+    return null;
+  }
+}
+
+export function readAsarFile(asarPath, entryPath) {
+  const asar = resolveAsarModule();
+  if (!asar) return null;
+  try {
+    return asar.extractFile(asarPath, entryPath);
   } catch {
     return null;
   }
@@ -58,13 +84,22 @@ export function sha256File(path) {
   return hash.digest('hex');
 }
 
+function patternsForPath(rel) {
+  const lower = rel.toLowerCase();
+  if (lower.includes('agent-core/src/') || lower.includes('resources/agent-core/src/')) {
+    return SECRET_CONTENT_PATTERNS.filter((pattern) =>
+      ['openai_live_key', 'bearer_live', 'private_key_block'].includes(pattern.id),
+    );
+  }
+  return SECRET_CONTENT_PATTERNS;
+}
+
 function shouldScanContent(rel) {
   const lower = rel.toLowerCase();
   if (lower.includes('/.venv/') || lower.includes('/site-packages/')) return false;
   if (lower.endsWith('.pem') && lower.includes('cacert')) return false;
   // Agent Core source intentionally contains redaction fixtures and API field names.
   // Release secret scan focuses on package shell assets and config leaks, not library source text.
-  if (lower.includes('resources/agent-core/src/') || lower.includes('agent-core/src/')) return false;
   if (lower.includes('evidence_redactor') || lower.includes('dogfood') || lower.includes('.test.')) return false;
   return true;
 }
@@ -96,7 +131,7 @@ export function scanReleaseArtifacts(packageRoot) {
       } catch {
         continue;
       }
-      for (const pattern of SECRET_CONTENT_PATTERNS) {
+      for (const pattern of patternsForPath(rel)) {
         if (pattern.re.test(text)) findings.push(`forbidden content ${pattern.id} in ${rel}`);
       }
       if (!rel.endsWith('.asar') && /[A-Za-z]:\\Users\\[^\\\s"']+/i.test(text)) {
@@ -110,11 +145,26 @@ export function scanReleaseArtifacts(packageRoot) {
     asarEntries = listAsarEntries(asarFile);
     if (asarEntries) {
       for (const entry of asarEntries) {
+        // scan asar content for packaged renderer/main secrets
         const lower = entry.toLowerCase();
         for (const suffix of FORBIDDEN_NAME_SUFFIXES) {
           if (lower.endsWith(suffix)) findings.push(`forbidden asar entry ${entry}`);
         }
         if (lower.endsWith('.env') || /(^|\/)\.env(\.|$)/.test(lower)) findings.push(`forbidden asar entry ${entry}`);
+      
+        const lowerEntry = String(entry).toLowerCase();
+        const ext = lowerEntry.includes('.') ? `.${lowerEntry.split('.').pop()}` : '';
+        if (['.js', '.mjs', '.cjs', '.json', '.css', '.html', '.map', '.txt', '.md'].includes(ext)) {
+          const bytes = readAsarFile(asarFile, entry);
+          if (bytes) {
+            const textContent = Buffer.from(bytes).toString('utf8');
+            if (textContent.length > 0 && textContent.length < 1500000) {
+              for (const pattern of patternsForPath(rel)) {
+                if (pattern.re.test(textContent)) findings.push(`forbidden content ${pattern.id} in resources/app.asar:${entry}`);
+              }
+            }
+          }
+        }
       }
       records.push({
         path: 'resources/app.asar#listing',
@@ -126,9 +176,8 @@ export function scanReleaseArtifacts(packageRoot) {
     }
   }
   const uniqueFindings = [...new Set(findings)];
-  const hardFindings = uniqueFindings.filter((item) => item !== 'asar_listing_unavailable');
   return {
-    ok: hardFindings.length === 0,
+    ok: uniqueFindings.length === 0,
     findings: uniqueFindings,
     files: records.sort((a, b) => a.path.localeCompare(b.path)),
     asar_listing: asarEntries ? 'present' : (asarFile ? 'unavailable' : 'absent'),
@@ -147,6 +196,7 @@ export function writeReleaseEvidence({ outputDir, version, commit, packageRoot, 
     'artifact.sha256': scan.files.length > 0 ? 'passed' : 'failed',
     'artifact.secret-scan': scan.ok ? 'passed' : 'failed',
     'artifact.sbom': 'passed_with_limitations',
+    'artifact.asar-listing': scan.asar_listing === 'present' || scan.asar_listing === 'absent' ? 'passed' : 'blocked',
   };
   const sbom = {
     version,

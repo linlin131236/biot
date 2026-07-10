@@ -4,34 +4,36 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export function inspectGitWorktree(statusPorcelain) {
   const lines = statusPorcelain
-    .split(/\r?\n/)
-    .map((line) => line.trimEnd())
+    .split(String.fromCharCode(10))
+    .map((line) => line.replace(new RegExp(String.fromCharCode(13) + '$'), '').trimEnd())
     .filter(Boolean)
-    .filter((line) => {
-      const ignored = [
-        '.claude/',
-        '.review-tmp/',
-        '.superpowers/',
-        'mockup-chat-ui.html',
-        'apps/desktop/src/assets/',
-        'docs/superpowers/plans/2026-07-10-dbolt-',
-        'docs/superpowers/plans/2026-07-10-desktop-settings.md',
-        'docs/superpowers/plans/2026-07-10-provider-contracts.md',
-      ];
-      return !ignored.some((marker) => line.includes(marker));
-    });
+    .filter((line) => !isIgnoredForReleaseEvidence(line));
   return {
     dirty: lines.length > 0,
     entries: lines,
   };
 }
 
+export function isIgnoredForReleaseEvidence(line) {
+  const trimmed = line.trim();
+  // Only non-shipping local drafts/caches. Production source trees are never ignored.
+  if (trimmed.includes('.claude/') || trimmed.includes('.review-tmp/') || trimmed.includes('.superpowers/')) {
+    return true;
+  }
+  if (trimmed === '?? mockup-chat-ui.html') return true;
+  if (trimmed === '?? docs/superpowers/plans/2026-07-10-desktop-settings.md') return true;
+  if (trimmed === '?? docs/superpowers/plans/2026-07-10-provider-contracts.md') return true;
+  if (trimmed.startsWith('?? docs/superpowers/plans/2026-07-10-dbolt-')) return true;
+  if (trimmed.startsWith('?? docs/brand-previews/')) return true;
+  return false;
+}
+
 export function assertCleanWorktreeForReleaseEvidence(statusPorcelain) {
   const result = inspectGitWorktree(statusPorcelain);
   if (result.dirty) {
-    const sample = result.entries.slice(0, 20).join('\n');
+    const sample = result.entries.slice(0, 20).join(String.fromCharCode(10));
     throw new Error(
-      `dirty_worktree_forbidden_for_release_evidence\n${sample}${result.entries.length > 20 ? '\n...' : ''}`,
+      'dirty_worktree_forbidden_for_release_evidence' + String.fromCharCode(10) + sample + (result.entries.length > 20 ? String.fromCharCode(10) + '...' : ''),
     );
   }
   return true;

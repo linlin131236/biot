@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 150" role="img" fill="none">
+  <title>Bolt stacked lockup</title>
+  <defs>
+    <linearGradient id="bolt-energy" x1="58" y1="16" x2="102" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#39D9FF"/>
+      <stop offset="100%" stop-color="#7B61FF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Master mark centered at x=48, y=8 -->
+  <g transform="translate(48 8)">
+    <path
+      d="M20 8.5 H44 C50.35 8.5 55.5 13.65 55.5 20 V28.2 M55.5 35.8 V44 C55.5 50.35 50.35 55.5 44 55.5 H20 C13.65 55.5 8.5 50.35 8.5 44 V36 M8.5 28 V20 C8.5 13.65 13.65 8.5 20 8.5"
+      stroke="url(#bolt-energy)"
+      stroke-width="5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M38.5 11 L24.5 30.5 H33.5 L25.5 53 L40.5 33.5 H31.5 Z"
+      fill="url(#bolt-energy)"
+    />
+  </g>
+
+  <!-- Centered wordmark "bolt" between y=98..128 -->
+  <g fill="#F5FAFF" transform="translate(12.5 98) scale(1.08)">
+    <!-- b -->
+    <path d="M0 0.2 H6.2 V10.1 C7.5 8.7 9.4 7.8 11.7 7.8 C17.7 7.8 21.8 12.3 21.8 18.5 C21.8 24.7 17.7 29.2 11.7 29.2 C9.5 29.2 7.6 28.4 6.2 27 V29 H0 V0.2 Z M6.2 18.5 C6.2 22.2 8.3 24.5 11.2 24.5 C14.1 24.5 16.1 22.2 16.1 18.5 C16.1 14.8 14.1 12.5 11.2 12.5 C8.3 12.5 6.2 14.8 6.2 18.5 Z"/>
+    <!-- o -->
+    <path d="M39.4 18.5 C39.4 24.8 34.9 29.2 28.7 29.2 C22.5 29.2 18 24.8 18 18.5 C18 12.2 22.5 7.8 28.7 7.8 C34.9 7.8 39.4 12.2 39.4 18.5 Z M33.7 18.5 C33.7 14.8 31.6 12.5 28.7 12.5 C25.8 12.5 23.7 14.8 23.7 18.5 C23.7 22.2 25.8 24.5 28.7 24.5 C31.6 24.5 33.7 22.2 33.7 18.5 Z"/>
+    <!-- l -->
+    <path d="M44.2 0.2 H50.4 V29 H44.2 V0.2 Z"/>
+    <!-- t -->
+    <path d="M57.2 4.4 H68.8 V9.2 H63.3 V22.4 C63.3 23.9 64.1 24.7 65.7 24.7 C66.8 24.7 67.8 24.4 68.7 23.9 V28.4 C67.5 28.9 66.1 29.2 64.4 29.2 C60.2 29.2 57.2 26.9 57.2 22.3 V9.2 H53.6 V4.4 H57.2 V0.1 H63.3 V4.4 H57.2 Z"/>
+  </g>
+</svg>
