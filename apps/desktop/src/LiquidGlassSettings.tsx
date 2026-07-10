@@ -1,6 +1,41 @@
 import { useState } from 'react';
 import { GlassPanel, GlassPill } from './LiquidGlassPrimitives';
 import { settingItems, surfaces, type LiquidGlassSettingsProps } from './LiquidGlassSettingsData';
+import { DiagnosticsFeedbackPanel } from './DiagnosticsFeedbackPanel';
+
+
+function desktopDiagnosticsApi() {
+  const bolt = (window as unknown as { bolt?: {
+    diagnostics?: {
+      exportSummary: () => Promise<string>;
+      openDir: () => Promise<void>;
+      setEnabled: (enabled: boolean) => Promise<void>;
+      getEnabled: () => Promise<boolean>;
+    };
+    update?: {
+      status: () => Promise<Record<string, unknown>>;
+      check: (manifestUrl?: string) => Promise<Record<string, unknown>>;
+    };
+  } }).bolt;
+  return {
+    exportSummary: async () => {
+      if (!bolt?.diagnostics?.exportSummary) {
+        return JSON.stringify({ upload: 'disabled_by_default', events: [], note: 'diagnostics bridge unavailable' }, null, 2);
+      }
+      return bolt.diagnostics.exportSummary();
+    },
+    openDiagnosticsDir: async () => {
+      await bolt?.diagnostics?.openDir?.();
+    },
+    setCollectionEnabled: async (enabled: boolean) => {
+      await bolt?.diagnostics?.setEnabled?.(enabled);
+    },
+    getCollectionEnabled: async () => {
+      if (!bolt?.diagnostics?.getEnabled) return true;
+      return bolt.diagnostics.getEnabled();
+    },
+  };
+}
 
 export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, settings, onSaveTheme }: LiquidGlassSettingsProps) {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -103,6 +138,16 @@ export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, s
                   <button type="button" onClick={() => handleSaveTheme('dark')} className={settings.theme === 'dark' ? 'active' : ''}>深色</button>
                   <button type="button" onClick={() => handleSaveTheme('light')} className={settings.theme === 'light' ? 'active' : ''}>浅色</button>
                 </div>
+              </div>
+            </GlassPanel>
+          </div>
+        ) : activeSetting === 'diagnostics' ? (
+          <div className="biotSettingsSurface">
+            <DiagnosticsFeedbackPanel api={desktopDiagnosticsApi()} />
+            <GlassPanel className="biotGlassCard" flow>
+              <div className="biotSettingRow">
+                <div><strong>自动更新</strong><span>生产更新通道默认关闭；仅允许 allowlist HTTPS 与签名清单。</span></div>
+                <GlassPill className="biotSettingBadge" tone="warning">默认关闭</GlassPill>
               </div>
             </GlassPanel>
           </div>

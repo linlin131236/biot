@@ -49,4 +49,16 @@ function createRequestId(): string {
 contextBridge.exposeInMainWorld('bolt', {
   selectWorkspace: () => ipcRenderer.invoke(BOLT_SELECT_WORKSPACE_CHANNEL),
   agentCoreRequest,
+  diagnostics: {
+    exportSummary: () => ipcRenderer.invoke('bolt:diagnostics:export-summary'),
+    openDir: () => ipcRenderer.invoke('bolt:diagnostics:open-dir'),
+    setEnabled: (enabled: boolean) => ipcRenderer.invoke('bolt:diagnostics:set-enabled', enabled),
+    getEnabled: () => ipcRenderer.invoke('bolt:diagnostics:get-enabled'),
+    record: (payload: { component: string; message: string; details?: Record<string, unknown> }) =>
+      ipcRenderer.invoke('bolt:diagnostics:record', payload),
+  },
+  update: {
+    status: () => ipcRenderer.invoke('bolt:update:status'),
+    check: (manifestUrl?: string) => ipcRenderer.invoke('bolt:update:check', { manifestUrl }),
+  },
 });

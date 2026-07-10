@@ -6,6 +6,8 @@ import { AgentCoreSupervisor, resolveAgentCoreRuntime } from './agentCoreRuntime
 import { registerWorkspacePickerIpc } from './workspacePicker.js';
 import { startDesktopWindow } from './desktopStartup.js';
 import { registerAgentCoreIpc } from './agentCoreIpc.js';
+import { registerDiagnosticsIpc } from './diagnosticsIpc.js';
+import { registerUpdateIpc } from './updateIpc.js';
 
 // ESM does not expose __dirname; reconstruct it from import.meta.url.
 const __filename = fileURLToPath(import.meta.url);
@@ -62,6 +64,17 @@ app.whenReady().then(async () => {
     getGeneration: () => agentCore?.getVerifiedGeneration() ?? null,
     isTrustedSender: (event) => event.sender.id === trustedWebContentsId,
     fetch,
+  });
+  const isTrustedSender = (event: { sender: { id: number } }) => event.sender.id === trustedWebContentsId;
+  registerDiagnosticsIpc(ipcMain, {
+    userDataPath: app.getPath('userData'),
+    isTrustedSender,
+  });
+  registerUpdateIpc(ipcMain, {
+    isTrustedSender,
+    currentVersion: app.getVersion(),
+    productionChannelEnabled: false,
+    coreBusy: () => agentCore?.getVerifiedGeneration() != null,
   });
   await startDesktopWindow({ startCore: startAgentCore, createWindow });
 }).catch((error) => {

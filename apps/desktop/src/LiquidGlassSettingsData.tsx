@@ -45,6 +45,7 @@ export const settingItems = [
   { id: 'patch', label: '补丁审查' },
   { id: 'audit', label: '审计诊断' },
   { id: 'validation', label: '验证发布' },
+  { id: 'diagnostics', label: '诊断反馈' },
   { id: 'collaboration', label: '智能协作' },
   { id: 'skills', label: '技能' },
   { id: 'agents', label: '子智能体' },
@@ -282,6 +283,20 @@ export const surfaces: Record<string, SettingSurface> = {
       { title: 'Token 用量', detail: '按时间范围展示消耗趋势，辅助控制预算。', control: '趋势图' },
       { title: '会话数量', detail: '统计任务、消息和活跃天数，帮助理解使用节奏。', control: '只读统计' },
       { title: '模型占比', detail: '显示常用模型比例，不自动切换模型。', control: '手动选择', tone: 'warning' },
+    ],
+  },
+  diagnostics: {
+    eyebrow: '本地诊断',
+    title: '诊断与反馈',
+    summary: '崩溃与启动诊断默认仅保存在本机，上传需要你主动同意。',
+    metrics: [
+      { label: '收集', value: '本地默认', tone: 'success' },
+      { label: '上传', value: '默认关闭', tone: 'warning' },
+      { label: '更新检查', value: '手动/关闭' },
+    ],
+    rows: [
+      { title: '诊断目录', detail: '可复制脱敏摘要或打开本地日志目录。', control: '本机' },
+      { title: '自动上传', detail: '当前版本不自动上传崩溃信息。', control: '关闭', tone: 'success' },
     ],
   },
   guide: {
