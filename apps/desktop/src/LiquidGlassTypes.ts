@@ -23,7 +23,7 @@ export interface LiquidGlassWorkbenchProps {
   fetchTimeline: () => void;
   runReview: () => void;
   changeWorkspace: () => void;
-  loadRecentSessions: (baseUrl: string, limit: number, fetcher: Fetcher) => Promise<RecentSession[]>;
+  loadRecentSessions: (limit: number, fetcher: Fetcher) => Promise<RecentSession[]>;
   error?: ReactNode;
   toolFlow?: ReactNode;
   modelPanel?: ReactNode;
@@ -32,7 +32,6 @@ export interface LiquidGlassWorkbenchProps {
   setTheme: (value: ThemeMode) => void;
   onSaveTheme: (next: ThemeMode) => void;
   settings: DesktopSettingsStatus | null;
-  coreUrl: string;
   fetcher: Fetcher;
 }
 

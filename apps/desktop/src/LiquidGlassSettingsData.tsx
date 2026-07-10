@@ -26,6 +26,7 @@ export type DesktopSettingsStatus = {
   language: string;
   default_workspace: string;
   has_api_key: boolean;
+  credential_revision?: number;
 };
 
 export type LiquidGlassSettingsProps = {
@@ -69,6 +70,7 @@ export const surfaces: Record<string, SettingSurface> = {
       { title: '界面主题', detail: '深浅色液态玻璃主题保持同一套安全信息层级。', control: '加载中...', tone: 'success' },
       { title: '界面语言', detail: '所有用户可见文字使用中文，面向公开产品表达。', control: '加载中...' },
       { title: '启动时打开', detail: '启动后默认进入任务驾驶舱，设置中心保留在侧边导航。', control: 'Agent 工作台' },
+      { title: '本地 Agent Core', detail: '由 Bolt 桌面端自动管理，用户不可配置地址。', control: '本地 Agent Core · 由 Bolt 自动管理', tone: 'success' },
       { title: '权限模式', detail: '写入、apply、恢复前都需要用户确认。', control: '写入需批准', tone: 'warning' },
     ],
   },

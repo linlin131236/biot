@@ -24,7 +24,6 @@ const baseProps = {
   setTheme: vi.fn(),
   onSaveTheme: vi.fn(),
   settings: { theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false },
-  coreUrl: 'http://localhost:8000',
   fetcher: fetch,
   legacyPanels: <div>工程面板内容</div>,
 };

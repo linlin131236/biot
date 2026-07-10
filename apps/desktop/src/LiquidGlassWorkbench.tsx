@@ -24,19 +24,19 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
   const safeWorkspace = props.workspacePath || '工作区未选择';
 
   useEffect(() => {
-    if (!props.hasWorkspace || !props.coreUrl || !props.fetcher) {
+    if (!props.hasWorkspace || !props.fetcher) {
       setRecentSessions([]);
       return;
     }
     let active = true;
     setSessionsLoading(true);
-    props.loadRecentSessions(props.coreUrl, 20, props.fetcher).then((sessions) => {
+    props.loadRecentSessions(20, props.fetcher).then((sessions) => {
       if (active) { setRecentSessions(sessions); setSessionsLoading(false); }
     }).catch(() => {
       if (active) { setRecentSessions([]); setSessionsLoading(false); }
     });
     return () => { active = false; };
-  }, [props.hasWorkspace, props.coreUrl, props.loadRecentSessions, props.fetcher]);
+  }, [props.hasWorkspace, props.loadRecentSessions, props.fetcher]);
 
   async function handleThemeChange(next: ThemeMode) {
     props.setTheme(next);
@@ -158,7 +158,7 @@ function TopBar({
         <button type="button" onClick={() => { setTheme('light'); onThemeChange('light'); }} className={theme === 'light' ? 'active' : ''}>浅色</button>
       </div>
       <div className="biotStatusPills">
-        <span><i /> 核心服务 <strong>{coreStatus === 'ok' ? '在线' : coreStatus}</strong></span>
+        <span><i /> 核心服务 <strong>{coreStatus === 'ok' ? '本地' : '离线'}</strong></span>
         <span><i /> 运行状态 <strong>{runId ? '已绑定' : '无运行'}</strong></span>
         <span><i /> 写入前永远等待人工批准</span>
       </div>

@@ -37,7 +37,7 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
     },
     {
       label: '核心服务',
-      value: coreOnline ? '在线' : props.coreStatus,
+      value: coreOnline ? '本地' : '离线',
       tone: coreOnline ? 'success' : 'danger',
     },
   ];
@@ -141,9 +141,8 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       </section>
 
       <section className="biotCompatStatus biotCompatibilityStatus" aria-label="工程状态">
-        <span>Agent Core 状态</span><strong>{props.coreStatus}</strong>
+        <span>Agent Core 状态</span><strong>{coreOnline ? '本地' : '离线'}</strong>
         <span>工作区</span><strong>{props.hasWorkspace ? '已选择' : '未选择'}</strong>
-        <span>核心服务地址</span><strong>由 Agent Core 管理</strong>
         <span>当前运行</span><strong>{props.runId || '无'}</strong>
       </section>
 

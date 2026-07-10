@@ -31,6 +31,7 @@ export function LiquidGlassSettings({ activeSetting, onBack, setActiveSetting, s
     { title: '界面主题', detail: '深浅色液态玻璃主题保持同一套安全信息层级。', control: realThemeLabel, tone: settings?.theme === 'light' ? 'default' : 'success' },
     { title: '界面语言', detail: '所有用户可见文字使用中文，面向公开产品表达。', control: settings?.language === 'zh-CN' ? '简体中文' : (settings?.language ?? '简体中文') },
     { title: '启动时打开', detail: '启动后默认进入任务驾驶舱，设置中心保留在侧边导航。', control: 'Agent 工作台' },
+    { title: '本地 Agent Core', detail: '由 Bolt 桌面端自动管理，用户不可配置地址。', control: '本地 Agent Core · 由 Bolt 自动管理', tone: 'success' },
     { title: '权限模式', detail: '写入、apply、恢复前都需要用户确认。', control: '写入需批准', tone: 'warning' },
   ] : activeSetting === 'model' ? [
     { title: '提供方', detail: '模型供应商和 Base URL 由本地配置管理。', control: 'OpenAI 兼容' },

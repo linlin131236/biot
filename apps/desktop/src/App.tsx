@@ -56,26 +56,26 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   useEffect(() => {
     if (!session.completed) return;
     let active = true;
-    fetchCoreHealth(session.coreUrl, fetcher).then((status) => { if (active) dispatch({ type: 'core.health.changed', status }); });
-    fetchUnfinishedGoals(session.coreUrl, fetcher).then((goals) => { if (active) setUnfinishedGoals(goals); }).catch(() => {});
+    fetchCoreHealth(fetcher).then((status) => { if (active) dispatch({ type: 'core.health.changed', status }); });
+    fetchUnfinishedGoals(fetcher).then((goals) => { if (active) setUnfinishedGoals(goals); }).catch(() => {});
     return () => { active = false; };
-  }, [fetcher, session.completed, session.coreUrl]);
+  }, [fetcher, session.completed]);
 
   useEffect(() => {
     if (!session.completed) return;
     let active = true;
-    loadDesktopSettings(session.coreUrl, fetcher).then((s) => {
+    loadDesktopSettings(fetcher).then((s) => {
       if (active) { setTheme(s.theme as ThemeMode); setSettings(s); }
     }).catch(() => setSettings({ theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false }));
     return () => { active = false; };
-  }, [fetcher, session.completed, session.coreUrl]);
+  }, [fetcher, session.completed]);
 
   async function handleSaveTheme(nextTheme: ThemeMode) {
     setTheme(nextTheme);
-    await storeDesktopSettings(session.coreUrl, { theme: nextTheme }, fetcher);
+    await storeDesktopSettings({ theme: nextTheme }, fetcher);
     // Refresh full settings from server
     try {
-      const s = await loadDesktopSettings(session.coreUrl, fetcher);
+      const s = await loadDesktopSettings(fetcher);
       setSettings(s);
     } catch { /* non-blocking */ }
   }
@@ -87,41 +87,41 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   }
 
   async function startRun() {
-    await guarded(async () => { const run = await startWorkflowRun(session.coreUrl, goal || '继续任务', session.workspacePath, fetcher); dispatch({ type: 'harness.run.created', runId: run.id }); saveSession({ ...session, lastRunId: run.id }); }, '无法创建任务。');
+    await guarded(async () => { const run = await startWorkflowRun(goal || '继续任务', session.workspacePath, fetcher); dispatch({ type: 'harness.run.created', runId: run.id }); saveSession({ ...session, lastRunId: run.id }); }, '无法创建任务。');
   }
 
   async function createGoal() {
-    await guarded(async () => { const g = await createWorkflowGoal(session.coreUrl, { objective: goal || 'Bolt 任务', criteria: ['文件读取', '补丁批准'], max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: session.workspacePath }, fetcher); setGoalInfo(g); }, '无法创建目标。');
+    await guarded(async () => { const g = await createWorkflowGoal({ objective: goal || 'Bolt 任务', criteria: ['文件读取', '补丁批准'], max_steps: 10, max_cost: 5.0, max_wall_time: 300, workspace: session.workspacePath }, fetcher); setGoalInfo(g); }, '无法创建目标。');
   }
 
   async function runStep() {
     if (!runId) return;
-    await guarded(async () => { const { step, refresh } = await executeWorkflowStep(session.coreUrl, runId, fetcher); dispatch({ type: 'agent.step.recorded', result: step }); if (step.tool_result) dispatch({ type: 'tool.result.recorded', result: step.tool_result }); applyRefresh(refresh); }, '无法执行步骤。');
+    await guarded(async () => { const { step, refresh } = await executeWorkflowStep(runId, fetcher); dispatch({ type: 'agent.step.recorded', result: step }); if (step.tool_result) dispatch({ type: 'tool.result.recorded', result: step.tool_result }); applyRefresh(refresh); }, '无法执行步骤。');
   }
 
-  async function refreshTraceOnly() { if (!runId) return; await guarded(async () => dispatch({ type: 'harness.trace.loaded', events: await fetchHarnessTrace(session.coreUrl, runId, fetcher) }), '无法刷新轨迹。'); }
-  async function refreshMemory() { await guarded(async () => dispatch({ type: 'memory.snapshot.loaded', snapshot: await fetchMemorySnapshot(session.coreUrl, fetcher) }), '无法连接 Agent Core。请确认服务已启动并检查核心服务地址。'); }
-  async function refreshPermissions() { await guarded(async () => dispatch({ type: 'permissions.pending.loaded', permissions: await fetchPendingPermissions(session.coreUrl, fetcher) }), '无法加载权限请求。'); }
+  async function refreshTraceOnly() { if (!runId) return; await guarded(async () => dispatch({ type: 'harness.trace.loaded', events: await fetchHarnessTrace(runId, fetcher) }), '无法刷新轨迹。'); }
+  async function refreshMemory() { await guarded(async () => dispatch({ type: 'memory.snapshot.loaded', snapshot: await fetchMemorySnapshot(fetcher) }), '无法连接本地 Agent Core。请确认 Bolt 桌面端已启动核心服务。'); }
+  async function refreshPermissions() { await guarded(async () => dispatch({ type: 'permissions.pending.loaded', permissions: await fetchPendingPermissions(fetcher) }), '无法加载权限请求。'); }
 
   async function onPermission(requestId: string, approved: boolean) {
-    await guarded(async () => { const result = await decidePermission(session.coreUrl, requestId, approved, fetcher); dispatch({ type: 'tool.result.recorded', result }); if (runId) applyRefresh(await refreshWorkflow(session.coreUrl, runId, fetcher)); }, '无法处理权限请求。');
+    await guarded(async () => { const result = await decidePermission(requestId, approved, fetcher); dispatch({ type: 'tool.result.recorded', result }); if (runId) applyRefresh(await refreshWorkflow(runId, fetcher)); }, '无法处理权限请求。');
   }
 
-  async function saveModel() { await guarded(async () => { const status = await storeModelSettings(session.coreUrl, { ...model, api_key: apiKey || undefined }, fetcher); dispatch({ type: 'model.settings.loaded', status }); setApiKey(''); }, '无法保存模型设置。'); }
-  async function runGardener() { if (!runId) return; await guarded(async () => recordToolResult(await maintainMemory(session.coreUrl, runId, fetcher)), '无法运行文档整理。'); }
-  async function fetchTimelineAction() { if (!runId) return; await guarded(async () => setTimeline(await fetchWorkflowTimeline(session.coreUrl, runId, fetcher)), '无法加载时间线。'); }
+  async function saveModel() { await guarded(async () => { const status = await storeModelSettings({ ...model, api_key: apiKey || undefined }, fetcher); dispatch({ type: 'model.settings.loaded', status }); setApiKey(''); }, '无法保存模型设置。'); }
+  async function runGardener() { if (!runId) return; await guarded(async () => recordToolResult(await maintainMemory(runId, fetcher)), '无法运行文档整理。'); }
+  async function fetchTimelineAction() { if (!runId) return; await guarded(async () => setTimeline(await fetchWorkflowTimeline(runId, fetcher)), '无法加载时间线。'); }
   const handleGoalConsoleChange = useCallback((g: Goal | null, rId: string | null) => {
     if (g && (g.id !== goalInfo?.id || g.status !== goalInfo?.status)) setGoalInfo(g);
     if (rId && rId !== (state.currentRunId || session.lastRunId)) { dispatch({ type: 'harness.run.created', runId: rId }); }
     if (rId && rId !== session.lastRunId) { saveSession({ ...session, lastRunId: rId }); }
   }, [goalInfo?.id, state.currentRunId, session.lastRunId, session]);
 
-  async function runReview() { await guarded(async () => { const result = await evaluateWorkflowReview(session.coreUrl, { items: ['pytest', 'build'], results: { pytest: true, build: true } }, fetcher); setReviewResult(result); }, '无法评估审查。'); }
+  async function runReview() { await guarded(async () => { const result = await evaluateWorkflowReview({ items: ['pytest', 'build'], results: { pytest: true, build: true } }, fetcher); setReviewResult(result); }, '无法评估审查。'); }
 
   async function readFile() {
     if (!hasWorkspace || !filePath || !runId) return;
     await guarded(async () => {
-      const result = await submitToolRequest(session.coreUrl, runId, { tool: 'file.read', operation: 'read', payload: { path: filePath } }, fetcher);
+      const result = await submitToolRequest(runId, { tool: 'file.read', operation: 'read', payload: { path: filePath } }, fetcher);
       dispatch({ type: 'tool.result.recorded', result });
     }, '无法读取文件。');
   }
@@ -129,7 +129,7 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   async function submitPatch() {
     if (!hasWorkspace || !filePath || !oldText || !newText || !runId) return;
     await guarded(async () => {
-      const result = await submitToolRequest(session.coreUrl, runId, { tool: 'file.patch', operation: 'patch', payload: { path: filePath, old_string: oldText, new_string: newText } }, fetcher);
+      const result = await submitToolRequest(runId, { tool: 'file.patch', operation: 'patch', payload: { path: filePath, old_string: oldText, new_string: newText } }, fetcher);
       dispatch({ type: 'tool.result.recorded', result });
     }, '无法提交补丁。');
   }
@@ -150,9 +150,7 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
       saveSession(next);
       dispatch({ type: 'workspace.selected', path });
       // Add to recent workspaces history
-      if (session.coreUrl) {
-        addWorkspaceToHistory(session.coreUrl, path, fetcher).catch(() => {});
-      }
+      addWorkspaceToHistory(path, fetcher).catch(() => {});
     }
   }
 
@@ -183,7 +181,6 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         setTheme={setTheme}
         onSaveTheme={handleSaveTheme}
         settings={settings}
-        coreUrl={session.coreUrl}
         fetcher={fetcher}
         error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
         toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}
@@ -212,8 +209,7 @@ function createInitialState(session: DesktopSession, memory: MemorySnapshot | un
 
 function FirstRunWizard({ session, onComplete }: { session: DesktopSession; onComplete: (s: DesktopSession) => void }) {
   const [workspacePath, setWorkspacePath] = useState(session.workspacePath || '');
-  const [coreUrl, setCoreUrl] = useState(session.coreUrl);
-  return (<main className="wizard"><section className="wizardPanel"><div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div><label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(e) => setWorkspacePath(e.target.value)} /></label><label>核心服务地址<input aria-label="核心服务地址" value={coreUrl} onChange={(e) => setCoreUrl(e.target.value)} /></label><p>API 密钥不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p><button type="button" onClick={() => onComplete({ completed: true, workspacePath, coreUrl, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button></section></main>);
+  return (<main className="wizard"><section className="wizardPanel"><div className="brand"><ShieldCheck size={24} /><h1>首次运行</h1></div><label>工作区路径<input aria-label="工作区路径" value={workspacePath} onChange={(e) => setWorkspacePath(e.target.value)} /></label><p>本地 Agent Core 由 Bolt 桌面端自动管理。API 密钥不会写入浏览器存储；模型配置继续由 Agent Core 管理。</p><button type="button" onClick={() => onComplete({ completed: true, workspacePath, lastRunId: session.lastRunId })}><FolderOpen size={16} />进入工作台</button></section></main>);
 }
 
 function ModelPanel({ model, setModel, apiKey, setApiKey, saveModel, status }: { model: ModelSettings; setModel: (m: ModelSettings) => void; apiKey: string; setApiKey: (v: string) => void; saveModel: () => void; status: BoltState['modelSettingsStatus'] }) {

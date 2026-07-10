@@ -90,7 +90,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
       </div>
 
       <div style={stageGridStyle}>
-        {data.stages.map((stage, index) => (
+        {(data.stages ?? []).map((stage, index) => (
           <div key={stage.stage_id} style={stageCardStyle(stage.status)}>
             <div style={stepStyle}>{index + 1}</div>
             <div>
@@ -102,7 +102,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
       </div>
 
       <div style={laneGridStyle}>
-        {data.lanes.map((lane) => (
+        {(data.lanes ?? []).map((lane) => (
           <div key={lane.lane_id} style={laneStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <strong>{lane.label_cn}</strong>
@@ -115,7 +115,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
 
       <div style={safetyStyle}>
         <strong>安全边界</strong>
-        <p style={{ margin: '4px 0 0', color: '#78350f' }}>{data.safety.summary_cn}</p>
+        <p style={{ margin: '4px 0 0', color: '#78350f' }}>{data.safety?.summary_cn ?? ''}</p>
       </div>
 
       {data.patch_approval && (
@@ -123,7 +123,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
           <strong>{data.patch_approval.label_cn}</strong>
           <p style={{ margin: '4px 0 8px', color: '#7c2d12' }}>{data.patch_approval.warning_cn}</p>
           <div style={{ display: 'grid', gap: 4 }}>
-            {data.patch_approval.checks.map((check) => (
+            {(data.patch_approval.checks ?? []).map((check) => (
               <div key={check.check_id} style={checkStyle}>
                 <span>{check.label_cn}</span>
                 <span style={laneBadgeStyle(check.status)}>{statusLabel(check.status)}</span>
@@ -138,7 +138,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
           <strong>{data.test_feedback.label_cn}</strong>
           <p style={{ margin: '4px 0 8px', color: '#164e63' }}>{data.test_feedback.warning_cn}</p>
           <div style={commandGridStyle}>
-            {data.test_feedback.commands.map((command) => (
+            {(data.test_feedback.commands ?? []).map((command) => (
               <div key={command.test_id} style={commandStyle}>
                 <span>{command.label_cn}</span>
                 <span style={laneBadgeStyle(command.status)}>{statusLabel(command.status)}</span>
@@ -153,7 +153,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
           <strong>{data.failure_recovery.label_cn}</strong>
           <p style={{ margin: '4px 0 8px', color: '#7f1d1d' }}>{data.failure_recovery.warning_cn}</p>
           <div style={{ display: 'grid', gap: 4 }}>
-            {data.failure_recovery.checks.map((check) => (
+            {(data.failure_recovery.checks ?? []).map((check) => (
               <div key={check.check_id} style={recoveryCheckStyle}>
                 <span>{check.label_cn}</span>
                 <span style={laneBadgeStyle(check.status)}>{statusLabel(check.status)}</span>
@@ -166,7 +166,7 @@ export function ProductWorkbenchPanel({ api }: Props) {
       <div>
         <strong style={{ fontSize: 13 }}>下一步</strong>
         <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-          {data.next_actions.map((item) => <li key={item} style={detailStyle}>{item}</li>)}
+          {(data.next_actions ?? []).map((item) => <li key={item} style={detailStyle}>{item}</li>)}
         </ul>
       </div>
     </section>
