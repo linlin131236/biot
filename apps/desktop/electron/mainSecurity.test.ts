@@ -10,6 +10,13 @@ const mainSource = readFileSync(join(__dirname, 'main.ts'), 'utf-8');
 const workspacePickerSource = readFileSync(join(__dirname, 'workspacePicker.ts'), 'utf-8');
 
 describe('main process security', () => {
+  it('registers Agent Core IPC against the supervisor verified generation', () => {
+    expect(mainSource).toContain('registerAgentCoreIpc');
+    expect(mainSource).toContain('getVerifiedGeneration');
+    expect(mainSource).not.toContain('process.env.BOLT_AGENT_CORE_TOKEN =');
+    expect(mainSource).not.toContain('process.env.BOLT_AGENT_CORE_PORT =');
+  });
+
   it('sets contextIsolation to true', () => {
     expect(mainSource).toContain('contextIsolation: true');
   });
@@ -18,8 +25,8 @@ describe('main process security', () => {
     expect(mainSource).toContain('nodeIntegration: false');
   });
 
-  it('references preload.js', () => {
-    expect(mainSource).toContain('preload.js');
+  it('references preload.cjs', () => {
+    expect(mainSource).toContain('preload.cjs');
   });
 
   it('does not enable remote module', () => {

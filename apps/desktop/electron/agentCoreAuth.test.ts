@@ -3,28 +3,38 @@ import { describe, expect, it } from 'vitest';
 import { resolveAgentCoreRuntime } from './agentCoreRuntime';
 
 describe('agent core local auth', () => {
-  it('generates a local token and passes it only through environment', () => {
+  it('passes only the current generation bearer through the child environment', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
       env: {},
       exists: () => false,
-      tokenFactory: () => 'generated-local-token'
+      generationFactory: () => ({
+        startupId: 'startup-id',
+        bootstrapKey: 'bootstrap-key',
+        bearerToken: 'generated-local-token',
+      })
     });
 
     expect(runtime.authToken).toBe('generated-local-token');
-    expect(runtime.env.BOLT_AGENT_CORE_TOKEN).toBe('generated-local-token');
+    expect(runtime.env.BOLT_CORE_BEARER).toBe('generated-local-token');
+    expect(runtime.env.BOLT_AGENT_CORE_TOKEN).toBeUndefined();
     expect(runtime.args).not.toContain('generated-local-token');
   });
 
-  it('honors an explicit local token from the environment', () => {
+  it('rejects inherited token values and injects only the new generation bearer', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
       env: { BOLT_AGENT_CORE_TOKEN: 'existing-token' },
       exists: () => false,
-      tokenFactory: () => 'generated-local-token'
+      generationFactory: () => ({
+        startupId: 'startup-id',
+        bootstrapKey: 'bootstrap-key',
+        bearerToken: 'generated-local-token',
+      })
     });
 
-    expect(runtime.authToken).toBe('existing-token');
-    expect(runtime.env.BOLT_AGENT_CORE_TOKEN).toBe('existing-token');
+    expect(runtime.authToken).toBe('generated-local-token');
+    expect(runtime.env.BOLT_AGENT_CORE_TOKEN).toBeUndefined();
+    expect(runtime.env.BOLT_CORE_BEARER).toBe('generated-local-token');
   });
 });

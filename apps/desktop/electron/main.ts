@@ -1,11 +1,19 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
 import { AgentCoreSupervisor, resolveAgentCoreRuntime } from './agentCoreRuntime.js';
 import { registerWorkspacePickerIpc } from './workspacePicker.js';
+import { startDesktopWindow } from './desktopStartup.js';
+import { registerAgentCoreIpc } from './agentCoreIpc.js';
+
+// ESM does not expose __dirname; reconstruct it from import.meta.url.
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 let agentCore: AgentCoreSupervisor | null = null;
+let trustedWebContentsId: number | null = null;
 
 async function createWindow() {
   const window = new BrowserWindow({
@@ -14,12 +22,16 @@ async function createWindow() {
     minWidth: 980,
     minHeight: 640,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
 
+  trustedWebContentsId = window.webContents.id;
+  window.webContents.once('destroyed', () => {
+    if (trustedWebContentsId === window.webContents.id) trustedWebContentsId = null;
+  });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => {
     const allowed = devServerUrl ? url.startsWith(devServerUrl) : url.startsWith('file://');
@@ -33,25 +45,28 @@ async function createWindow() {
 }
 
 async function startAgentCore() {
-  const runtime = resolveAgentCoreRuntime({
-    repoRoot: path.resolve(__dirname, '../../..'),
-    resourcesPath: process.resourcesPath,
-    packaged: app.isPackaged,
-    env: process.env,
-    exists: existsSync
-  });
-  process.env.BOLT_AGENT_CORE_TOKEN = runtime.authToken;
-  process.env.BOLT_AGENT_CORE_PORT = new URL(runtime.baseUrl).port;
-  process.env.BOLT_WORKSPACE = runtime.env.BOLT_WORKSPACE;
-  agentCore = new AgentCoreSupervisor({ runtime });
-  const status = await agentCore.ensureStarted();
-  if (status.status === 'down') console.error(status.error);
+  const runtimeFactory = () => resolveAgentCoreRuntime({
+      repoRoot: path.resolve(__dirname, '../../..'),
+      resourcesPath: process.resourcesPath,
+      packaged: app.isPackaged,
+      env: process.env,
+      exists: existsSync
+    });
+  agentCore = new AgentCoreSupervisor({ runtimeFactory });
+  return agentCore.ensureStarted();
 }
 
 app.whenReady().then(async () => {
   registerWorkspacePickerIpc(ipcMain, dialog);
-  await startAgentCore();
-  await createWindow();
+  registerAgentCoreIpc(ipcMain, {
+    getGeneration: () => agentCore?.getVerifiedGeneration() ?? null,
+    isTrustedSender: (event) => event.sender.id === trustedWebContentsId,
+    fetch,
+  });
+  await startDesktopWindow({ startCore: startAgentCore, createWindow });
+}).catch((error) => {
+  console.error(error);
+  app.quit();
 });
 
 app.on('before-quit', () => {
