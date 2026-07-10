@@ -2,55 +2,68 @@
 
 - Date: 2026-07-11
 - Branch: `feat/safe-controlled-beta`
-- Commit used for rebuild: `22a55304dd5a76cb0874ba02cd4a6f920c6c2f6b`
+- Final rebuild commit: `3c335c3b7da401b75dd23473399ba3ccb00434e7`
 - Product version: `0.1.0`
 
 ## Audit acceptance
 
-The previous claim that the Windows release-evidence vertical slice was "technically complete" is **rejected**.
+Independent review rejected “technical implementation complete.”
 
-Correct state before this repair:
+Correct ongoing status:
 
-- release capability skeleton existed
-- multiple critical implementation/evidence gaps remained
+> 发布能力骨架已加固；关键 dirty 源码 / 未接入 / 假门禁问题已修；Desktop 全量测试已恢复全绿；签名与干净 Windows 完整 E2E 仍未过。玩家内测仍然禁止。
 
-## Repairs completed
+## What was repaired in this follow-up
 
-1. Committed previously dirty P0 sources that ship inside packages:
-   - Desktop transport/readiness/preload stack
-   - Agent Core credential gate / Windows secret stack
-2. Wired diagnostics and update modules into Electron Main + preload + Settings UI
-3. Added dirty-worktree package evidence gate
-4. Split `signing.verify` (signtool verify, no private key) from `signing.capability` (CSC material)
-5. Stopped clean-E2E script from marking `clean_windows_e2e=passed` on 5-second launch smoke
-6. Honest SBOM inventory limitations (`file_inventory_not_cyclonedx`)
-7. Rebuilt package from clean product source and produced real NSIS installer
+1. **Desktop full suite restored**
+   - Preload bridge security contract re-accepted for `diagnostics` / `update` narrow surfaces with fixed channels.
+   - Task-closure dogfood stabilized by waiting for health + quiet network fan-out (not by blind timeout inflation).
+   - Real Electron bridge integration hardened: compile preload first, parent/child watchdogs, one retry under suite load, assert diagnostics/update presence.
+   - Final result: **66 files / 465 tests passed**.
 
-## Rebuild evidence (non-secret)
+2. **clean-worktree gate tightened**
+   - Production `apps/desktop/src/assets/` is **not** ignored.
+   - Untracked production assets make evidence packaging dirty/fail.
+   - Brand SVG assets were committed; non-shipping previews moved out of production path.
+
+3. **ASAR scan hardened**
+   - Resolves `@electron/asar` (including pnpm path).
+   - Lists asar entries and scans packaged JS/JSON/CSS/HTML content for secret patterns.
+   - Invalid/unlistable asar is a **hard failure** (`asar_listing_unavailable`), not a soft pass.
+   - Final scan: `asar=present`, secret-scan passed.
+
+4. **Real crash/startup diagnostics wired**
+   - `render-process-gone`, main `uncaughtException` / `unhandledRejection`, Agent Core/desktop startup failures write into local diagnostics store via `crashDiagnostics` helpers.
+   - UI diagnostics panel remains available; default no auto-upload.
+
+5. **Rebuild from clean final commit**
+   - Worktree clean for product source.
+   - Regenerated `win-unpacked` and **real NSIS** installer.
+   - Package includes `diagnosticsIpc`, `crashDiagnostics`, `updateService` markers in `app.asar`.
+
+## Final rebuild evidence (non-secret)
 
 | Item | Value |
 |------|-------|
-| Git commit | `22a55304dd5a76cb0874ba02cd4a6f920c6c2f6b` |
-| Worktree gate | clean for product source (non-shipping local drafts ignored) |
-| `win-unpacked/Bolt.exe` SHA-256 | `ca80d9feb1bd836aabf85e0cd08521ea7ccc0191e9555c4ec61acfe0e68e9a4f` |
+| Git commit | `3c335c3b7da401b75dd23473399ba3ccb00434e7` |
+| Desktop full vitest | **66 files / 465 passed** |
+| Desktop build | passed |
+| Architecture gate | passed (prior + unchanged) |
+| Worktree evidence gate | clean |
+| `win-unpacked/Bolt.exe` SHA-256 | `fbb3b9d731c91e02aee4fe288051c4d759f107379343c871c7f59f38211a9e52` |
 | `Bolt.exe` size | 235706880 bytes |
-| `Bolt Setup 0.1.0.exe` SHA-256 | `24a48c6b267d90277a02361d9e2d2f581c1d23921dde3264ed316e0d5a5b1e1f` |
-| Setup size | 132006970 bytes |
-| `app.asar` mtime | 2026-07-11 04:15:23 +0800 (after wiring commits) |
-| asar content markers | `diagnosticsIpc`, `updateService`, `updateIpc`, `diagnosticsStore` present |
+| `Bolt Setup 0.1.0.exe` SHA-256 | `28cc1053397ca30e592d0da2add1b97f4d6a82272a25a7468e2997aaf268ace0` |
+| Setup size | 132007604 bytes |
+| `app.asar` mtime | 2026-07-11 04:46:11 +0800 |
 | package layout smoke | passed |
-| artifact secret-scan | passed (shell inventory; asar listing unavailable without `@electron/asar`) |
-| SBOM | inventory only, not CycloneDX/SPDX |
+| artifact secret-scan | passed |
+| asar listing/content scan | present / passed |
+| SBOM | `file_inventory_not_cyclonedx` (honest limitations) |
 | `signing.verify` | blocked (`signtool_not_found` in this shell) |
 | `signing.capability` | blocked (no CSC material) |
 | `clean_windows_e2e` | blocked on developer host |
 | NSIS install/uninstall GUI E2E | not_run |
 | production update channel | blocked by design |
-
-## Focused verification after repair
-
-- node release gate tests: passed
-- desktop wiring/update/diagnostics focused vitest: 13 passed
 
 ## Go / No-Go
 
@@ -63,11 +76,12 @@ Correct state before this repair:
 
 ### Remaining blockers for player limited beta
 
-1. Trusted code signing certificate + successful `signtool verify /pa` on final artifacts
+1. Trusted code signing certificate + successful `signtool verify /pa` on these exact artifacts
 2. Clean Windows install/start/core/credentials/task/exit/uninstall evidence
-3. Production update channel policy/host if auto-update is required
+3. Production update channel policy/host only if auto-update is required
 4. Explicit user authorization before any player distribution
 
 ## Correct summary statement
 
-> 发布能力骨架已加固，且关键 dirty 源码/接入/门禁问题已修复；但签名、干净 Windows 完整 E2E、安装卸载证据与生产更新链仍未通过。玩家内测仍然禁止。
+> 内部发布链关键缺口已按审核意见修复，Desktop 全量全绿，且已从 clean commit 重新生成 EXE 与 NSIS。  
+> 但这仍不等于可玩家内测：签名、干净 Windows 完整 E2E 与生产更新链仍未通过。
