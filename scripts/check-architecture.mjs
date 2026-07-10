@@ -96,19 +96,28 @@ function checkP0LocalSecurity(rel, text) {
 // Narrow exception: apps/desktop/src/desktopSession.ts may mention 'coreUrl' only as the
 // legacy localStorage migration detector (hasOwnProperty / purge). No panels are whitelisted.
 function checkRendererCoreUrlAuthority(rel, text) {
-  if (!rel.startsWith('apps/desktop/src/')) return;
-  if (rel.includes('.test.') || rel.endsWith('.test.ts') || rel.endsWith('.test.tsx')) return;
+  for (const message of rendererCoreUrlAuthorityViolations(rel, text)) fail(rel, message);
+}
 
-  const allowLegacyCoreUrlDetector = rel === 'apps/desktop/src/desktopSession.ts';
-  if (/\bcoreUrl\b/.test(text) && !allowLegacyCoreUrlDetector) {
-    fail(rel, 'Renderer must not retain coreUrl');
+export function rendererCoreUrlAuthorityViolations(rel, text) {
+  const violations = [];
+  if (!rel.startsWith('apps/desktop/src/')) return violations;
+  if (rel.includes('.test.') || rel.endsWith('.test.ts') || rel.endsWith('.test.tsx')) return violations;
+
+  const legacyDetector = "Object.prototype.hasOwnProperty.call(value, 'coreUrl')";
+  const coreUrlSurface = rel === 'apps/desktop/src/desktopSession.ts'
+    ? text.replace(legacyDetector, '')
+    : text;
+  if (/\bcoreUrl\b/.test(coreUrlSurface)) {
+    violations.push('Renderer must not retain coreUrl');
   }
-  if (/\bDEFAULT_CORE_URL\b/.test(text)) fail(rel, 'DEFAULT_CORE_URL is forbidden');
-  if (/\bhttp:\/\/core\b/.test(text)) fail(rel, 'http://core defaults are forbidden');
-  if (/\bagentCoreEndpoint\b/.test(text)) fail(rel, 'agentCoreEndpoint must not reappear in Renderer');
+  if (/\bDEFAULT_CORE_URL\b/.test(text)) violations.push('DEFAULT_CORE_URL is forbidden');
+  if (/\bhttp:\/\/core\b/.test(text)) violations.push('http://core defaults are forbidden');
+  if (/\bagentCoreEndpoint\b/.test(text)) violations.push('agentCoreEndpoint must not reappear in Renderer');
   if (/\bbaseUrl\b/.test(text)) {
-    fail(rel, 'Agent Core baseUrl parameter/prop is forbidden in production Renderer sources');
+    violations.push('Agent Core baseUrl parameter/prop is forbidden in production Renderer sources');
   }
+  return violations;
 }
 
 function imports(text) {

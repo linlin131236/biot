@@ -89,7 +89,6 @@ describe('AuditTimelinePanel', () => {
   });
 });
 
-
 it('forwards source filter to fetchAuditTimeline', async () => {
   const fetchAuditTimeline = vi.fn().mockResolvedValue({ events: [] });
   render(<AuditTimelinePanel closureId="cl_1" api={{ fetchAuditTimeline }} />);
@@ -105,4 +104,3 @@ it('forwards source filter to fetchAuditTimeline', async () => {
     await waitFor(() => expect(fetchAuditTimeline).toHaveBeenCalledWith('cl_1', undefined));
   }
 });
-
