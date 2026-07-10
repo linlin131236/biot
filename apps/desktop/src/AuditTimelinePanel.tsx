@@ -27,7 +27,7 @@ interface TimelineData {
 interface Props {
   closureId?: string | null;
   api: {
-    fetchAuditTimeline: (closureId?: string) => Promise<Record<string, unknown>>;
+    fetchAuditTimeline: (closureId?: string, source?: string) => Promise<Record<string, unknown>>;
   };
 }
 

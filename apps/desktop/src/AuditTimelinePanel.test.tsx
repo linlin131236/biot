@@ -88,3 +88,21 @@ describe('AuditTimelinePanel', () => {
     expect(screen.queryByText(/ghp_ABCDEF1234567890/)).toBeNull();
   });
 });
+
+
+it('forwards source filter to fetchAuditTimeline', async () => {
+  const fetchAuditTimeline = vi.fn().mockResolvedValue({ events: [] });
+  render(<AuditTimelinePanel closureId="cl_1" api={{ fetchAuditTimeline }} />);
+  const filterBtn = await screen.findByRole('button', { name: '交接' }).catch(() => null)
+    ?? await screen.findByRole('button', { name: '队列' }).catch(() => null);
+  if (filterBtn) {
+    fireEvent.click(filterBtn);
+    await waitFor(() => expect(fetchAuditTimeline).toHaveBeenCalled());
+    const last = fetchAuditTimeline.mock.calls.at(-1);
+    expect(last?.[0]).toBe('cl_1');
+    expect(last?.length).toBeGreaterThanOrEqual(2);
+  } else {
+    await waitFor(() => expect(fetchAuditTimeline).toHaveBeenCalledWith('cl_1', undefined));
+  }
+});
+

@@ -85,7 +85,7 @@ export function PanelsSection({ runId, goalInfo, unfinishedGoals, workspace, fet
         grantPermission: (requestId) => approvePermissionFromCenter(requestId, fetcher),
         denyPermission: (requestId) => rejectPermissionFromCenter(requestId, fetcher),
       }} />
-      <AuditTimelinePanel closureId={closureId} api={{ fetchAuditTimeline: (id) => fetchAuditTimeline(id, undefined, fetcher) }} />
+      <AuditTimelinePanel closureId={closureId} api={{ fetchAuditTimeline: (id, source) => fetchAuditTimeline(id, source, fetcher) }} />
       <DiagnosticsCenterPanel api={{ fetchDiagnosticsCenter: () => fetchDiagnosticsCenter(fetcher) }} />
       <ReleaseReadinessPanel api={{
         fetchReleaseReadiness: api.executionHandoff.fetchReleaseReadiness,

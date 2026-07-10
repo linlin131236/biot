@@ -121,7 +121,11 @@ export function createPanelsApi(fetcher: Fetcher, goalInfo: Goal | null): Panels
     },
     skilllearner: { autoScan: autoScanSkillLearner, recordFailure },
     orchestrator: { runOrchestration: runOrchestrator, fetchRoles: fetchOrchestratorRoles },
-    sleepWake: { sleep: sleepAgent, wake: wakeAgent, fetchStatus: fetchSleepWakeStatus },
+    sleepWake: {
+      sleep: (payload) => sleepAgent(payload, fetcher),
+      wake: (payload) => wakeAgent(payload, fetcher),
+      fetchStatus: () => fetchSleepWakeStatus(fetcher),
+    },
     gateFreeze: { freezeGate, unfreezeGate, fetchStatus: fetchGateStatus },
     toolVerification: { verifyTools },
     autoFix: { autoFixReviewFindings },
