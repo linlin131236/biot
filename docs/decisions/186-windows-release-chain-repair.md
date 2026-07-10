@@ -2,63 +2,61 @@
 
 - Date: 2026-07-11
 - Branch: `feat/safe-controlled-beta`
-- Final rebuild commit: `3c335c3b7da401b75dd23473399ba3ccb00434e7`
+- Final product rebuild commit: `b175e521a45d000f6c3363432dad1c2e284c11f3`
 - Product version: `0.1.0`
 
 ## Audit acceptance
 
-Independent review rejected “technical implementation complete.”
+Independent review correctly rejected earlier claims of completion.
 
 Correct ongoing status:
 
-> 发布能力骨架已加固；关键 dirty 源码 / 未接入 / 假门禁问题已修；Desktop 全量测试已恢复全绿；签名与干净 Windows 完整 E2E 仍未过。玩家内测仍然禁止。
+> 发布链关键缺口已按审核意见继续收紧；Desktop 全量全绿；ASAR 内容扫描已真实可读且 fixture 可抓 secret；sender trust 已提升到 frame/URL 级；fatal exception 使用 monitor 记录。
+> 签名与干净 Windows 完整 E2E 仍未过。玩家内测仍然禁止。
 
-## What was repaired in this follow-up
+## What was repaired after the latest audit
 
-1. **Desktop full suite restored**
-   - Preload bridge security contract re-accepted for `diagnostics` / `update` narrow surfaces with fixed channels.
-   - Task-closure dogfood stabilized by waiting for health + quiet network fan-out (not by blind timeout inflation).
-   - Real Electron bridge integration hardened: compile preload first, parent/child watchdogs, one retry under suite load, assert diagnostics/update presence.
-   - Final result: **66 files / 465 tests passed**.
-
-2. **clean-worktree gate tightened**
-   - Production `apps/desktop/src/assets/` is **not** ignored.
-   - Untracked production assets make evidence packaging dirty/fail.
-   - Brand SVG assets were committed; non-shipping previews moved out of production path.
-
-3. **ASAR scan hardened**
-   - Resolves `@electron/asar` (including pnpm path).
-   - Lists asar entries and scans packaged JS/JSON/CSS/HTML content for secret patterns.
-   - Invalid/unlistable asar is a **hard failure** (`asar_listing_unavailable`), not a soft pass.
+1. **ASAR content scan is real**
+   - `normalizeAsarEntry()` strips leading separators and keeps the Windows path form required by `@electron/asar` (`dist-electron\main.js`).
+   - Scannable JS/JSON/CSS/HTML entries hard-fail on `asar_read_failed` / `asar_read_empty`.
+   - Fixture test creates a real asar containing `sk-...` and asserts detection.
+   - Spot-check on rebuilt package: 20/20 sampled JS entries read non-zero bytes.
    - Final scan: `asar=present`, secret-scan passed.
 
-4. **Real crash/startup diagnostics wired**
-   - `render-process-gone`, main `uncaughtException` / `unhandledRejection`, Agent Core/desktop startup failures write into local diagnostics store via `crashDiagnostics` helpers.
-   - UI diagnostics panel remains available; default no auto-upload.
+2. **IPC sender trust hardened**
+   - Shared `isTrustedDesktopSender()` requires:
+     - matching trusted `webContents.id`
+     - top-level frame only
+     - exact dev-server origin, or packaged `.../dist/index.html` entry
+   - Used by Agent Core, diagnostics, and update IPC.
+   - `will-navigate` no longer allows arbitrary `file://` prefixes.
 
-5. **Rebuild from clean final commit**
-   - Worktree clean for product source.
-   - Regenerated `win-unpacked` and **real NSIS** installer.
-   - Package includes `diagnosticsIpc`, `crashDiagnostics`, `updateService` markers in `app.asar`.
+3. **Fatal exception handling**
+   - Replaced swallowing `uncaughtException` listener with `uncaughtExceptionMonitor` so diagnostics are recorded without suppressing Electron's default fatal exit path.
+   - `unhandledRejection` still recorded.
+
+4. **Whitespace**
+   - Decision/scanner trailing whitespace cleaned; `git diff --check` clean on product commits.
+
+5. **Desktop suite**
+   - Final result after this repair: **67 files / 470 tests passed**.
 
 ## Final rebuild evidence (non-secret)
 
 | Item | Value |
 |------|-------|
-| Git commit | `3c335c3b7da401b75dd23473399ba3ccb00434e7` |
-| Desktop full vitest | **66 files / 465 passed** |
+| Git commit | `b175e521a45d000f6c3363432dad1c2e284c11f3` |
+| Desktop full vitest | **67 files / 470 passed** |
 | Desktop build | passed |
-| Architecture gate | passed (prior + unchanged) |
 | Worktree evidence gate | clean |
-| `win-unpacked/Bolt.exe` SHA-256 | `fbb3b9d731c91e02aee4fe288051c4d759f107379343c871c7f59f38211a9e52` |
+| `win-unpacked/Bolt.exe` SHA-256 | `79c76fc5e76b80b299b425926cc7a05d03acb2df54db0c765290c469890e1fe9` |
 | `Bolt.exe` size | 235706880 bytes |
-| `Bolt Setup 0.1.0.exe` SHA-256 | `28cc1053397ca30e592d0da2add1b97f4d6a82272a25a7468e2997aaf268ace0` |
-| Setup size | 132007604 bytes |
-| `app.asar` mtime | 2026-07-11 04:46:11 +0800 |
+| `Bolt Setup 0.1.0.exe` SHA-256 | `712985fce2eee9d8a919045d9aada99fa8e896d4bc69701a3d94de31c696ca1e` |
+| Setup size | 132007405 bytes |
 | package layout smoke | passed |
 | artifact secret-scan | passed |
-| asar listing/content scan | present / passed |
-| SBOM | `file_inventory_not_cyclonedx` (honest limitations) |
+| asar listing/content scan | present / passed (real non-zero reads) |
+| SBOM | `file_inventory_not_cyclonedx` |
 | `signing.verify` | blocked (`signtool_not_found` in this shell) |
 | `signing.capability` | blocked (no CSC material) |
 | `clean_windows_e2e` | blocked on developer host |
@@ -83,5 +81,5 @@ Correct ongoing status:
 
 ## Correct summary statement
 
-> 内部发布链关键缺口已按审核意见修复，Desktop 全量全绿，且已从 clean commit 重新生成 EXE 与 NSIS。
-> 但这仍不等于可玩家内测：签名、干净 Windows 完整 E2E 与生产更新链仍未通过。
+> 审核指出的 ASAR 假绿、弱 sender trust、fatal exception 处理与 whitespace 已修复，并已从 clean commit 重建 EXE/NSIS。
+> 这仍不等于可玩家内测：签名与干净 Windows 完整 E2E 未通过。
