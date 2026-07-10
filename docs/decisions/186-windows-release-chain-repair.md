@@ -2,62 +2,61 @@
 
 - Date: 2026-07-11
 - Branch: `feat/safe-controlled-beta`
-- Final product rebuild commit: `b175e521a45d000f6c3363432dad1c2e284c11f3`
+- Final product rebuild commit: `7f3d9916dbeb842aa4c95eba8b333c95dc38133e`
 - Product version: `0.1.0`
 
 ## Audit acceptance
 
-Independent review correctly rejected earlier claims of completion.
+Independent review correctly rejected earlier claims of completion, including residual sender-trust prefix grants.
 
 Correct ongoing status:
 
-> 发布链关键缺口已按审核意见继续收紧；Desktop 全量全绿；ASAR 内容扫描已真实可读且 fixture 可抓 secret；sender trust 已提升到 frame/URL 级；fatal exception 使用 monitor 记录。
-> 签名与干净 Windows 完整 E2E 仍未过。玩家内测仍然禁止。
+> Packaged/dev sender and navigation trust now require exact entry URLs only.
+> Desktop suite is green and packages were rebuilt from this exact-trust commit.
+> Signing and clean Windows full E2E remain No-Go. Player beta remains forbidden.
 
-## What was repaired after the latest audit
+## Latest critical fix
 
-1. **ASAR content scan is real**
-   - `normalizeAsarEntry()` strips leading separators and keeps the Windows path form required by `@electron/asar` (`dist-electron\main.js`).
-   - Scannable JS/JSON/CSS/HTML entries hard-fail on `asar_read_failed` / `asar_read_empty`.
-   - Fixture test creates a real asar containing `sk-...` and asserts detection.
-   - Spot-check on rebuilt package: 20/20 sampled JS entries read non-zero bytes.
-   - Final scan: `asar=present`, secret-scan passed.
+Removed remaining weak URL grants:
 
-2. **IPC sender trust hardened**
-   - Shared `isTrustedDesktopSender()` requires:
-     - matching trusted `webContents.id`
-     - top-level frame only
-     - exact dev-server origin, or packaged `.../dist/index.html` entry
-   - Used by Agent Core, diagnostics, and update IPC.
-   - `will-navigate` no longer allows arbitrary `file://` prefixes.
+- No `endsWith('/dist/index.html')`
+- No `includes('/dist/index.html')`
+- No `startsWith(devServerUrl)`
 
-3. **Fatal exception handling**
-   - Replaced swallowing `uncaughtException` listener with `uncaughtExceptionMonitor` so diagnostics are recorded without suppressing Electron's default fatal exit path.
-   - `unhandledRejection` still recorded.
+Packaged mode accepts only the normalized exact path:
 
-4. **Whitespace**
-   - Decision/scanner trailing whitespace cleaned; `git diff --check` clean on product commits.
+`file:///<appPath>/dist/index.html`
 
-5. **Desktop suite**
-   - Final result after this repair: **67 files / 470 tests passed**.
+with no query, hash, or userinfo.
+
+Dev mode accepts only exact `URL.origin` plus allowlisted pathnames (`/`, `/index.html`).
+
+`will-navigate` and all IPC (Agent Core / diagnostics / update) share the same validator.
+
+Attack tests cover:
+
+- `file:///C:/Temp/dist/index.html`
+- `index.html.evil`
+- similar dev ports/hosts
+- userinfo / fragment / iframe parent / non-top frames
+- packaged query strings
 
 ## Final rebuild evidence (non-secret)
 
 | Item | Value |
 |------|-------|
-| Git commit | `b175e521a45d000f6c3363432dad1c2e284c11f3` |
-| Desktop full vitest | **67 files / 470 passed** |
-| Desktop build | passed |
+| Git commit | `7f3d9916dbeb842aa4c95eba8b333c95dc38133e` |
+| Desktop full vitest | **67 files / 469 passed** |
+| Desktop build / architecture | passed |
 | Worktree evidence gate | clean |
-| `win-unpacked/Bolt.exe` SHA-256 | `79c76fc5e76b80b299b425926cc7a05d03acb2df54db0c765290c469890e1fe9` |
+| `win-unpacked/Bolt.exe` SHA-256 | `ab4f30da93e189f68ec5370c6b16cb667160e34868597a2a07b4ed55986c36f6` |
 | `Bolt.exe` size | 235706880 bytes |
-| `Bolt Setup 0.1.0.exe` SHA-256 | `712985fce2eee9d8a919045d9aada99fa8e896d4bc69701a3d94de31c696ca1e` |
-| Setup size | 132007405 bytes |
+| `Bolt Setup 0.1.0.exe` SHA-256 | `6da5cb352129b58f88b40ddfe7bd01db0286b1c4e9896f5022223a29a576b517` |
+| Setup size | 132007699 bytes |
 | package layout smoke | passed |
-| artifact secret-scan | passed |
-| asar listing/content scan | present / passed (real non-zero reads) |
-| SBOM | `file_inventory_not_cyclonedx` |
-| `signing.verify` | blocked (`signtool_not_found` in this shell) |
+| artifact secret-scan / asar content | passed (`asar=present`) |
+| weak URL grants in electron sources | none |
+| `signing.verify` | blocked (`signtool_not_found`) |
 | `signing.capability` | blocked (no CSC material) |
 | `clean_windows_e2e` | blocked on developer host |
 | NSIS install/uninstall GUI E2E | not_run |
@@ -81,5 +80,6 @@ Correct ongoing status:
 
 ## Correct summary statement
 
-> 审核指出的 ASAR 假绿、弱 sender trust、fatal exception 处理与 whitespace 已修复，并已从 clean commit 重建 EXE/NSIS。
-> 这仍不等于可玩家内测：签名与干净 Windows 完整 E2E 未通过。
+> The last sender-trust Critical is fixed with exact-entry validation and attack tests.
+> Packages were rebuilt after the Main change.
+> Player beta remains forbidden until signing and clean Windows E2E pass.
