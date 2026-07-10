@@ -1,18 +1,70 @@
+export type AgentCoreIpcResponse = {
+  requestId: string;
+  generationId: string;
+  status: number;
+  statusText: string;
+  headers: Array<[string, string]>;
+  body: string;
+};
+
+export type AgentCoreRequestHandle = {
+  requestId: string;
+  response: Promise<Response>;
+  cancel: () => Promise<'cancelled' | 'already_finished'>;
+};
+
+export type AgentCoreTransport = (
+  input: string,
+  init?: RequestInit,
+) => AgentCoreRequestHandle;
+
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export function createAgentCoreFetcher(fetcher: Fetcher = fetch): Fetcher {
-  return async (input: string, init?: RequestInit) => {
-    const endpoint = await readAgentCoreEndpoint();
-    if (typeof window !== 'undefined' && window.bolt?.agentCoreFetch && isTrustedAgentCoreUrl(input, endpoint.port)) {
-      const response = await window.bolt.agentCoreFetch(input, serializeRequestInit(init));
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
+export function createAgentCoreFetcher(): Fetcher {
+  const transport = createAgentCoreTransport();
+  return (input, init) => transport(input, init).response;
+}
+
+export function createAgentCoreTransport(): AgentCoreTransport {
+  return (input: string, init?: RequestInit) => {
+    const path = assertRelativeAgentCorePath(input);
+    const bridge = typeof window === 'undefined' ? undefined : window.bolt?.agentCoreRequest;
+    if (!bridge) {
+      throw new Error('Bolt Desktop Agent Core bridge 不可用');
     }
-    return fetcher(input, init);
+
+    const handle = bridge(path, serializeRequestInit(init));
+    return {
+      requestId: handle.requestId,
+      response: handle.response.then(toResponse),
+      cancel: handle.cancel,
+    };
   };
+}
+
+function assertRelativeAgentCorePath(input: string): string {
+  if (typeof input !== 'string' || input.length === 0) {
+    throw new Error('CORE_REQUEST_INVALID');
+  }
+  if (
+    !input.startsWith('/')
+    || input.startsWith('//')
+    || input.includes('\\')
+    || input.includes('#')
+    || input.includes('://')
+    || input.includes('@')
+  ) {
+    throw new Error('CORE_REQUEST_INVALID');
+  }
+  return input;
+}
+
+function toResponse(response: AgentCoreIpcResponse): Response {
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
 }
 
 function serializeRequestInit(init?: RequestInit): { method?: string; headers?: [string, string][]; body?: string } | undefined {
@@ -22,25 +74,7 @@ function serializeRequestInit(init?: RequestInit): { method?: string; headers?: 
   }
   return {
     method: init.method,
-    headers: Array.from(new Headers(init.headers).entries()),
+    headers: init.headers ? Array.from(new Headers(init.headers).entries()) : undefined,
     body: typeof init.body === 'string' ? init.body : undefined,
   };
-}
-
-async function readAgentCoreEndpoint(): Promise<{ port: number }> {
-  if (typeof window === 'undefined') return { port: 8000 };
-  const endpoint = await window.bolt?.agentCoreEndpoint?.();
-  return typeof endpoint?.port === 'number' ? endpoint : { port: 8000 };
-}
-
-function isTrustedAgentCoreUrl(input: string, allowedPort: number): boolean {
-  try {
-    const url = new URL(input);
-    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
-    return (url.protocol === 'http:' || url.protocol === 'https:')
-      && ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname)
-      && port === String(allowedPort);
-  } catch {
-    return false;
-  }
 }

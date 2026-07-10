@@ -1,63 +1,124 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createAgentCoreFetcher } from './agentCoreAuth';
+import { createAgentCoreTransport, type AgentCoreIpcResponse } from './agentCoreAuth';
 
-describe('agent core authenticated fetcher', () => {
-  it('delegates local Agent Core requests to the desktop bridge without exposing the token', async () => {
+describe('agent core IPC transport adapter', () => {
+  it('returns a request handle synchronously before the response settles', () => {
+    let resolveDto!: (value: AgentCoreIpcResponse) => void;
+    const dto = new Promise<AgentCoreIpcResponse>((resolve) => {
+      resolveDto = resolve;
+    });
+    const cancel = vi.fn().mockResolvedValue('cancelled' as const);
     window.bolt = {
       selectWorkspace: vi.fn(),
-      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
-      agentCoreFetch: vi.fn().mockResolvedValue({
-        status: 200,
-        statusText: 'OK',
-        headers: [['content-type', 'application/json']],
-        body: '{"ok":true}'
-      })
+      agentCoreRequest: vi.fn().mockReturnValue({
+        requestId: '018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e',
+        response: dto,
+        cancel,
+      }),
     };
-    const fetcher = vi.fn().mockResolvedValue(new Response('{}'));
 
-    const response = await createAgentCoreFetcher(fetcher)('http://localhost:8000/memory', {
+    const handle = createAgentCoreTransport()('/memory', { method: 'GET' });
+
+    expect(handle.requestId).toBe('018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e');
+    expect(handle.response).toBeInstanceOf(Promise);
+    expect(window.bolt.agentCoreRequest).toHaveBeenCalledWith('/memory', { method: 'GET' });
+    resolveDto({
+      requestId: handle.requestId,
+      generationId: 'generation-1',
+      status: 200,
+      statusText: 'OK',
+      headers: [['content-type', 'application/json']],
+      body: '{"ok":true}',
+    });
+  });
+
+  it('rebuilds the copyable response DTO as a Response inside Renderer', async () => {
+    const requestId = '018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e';
+    window.bolt = {
+      selectWorkspace: vi.fn(),
+      agentCoreRequest: vi.fn().mockReturnValue({
+        requestId,
+        response: Promise.resolve({
+          requestId,
+          generationId: 'generation-1',
+          status: 201,
+          statusText: 'Created',
+          headers: [['content-type', 'application/json']],
+          body: '{"ok":true}',
+        }),
+        cancel: vi.fn().mockResolvedValue('already_finished'),
+      }),
+    };
+
+    const handle = createAgentCoreTransport()('/memory', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: '{"query":"x"}'
+      body: '{"query":"x"}',
     });
+    const response = await handle.response;
 
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(window.bolt.agentCoreFetch).toHaveBeenCalledWith('http://localhost:8000/memory', {
-      method: 'POST',
-      headers: [['content-type', 'application/json']],
-      body: '{"query":"x"}'
-    });
+    expect(response).toBeInstanceOf(Response);
+    expect(response.status).toBe(201);
+    expect(response.statusText).toBe('Created');
+    expect(response.headers.get('content-type')).toBe('application/json');
     await expect(response.json()).resolves.toEqual({ ok: true });
   });
 
-  it('does not send external URLs through the authenticated desktop bridge', async () => {
+  it('delegates cancellation to the bridge handle', async () => {
+    const cancel = vi.fn().mockResolvedValue('cancelled' as const);
     window.bolt = {
       selectWorkspace: vi.fn(),
-      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
-      agentCoreFetch: vi.fn()
+      agentCoreRequest: vi.fn().mockReturnValue({
+        requestId: '018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e',
+        response: new Promise<AgentCoreIpcResponse>(() => undefined),
+        cancel,
+      }),
     };
-    const fetcher = vi.fn().mockResolvedValue(new Response('{}'));
 
-    await createAgentCoreFetcher(fetcher)('https://example.com/memory', {
-      headers: { authorization: 'Bearer explicit-token' }
-    });
+    const handle = createAgentCoreTransport()('/memory');
 
-    expect(window.bolt.agentCoreFetch).not.toHaveBeenCalled();
-    const init = fetcher.mock.calls[0][1] as RequestInit;
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer explicit-token');
+    await expect(handle.cancel()).resolves.toBe('cancelled');
+    expect(cancel).toHaveBeenCalledOnce();
   });
 
-  it('does not send wrong localhost ports through the authenticated desktop bridge', async () => {
+  it('fails closed when the desktop bridge is unavailable', () => {
+    window.bolt = { selectWorkspace: vi.fn() };
+
+    expect(() => createAgentCoreTransport()('/memory')).toThrow('bridge');
+  });
+
+  it('rejects absolute Agent Core URLs before any bridge call', () => {
+    const agentCoreRequest = vi.fn();
     window.bolt = {
       selectWorkspace: vi.fn(),
-      agentCoreEndpoint: vi.fn().mockResolvedValue({ port: 8000 }),
-      agentCoreFetch: vi.fn()
+      agentCoreRequest,
     };
-    const fetcher = vi.fn().mockResolvedValue(new Response('{}'));
 
-    await createAgentCoreFetcher(fetcher)('http://127.0.0.1:9000/memory');
+    expect(() => createAgentCoreTransport()('http://127.0.0.1:8000/health')).toThrow('CORE_REQUEST_INVALID');
+    expect(() => createAgentCoreTransport()('//evil.example/health')).toThrow('CORE_REQUEST_INVALID');
+    expect(() => createAgentCoreTransport()('http://user:pass@127.0.0.1/health')).toThrow('CORE_REQUEST_INVALID');
+    expect(() => createAgentCoreTransport()('/health#frag')).toThrow('CORE_REQUEST_INVALID');
+    expect(() => createAgentCoreTransport()('\\health')).toThrow('CORE_REQUEST_INVALID');
+    expect(agentCoreRequest).not.toHaveBeenCalled();
+  });
 
-    expect(window.bolt.agentCoreFetch).not.toHaveBeenCalled();
-    expect(fetcher).toHaveBeenCalledWith('http://127.0.0.1:9000/memory', undefined);
+  it('accepts relative path input only', () => {
+    const agentCoreRequest = vi.fn().mockReturnValue({
+      requestId: '018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e',
+      response: Promise.resolve({
+        requestId: '018f47ce-9d6e-7a4b-8c1d-2f3a4b5c6d7e',
+        generationId: 'generation-1',
+        status: 200,
+        statusText: 'OK',
+        headers: [['content-type', 'application/json']],
+        body: '{}',
+      }),
+      cancel: vi.fn().mockResolvedValue('already_finished'),
+    });
+    window.bolt = { selectWorkspace: vi.fn(), agentCoreRequest };
+
+    createAgentCoreTransport()('/health', { method: 'GET' });
+
+    expect(agentCoreRequest).toHaveBeenCalledWith('/health', { method: 'GET' });
   });
 });
