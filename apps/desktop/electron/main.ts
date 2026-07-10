@@ -9,7 +9,7 @@ import { registerAgentCoreIpc } from './agentCoreIpc.js';
 import { registerDiagnosticsIpc } from './diagnosticsIpc.js';
 import { registerUpdateIpc } from './updateIpc.js';
 import { recordMainException, recordRendererGone, recordStartupFailure } from './crashDiagnostics.js';
-import { isTrustedDesktopSender } from './senderTrust.js';
+import { isAllowedNavigationUrl, isTrustedDesktopSender } from './senderTrust.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +28,7 @@ function isTrustedSender(event: {
     packaged: app.isPackaged,
     appPath: app.getAppPath(),
     devServerUrl: devServerUrl ?? null,
+    allowedEntryPathnames: ['/', '/index.html'],
   });
 }
 
@@ -56,10 +57,12 @@ async function createWindow() {
   });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', (event, url) => {
-    // Packaged: only the app index entry. Dev: only configured Vite origin.
-    const allowed = devServerUrl
-      ? url.startsWith(devServerUrl)
-      : app.isPackaged && (url.endsWith('/dist/index.html') || url.includes('/dist/index.html'));
+    const allowed = isAllowedNavigationUrl(url, {
+      packaged: app.isPackaged,
+      appPath: app.getAppPath(),
+      devServerUrl: devServerUrl ?? null,
+      allowedEntryPathnames: ['/', '/index.html'],
+    });
     if (!allowed) event.preventDefault();
   });
   if (devServerUrl) {

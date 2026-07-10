@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { isTrustedDesktopSender } from './senderTrust';
+import {
+  expectedPackagedEntryUrl,
+  isAllowedNavigationUrl,
+  isTrustedDesktopSender,
+} from './senderTrust';
 
-describe('isTrustedDesktopSender', () => {
+describe('isTrustedDesktopSender exact entry boundary', () => {
   const base = {
     trustedWebContentsId: 7,
     packaged: true,
@@ -9,44 +13,64 @@ describe('isTrustedDesktopSender', () => {
     devServerUrl: null as string | null,
   };
 
-  it('rejects untrusted webContents id', () => {
-    expect(isTrustedDesktopSender({
-      sender: { id: 8 },
-      senderFrame: { url: 'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html' },
-    }, base)).toBe(false);
+  it('accepts only the exact packaged index entry', () => {
+    const ok = 'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html';
+    expect(isTrustedDesktopSender({ sender: { id: 7 }, senderFrame: { url: ok } }, base)).toBe(true);
+    expect(expectedPackagedEntryUrl(base.appPath)).toBe('file:///c:/program files/bolt/resources/app.asar/dist/index.html');
   });
 
-  it('rejects missing/non-top frames', () => {
+  it('rejects lookalike packaged paths and arbitrary local pages', () => {
+    const attacks = [
+      'file:///C:/Temp/dist/index.html',
+      'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html.evil',
+      'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html?x=1',
+      'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html#frag',
+      'file://user:pass@C:/Program%20Files/Bolt/resources/app.asar/dist/index.html',
+      'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/',
+    ];
+    for (const url of attacks) {
+      expect(isTrustedDesktopSender({ sender: { id: 7 }, senderFrame: { url } }, base), url).toBe(false);
+      expect(isAllowedNavigationUrl(url, base), url).toBe(false);
+    }
+  });
+
+  it('rejects untrusted webContents, missing frame, iframe parent, and non-top frames', () => {
+    const ok = 'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html';
+    expect(isTrustedDesktopSender({ sender: { id: 8 }, senderFrame: { url: ok } }, base)).toBe(false);
     expect(isTrustedDesktopSender({ sender: { id: 7 } }, base)).toBe(false);
-    expect(isTrustedDesktopSender({
-      sender: { id: 7 },
-      senderFrame: { url: 'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html', parent: {} },
-    }, base)).toBe(false);
+    expect(isTrustedDesktopSender({ sender: { id: 7 }, senderFrame: { url: ok, parent: {} } }, base)).toBe(false);
+    expect(isTrustedDesktopSender({ sender: { id: 7 }, senderFrame: { url: ok, top: {} } }, base)).toBe(false);
   });
 
-  it('rejects arbitrary file urls even when webContents matches', () => {
-    expect(isTrustedDesktopSender({
-      sender: { id: 7 },
-      senderFrame: { url: 'file:///C:/Temp/evil.html' },
-    }, base)).toBe(false);
-  });
-
-  it('accepts packaged index entry with matching webContents', () => {
-    expect(isTrustedDesktopSender({
-      sender: { id: 7 },
-      senderFrame: { url: 'file:///C:/Program%20Files/Bolt/resources/app.asar/dist/index.html' },
-    }, base)).toBe(true);
-  });
-
-  it('accepts exact dev server origin only when configured', () => {
-    const opts = { ...base, packaged: false, devServerUrl: 'http://127.0.0.1:5173/' };
+  it('dev mode requires exact origin and allowed pathname, not startsWith prefix', () => {
+    const opts = {
+      ...base,
+      packaged: false,
+      devServerUrl: 'http://127.0.0.1:5173',
+      allowedEntryPathnames: ['/', '/index.html'],
+    };
     expect(isTrustedDesktopSender({
       sender: { id: 7 },
       senderFrame: { url: 'http://127.0.0.1:5173/index.html' },
     }, opts)).toBe(true);
     expect(isTrustedDesktopSender({
       sender: { id: 7 },
-      senderFrame: { url: 'http://127.0.0.1:5174/index.html' },
-    }, opts)).toBe(false);
+      senderFrame: { url: 'http://127.0.0.1:5173/' },
+    }, opts)).toBe(true);
+
+    const attacks = [
+      'http://127.0.0.1:51730/index.html',
+      'http://127.0.0.1:5173.evil.example/index.html',
+      'http://127.0.0.1:5174/index.html',
+      'http://127.0.0.1:5173/index.html.evil',
+      'http://user:pass@127.0.0.1:5173/index.html',
+      'http://127.0.0.1:5173/index.html#x',
+      'http://127.0.0.1:5173/other.html',
+      'file:///C:/Temp/dist/index.html',
+    ];
+    for (const url of attacks) {
+      expect(isTrustedDesktopSender({ sender: { id: 7 }, senderFrame: { url } }, opts), url).toBe(false);
+      expect(isAllowedNavigationUrl(url, opts), url).toBe(false);
+    }
   });
 });
