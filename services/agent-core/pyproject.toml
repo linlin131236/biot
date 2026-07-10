@@ -23,3 +23,6 @@ test = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+  "windows: tests that require Windows-specific APIs or filesystem behavior"
+]

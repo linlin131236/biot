@@ -5,6 +5,8 @@ import platform
 import sys
 import tempfile
 
+import pytest
+
 from bolt_core.desktop_settings import DesktopSettingsService, DEFAULT_SETTINGS
 
 
@@ -49,39 +51,27 @@ def test_update_multiple_fields():
         assert result["default_workspace"] == "/tmp/ws"
 
 
-def test_api_key_save_and_delete():
+def test_api_key_operations_require_credential_lifecycle():
     with tempfile.TemporaryDirectory() as tmp:
         service = DesktopSettingsService(tmp)
-
-        assert service.has_api_key() is False
-        assert service.get_status()["has_api_key"] is False
-
-        service.save_api_key("sk-secret-key-12345")
-        assert service.has_api_key() is True
-        assert service.get_status()["has_api_key"] is True
-
-        # key file should exist with permission 600 (Unix only; Windows ignores chmod)
         key_path = os.path.join(tmp, ".bolt", "desktop-api-key")
-        assert os.path.exists(key_path)
-        if sys.platform != "win32":
-            mode = os.stat(key_path).st_mode & 0o777
-            assert mode == 0o600
 
-        # plaintext should NOT appear in get_status
-        status = service.get_status()
-        assert "sk-secret" not in str(status)
-
-        service.delete_api_key()
         assert service.has_api_key() is False
         assert service.get_status()["has_api_key"] is False
+        with pytest.raises(RuntimeError, match="credential lifecycle required"):
+            service.save_api_key("synthetic-secret")
+        service.delete_api_key()
+
         assert not os.path.exists(key_path)
+        assert service.has_api_key() is False
 
 
-def test_api_key_empty_is_ignored():
+def test_api_key_empty_is_not_written():
     with tempfile.TemporaryDirectory() as tmp:
         service = DesktopSettingsService(tmp)
 
-        service.save_api_key("")
+        with pytest.raises(RuntimeError, match="credential lifecycle required"):
+            service.save_api_key("")
         assert service.has_api_key() is False
 
 

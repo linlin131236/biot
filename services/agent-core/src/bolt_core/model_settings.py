@@ -23,7 +23,7 @@ class ModelSettingsStore:
         self._config = ModelConfig(
             provider=str(payload.get("provider", self._config.provider)),
             base_url=str(payload.get("base_url", self._config.base_url)),
-            api_key=payload.get("api_key") or self._config.api_key,
+            credential_id=self._config.credential_id,
             model=str(payload.get("model", self._config.model)),
             temperature=float(payload.get("temperature", self._config.temperature)),
             timeout=float(payload.get("timeout", self._config.timeout)),
@@ -36,5 +36,5 @@ class ModelSettingsStore:
             self._config.base_url,
             self._config.model,
             self._config.temperature,
-            self._config.api_key is not None,
+            self._config.credential_id is not None,
         )

@@ -23,17 +23,20 @@ from bolt_core.tool_executor import ReadOnlyToolExecutor, ToolExecution
 from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
 from bolt_core.workspace_lock import resolve_run_workspace
+from bolt_core.workspace_credential_gate import LockedWorkspace
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
                  memory_db_path: str | None = None,
                  task_closure_service: TaskClosureService | None = None,
-                 locked_workspace: str | None = None) -> None:
+                 locked_workspace: str | None = None, model_gateway=None,
+                 locked_workspace_binding: LockedWorkspace | None = None) -> None:
         self.workspace = str(Path(workspace).resolve())
         self.locked_workspace = str(Path(locked_workspace).resolve()) if locked_workspace else None
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
         self.model_settings = ModelSettingsStore()
-        self.agent_loop = AgentLoop()
+        self.locked_workspace_binding = locked_workspace_binding
+        self.agent_loop = AgentLoop(gateway=model_gateway)
         self.consolidator = MemoryConsolidator()
         self.terminal = TerminalService(self.workspace)
         self.goal_service = GoalService(self.workspace)
@@ -147,18 +150,17 @@ class Harness:
         trace = self._trace_log(run_id)
         config = self.model_settings.config()
         memories = self._agent_memories()
-        return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories)
+        return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories, self.locked_workspace_binding)
 
     def run_agent_loop(self, run_id: str, max_steps: int = 50) -> AgentLoopResult:
         run = self._run(run_id)
         trace = self._trace_log(run_id)
         config = self.model_settings.config()
         closure_id = self.task_closure_recorder.start_loop(run_id)
-        result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps)
+        result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps, self.locked_workspace_binding)
         self.task_closure_recorder.record_loop_result(closure_id, result, max_steps)
         return result
 
-    # Terminal delegation
     def terminal_poll(self, session_id: str) -> dict:
         return self.terminal.poll(session_id)
 

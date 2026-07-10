@@ -116,8 +116,11 @@ def create_app(
     local_api_token: str | None = None,
     require_local_api_token: bool = False,
     lock_default_workspace: bool = False,
+    desktop_production: bool = False,
+    credential_lifecycle=None, credential_configs=None,
+    model_gateway=None, locked_workspace_binding=None,
 ) -> FastAPI:
-    app = FastAPI(title="Bolt Agent Core")
+    app = FastAPI(title="Bolt Agent Core", docs_url="/docs" if not desktop_production else None, redoc_url="/redoc" if not desktop_production else None, openapi_url="/openapi.json" if not desktop_production else None)
     install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
     workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"), lock_default_workspace)
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))
@@ -133,7 +136,7 @@ def create_app(
         task_closure_service = TaskClosureService(None)
         execution_queue_service = ExecutionQueueService(None)
         execution_handoff_service = ExecutionHandoffService(None)
-    harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace)
+    harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace, locked_workspace_binding=locked_workspace_binding, model_gateway=model_gateway)
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
@@ -230,7 +233,11 @@ def create_app(
     app.include_router(create_failure_explanation_router())
     app.include_router(create_session_recovery_router())
     app.include_router(create_settings_tools_router())
-    app.include_router(create_desktop_settings_router(str(project_dir or Path.cwd())))
+    app.include_router(create_desktop_settings_router(
+        str(project_dir or Path.cwd()),
+        credential_lifecycle=credential_lifecycle,
+        credential_configs=credential_configs,
+    ))
     app.include_router(create_workspace_router(str(project_dir or Path.cwd())))
     app.include_router(create_desktop_beta_dogfood_router())
     app.include_router(create_product_workbench_router(str(project_dir or Path.cwd())))

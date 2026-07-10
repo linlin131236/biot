@@ -1,15 +1,13 @@
 """Desktop settings persistence service (M151).
 
-Stores user preferences (theme, language, default workspace) in
-`.bolt/desktop-settings.json` and API key in `.bolt/desktop-api-key`
-with file permission 600. Never returns plaintext API key to the
-renderer — only `has_api_key` boolean.
+Stores non-secret user preferences (theme, language, default workspace) in
+`.bolt/desktop-settings.json`. Credential secrets are handled only through
+the dedicated Credential Manager lifecycle and never returned to the renderer.
 """
 from __future__ import annotations
 
 import json
 import logging
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -38,7 +36,6 @@ class DesktopSettingsService:
     def __init__(self, project_dir: str | Path | None = None) -> None:
         self._bolt_dir = Path(project_dir or Path.cwd()) / ".bolt"
         self._settings_path = self._bolt_dir / "desktop-settings.json"
-        self._api_key_path = self._bolt_dir / "desktop-api-key"
         self._settings = self._load()
 
     # ------------------------------------------------------------------ #
@@ -52,7 +49,7 @@ class DesktopSettingsService:
             "language": self._settings.language,
             "default_workspace": self._settings.default_workspace,
             "recent_workspaces": list(self._settings.recent_workspaces),
-            "has_api_key": self._api_key_path.exists() and self._api_key_path.read_text().strip() != "",
+            "has_api_key": False,
         }
 
     def update(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -78,23 +75,13 @@ class DesktopSettingsService:
         return self.get_status()
 
     def save_api_key(self, api_key: str) -> None:
-        """Persist API key with file permission 600. Key is never logged."""
-        self._ensure_bolt_dir()
-        self._api_key_path.write_text(api_key)
-        try:
-            os.chmod(self._api_key_path, 0o600)
-        except OSError:
-            pass
-        logger.info("desktop API key saved")
+        raise RuntimeError("credential lifecycle required")
 
     def delete_api_key(self) -> None:
-        """Remove stored API key."""
-        if self._api_key_path.exists():
-            self._api_key_path.unlink()
-            logger.info("desktop API key deleted")
+        return None
 
     def has_api_key(self) -> bool:
-        return self._api_key_path.exists() and self._api_key_path.read_text().strip() != ""
+        return False
 
     # ------------------------------------------------------------------ #
     # Internal helpers

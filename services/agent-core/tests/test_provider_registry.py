@@ -1,5 +1,3 @@
-import os
-
 from bolt_core.provider_registry import ProviderRegistry, ProviderEntry, BUILTIN_PROVIDERS
 
 
@@ -9,19 +7,16 @@ def test_builtin_providers_include_openai_and_ollama():
     assert "ollama" in names
 
 
-def test_resolve_returns_config_with_env_key():
-    os.environ["TEST_BOLT_KEY"] = "sk-test-123"
-    try:
-        entry = ProviderEntry("test", "https://api.test.com/v1", "test-model", "TEST_BOLT_KEY")
-        registry = ProviderRegistry({"test": entry})
-        config = registry.resolve("test")
+def test_resolve_returns_non_secret_config_without_environment_key_lookup(monkeypatch):
+    monkeypatch.setenv("TEST_BOLT_KEY", "sk-test-123")
+    entry = ProviderEntry("test", "https://api.test.com/v1", "test-model", "TEST_BOLT_KEY")
+    config = ProviderRegistry({"test": entry}).resolve("test")
 
-        assert config is not None
-        assert config.provider == "test"
-        assert config.api_key == "sk-test-123"
-        assert config.model == "test-model"
-    finally:
-        del os.environ["TEST_BOLT_KEY"]
+    assert config is not None
+    assert config.provider == "test"
+    assert config.credential_id is None
+    assert not hasattr(config, "api_key")
+    assert config.model == "test-model"
 
 
 def test_resolve_returns_none_for_unknown_provider():
@@ -29,13 +24,13 @@ def test_resolve_returns_none_for_unknown_provider():
     assert registry.resolve("nonexistent") is None
 
 
-def test_resolve_without_env_key_returns_none_api_key():
+def test_resolve_never_exposes_an_api_key_field():
     entry = ProviderEntry("notest", "https://api.test.com/v1", "test-model", "MISSING_KEY_12345")
     registry = ProviderRegistry({"notest": entry})
     config = registry.resolve("notest")
 
     assert config is not None
-    assert config.api_key is None
+    assert not hasattr(config, "api_key")
 
 
 def test_resolve_with_model_override():

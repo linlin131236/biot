@@ -1,9 +1,5 @@
-"""Provider registry: resolves LLM provider configurations from environment variables.
+"""Provider registry for non-secret provider configuration templates."""
 
-API keys come from env or explicit user config, never from repo files.
-"""
-
-import os
 from dataclasses import dataclass
 
 from bolt_core.model_gateway import ModelConfig
@@ -18,7 +14,8 @@ class ProviderEntry:
     default_temperature: float = 0.2
 
 
-# Built-in provider templates. API keys are resolved from env at runtime.
+# Built-in provider templates. Credential secrets are resolved only by the
+# workspace credential gate immediately before provider client construction.
 BUILTIN_PROVIDERS: dict[str, ProviderEntry] = {
     "openai": ProviderEntry("openai", "https://api.openai.com/v1", "gpt-4o", "OPENAI_API_KEY"),
     "deepseek": ProviderEntry("deepseek", "https://api.deepseek.com/v1", "deepseek-chat", "DEEPSEEK_API_KEY"),
@@ -28,7 +25,7 @@ BUILTIN_PROVIDERS: dict[str, ProviderEntry] = {
 
 
 class ProviderRegistry:
-    """Registry of LLM providers. Resolves API keys from environment."""
+    """Registry of non-secret provider defaults."""
 
     def __init__(self, providers: dict[str, ProviderEntry] | None = None) -> None:
         self._providers = providers or dict(BUILTIN_PROVIDERS)
@@ -37,11 +34,10 @@ class ProviderRegistry:
         entry = self._providers.get(name)
         if entry is None:
             return None
-        api_key = os.environ.get(entry.api_key_env)
         return ModelConfig(
             provider=entry.name,
             base_url=entry.base_url,
-            api_key=api_key,
+            credential_id=None,
             model=model or entry.model,
             temperature=temperature if temperature is not None else entry.default_temperature,
         )

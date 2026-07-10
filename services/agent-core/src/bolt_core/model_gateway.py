@@ -3,15 +3,22 @@ import os
 import re
 import urllib.request
 from dataclasses import dataclass
+from typing import Callable
 
 from bolt_core.tool_operations import operation_for_tool
+from bolt_core.workspace_credential_gate import (
+    CredentialGateError,
+    CredentialLease,
+    LockedWorkspace,
+    WorkspaceCredentialGate,
+)
 
 
 @dataclass(frozen=True)
 class ModelConfig:
     provider: str
     base_url: str
-    api_key: str | None
+    credential_id: str | None
     model: str
     temperature: float = 0.2
     timeout: float = 120.0
@@ -43,6 +50,7 @@ class ToolCall:
 class ModelRequest:
     messages: list[ModelMessage]
     config: ModelConfig
+    locked_workspace: LockedWorkspace | None = None
 
 
 @dataclass(frozen=True)
@@ -70,12 +78,25 @@ class OpenAICompatibleGateway:
 
     MAX_RETRIES = 3
 
-    def complete(self, request: ModelRequest) -> ModelResponse:
-        if not request.config.api_key:
-            return ModelResponse("failed", None, TokenUsage(0, 0, 0), [], "api key missing")
-        return self._complete_with_retry(request)
+    def __init__(self, client_factory: Callable | None = None) -> None:
+        self._client_factory = client_factory
 
-    def _complete_with_retry(self, request: ModelRequest) -> ModelResponse:
+    def complete(
+        self,
+        request: ModelRequest,
+        lease: CredentialLease | None = None,
+        validate: Callable[[], None] | None = None,
+    ) -> ModelResponse:
+        if lease is None:
+            return _failed_response("api key missing")
+        try:
+            if validate is not None:
+                validate()
+            return self._complete_with_retry(request, lease.secret)
+        except CredentialGateError as error:
+            return _failed_response(str(error))
+
+    def _complete_with_retry(self, request: ModelRequest, secret: str) -> ModelResponse:
         from bolt_core.tool_schemas import all_tool_schemas
 
         try:
@@ -83,11 +104,8 @@ class OpenAICompatibleGateway:
         except ImportError:
             return ModelResponse("failed", None, TokenUsage(0, 0, 0), [], "openai package not installed")
 
-        client = OpenAI(
-            base_url=request.config.base_url,
-            api_key=request.config.api_key,
-            timeout=request.config.timeout,
-        )
+        factory = self._client_factory or OpenAI
+        client = factory(base_url=request.config.base_url, api_key=secret, timeout=request.config.timeout)
         messages = [_message_to_openai_dict(msg) for msg in request.messages]
         tools = all_tool_schemas()
 
@@ -117,14 +135,43 @@ class OpenAICompatibleGateway:
 class DefaultModelGateway:
     """Routes explicit fake configs to tests, all real providers to OpenAI-compatible chat."""
 
-    def __init__(self, fake: FakeModelGateway | None = None, real: OpenAICompatibleGateway | None = None) -> None:
+    def __init__(
+        self,
+        fake: FakeModelGateway | None = None,
+        real: OpenAICompatibleGateway | None = None,
+        credential_gate: WorkspaceCredentialGate | None = None,
+    ) -> None:
         self._fake = fake or FakeModelGateway()
         self._real = real or OpenAICompatibleGateway()
+        self._credential_gate = credential_gate
 
     def complete(self, request: ModelRequest) -> ModelResponse:
+        if self._credential_gate is not None:
+            return self._complete_with_gate(request)
         if request.config.provider == "fake":
             return self._fake.complete(request)
         return self._real.complete(request)
+
+    def _complete_with_gate(self, request: ModelRequest) -> ModelResponse:
+        workspace = request.locked_workspace
+        if workspace is None:
+            return _failed_response("credential_workspace_required")
+        try:
+            lease = self._credential_gate.resolve(workspace, request.config.provider)
+        except CredentialGateError as error:
+            return _failed_response(str(error))
+        validate = lambda: self._credential_gate.validate(workspace, request.config.provider, lease)
+        if request.config.provider == "fake":
+            try:
+                validate()
+            except CredentialGateError as error:
+                return _failed_response(str(error))
+            return self._fake.complete(request)
+        return self._real.complete(request, lease, validate)
+
+
+def _failed_response(error: str) -> ModelResponse:
+    return ModelResponse("failed", None, TokenUsage(0, 0, 0), [], error)
 
 
 def _fake_tool_call(prompt: str) -> ToolCall:

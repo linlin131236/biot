@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 from bolt_core.context_compressor import ContextCompressor
@@ -13,6 +13,7 @@ from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceLog
 from bolt_core.verifier import Verifier
 from bolt_core.evidence_redactor import redact
+from bolt_core.workspace_credential_gate import LockedWorkspace
 
 
 @dataclass(frozen=True)
@@ -39,11 +40,11 @@ class AgentLoop:
         self.verifier = verifier or Verifier()
         self.context_compressor = context_compressor or ContextCompressor()
 
-    def run_step(self, goal: str, config: ModelConfig, p0_context: dict, trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories: list[MemoryRecord] | None = None) -> AgentStepResult:
+    def run_step(self, goal: str, config: ModelConfig, p0_context: dict, trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories: list[MemoryRecord] | None = None, locked_workspace: LockedWorkspace | None = None) -> AgentStepResult:
         context = self.context_builder.build(goal, p0_context, trace.events(), memories)
         trace.record("context.built", {"token_budget": context.token_budget, "memory_count": len(context.memory_context)})
         trace.record("planner.started", {})
-        request = self.planner.build_request(context, config)
+        request = replace(self.planner.build_request(context, config), locked_workspace=locked_workspace)
         trace.record("planner.completed", {"messages": len(request.messages)})
         trace.record("llm.requested", {"model": config.model})
         response = self.gateway.complete(request)
@@ -53,7 +54,7 @@ class AgentLoop:
         self._record_model_trace(trace, config.model, response)
         return self._dispatch_model_response(response, trace, submit)
 
-    def run_loop(self, goal: str, config: ModelConfig, p0_context_fn: Callable[[], dict], trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories_fn: Callable[[], list[MemoryRecord]], max_steps: int = 50) -> AgentLoopResult:
+    def run_loop(self, goal: str, config: ModelConfig, p0_context_fn: Callable[[], dict], trace: TraceLog, submit: Callable[[ToolRequest], ToolResult], memories_fn: Callable[[], list[MemoryRecord]], max_steps: int = 50, locked_workspace: LockedWorkspace | None = None) -> AgentLoopResult:
         trace.record("agent.loop.started", {"max_steps": max_steps})
         context = self.context_builder.build(goal, p0_context_fn(), trace.events(), memories_fn())
         trace.record("context.built", {"token_budget": context.token_budget, "memory_count": len(context.memory_context)})
@@ -65,7 +66,7 @@ class AgentLoop:
         for index in range(max(1, max_steps)):
             trace.record("agent.loop.iteration.started", {"step": index + 1})
             trace.record("llm.requested", {"model": config.model})
-            response = self.gateway.complete(ModelRequest(list(messages), config))
+            response = self.gateway.complete(ModelRequest(list(messages), config, locked_workspace))
             if response.status != "completed":
                 trace.record("llm.failed", {"error": response.error})
                 last_step = AgentStepResult("failed", response.content or "", None, response.error)

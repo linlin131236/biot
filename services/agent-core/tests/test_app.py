@@ -203,7 +203,7 @@ async def test_memory_record_query_resolve_and_consolidate_endpoints():
 
 
 @pytest.mark.anyio
-async def test_model_settings_endpoint_redacts_api_key():
+async def test_model_settings_endpoint_ignores_plaintext_api_key_payload():
     async with _client() as client:
         save_response = await client.post(
             "/model/settings",
@@ -211,7 +211,7 @@ async def test_model_settings_endpoint_redacts_api_key():
         )
         status_response = await client.get("/model/settings")
 
-    assert save_response.json()["has_api_key"] is True
+    assert save_response.json()["has_api_key"] is False
     assert status_response.json()["model"] == "test"
     assert "secret" not in str(status_response.json())
 

@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 
 
-PUBLIC_PATHS = {"/health", "/docs", "/redoc", "/openapi.json"}
+PUBLIC_PATHS = {"/health"}
 
 
 def install_local_api_auth(app: FastAPI, token: str | None, *, require_token: bool = True) -> None:
@@ -24,7 +24,7 @@ def install_local_api_auth(app: FastAPI, token: str | None, *, require_token: bo
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        if request.method == "OPTIONS" or request.url.path in PUBLIC_PATHS:
+        if request.url.path in PUBLIC_PATHS:
             return await call_next(request)
         authorization = request.headers.get("authorization", "")
         if not secrets.compare_digest(authorization, expected):

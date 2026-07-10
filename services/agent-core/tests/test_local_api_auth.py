@@ -6,6 +6,22 @@ import bolt_core.app as app_module
 from bolt_core.local_api_auth import install_local_api_auth
 
 
+def test_desktop_production_auth_exposes_only_health_publicly(tmp_path):
+    app = create_app(
+        execution_audit_path=tmp_path / "audit.json",
+        project_dir=tmp_path,
+        local_api_token="secret-token",
+        require_local_api_token=True,
+        desktop_production=True,
+    )
+    client = TestClient(app)
+
+    assert client.get("/health").status_code == 200
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 401
+    assert client.options("/memory").status_code == 401
+
+
 def test_health_remains_public_when_local_token_is_required(tmp_path):
     app = create_app(execution_audit_path=tmp_path / "audit.json", project_dir=tmp_path, local_api_token="secret-token")
     client = TestClient(app)
