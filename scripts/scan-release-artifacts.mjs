@@ -8,7 +8,10 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const require = createRequire(import.meta.url);
 
 const TEXT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.json', '.txt', '.md', '.html', '.css', '.map', '.yml', '.yaml', '.toml', '.py', '.env', '.xml']);
 const FORBIDDEN_NAME_SUFFIXES = ['.env', '.pfx', '.p12', '.key'];
@@ -38,6 +41,15 @@ export function listFilesRecursive(root) {
   };
   walk(root);
   return out;
+}
+
+export function listAsarEntries(asarPath) {
+  try {
+    const asar = require('@electron/asar');
+    return asar.listPackage(asarPath).map((entry) => String(entry).split(chr(92)).join("/"));
+  } catch {
+    return null;
+  }
 }
 
 export function sha256File(path) {
@@ -92,10 +104,34 @@ export function scanReleaseArtifacts(packageRoot) {
       }
     }
   }
+  const asarFile = files.find((full) => relative(packageRoot, full).split(sep).join('/').endsWith('app.asar'));
+  let asarEntries = null;
+  if (asarFile) {
+    asarEntries = listAsarEntries(asarFile);
+    if (asarEntries) {
+      for (const entry of asarEntries) {
+        const lower = entry.toLowerCase();
+        for (const suffix of FORBIDDEN_NAME_SUFFIXES) {
+          if (lower.endsWith(suffix)) findings.push(`forbidden asar entry ${entry}`);
+        }
+        if (lower.endsWith('.env') || /(^|\/)\.env(\.|$)/.test(lower)) findings.push(`forbidden asar entry ${entry}`);
+      }
+      records.push({
+        path: 'resources/app.asar#listing',
+        size: asarEntries.length,
+        sha256: createHash("sha256").update(asarEntries.join(String.fromCharCode(10))).digest("hex"),
+      });
+    } else {
+      findings.push('asar_listing_unavailable');
+    }
+  }
+  const uniqueFindings = [...new Set(findings)];
+  const hardFindings = uniqueFindings.filter((item) => item !== 'asar_listing_unavailable');
   return {
-    ok: findings.length === 0,
-    findings: [...new Set(findings)],
+    ok: hardFindings.length === 0,
+    findings: uniqueFindings,
     files: records.sort((a, b) => a.path.localeCompare(b.path)),
+    asar_listing: asarEntries ? 'present' : (asarFile ? 'unavailable' : 'absent'),
   };
 }
 
@@ -110,13 +146,16 @@ export function writeReleaseEvidence({ outputDir, version, commit, packageRoot, 
   const checks = {
     'artifact.sha256': scan.files.length > 0 ? 'passed' : 'failed',
     'artifact.secret-scan': scan.ok ? 'passed' : 'failed',
-    'artifact.sbom': 'passed',
+    'artifact.sbom': 'passed_with_limitations',
   };
   const sbom = {
     version,
     commit,
     generator: 'scripts/scan-release-artifacts.mjs',
     package_manager_hint: 'pnpm+uv',
+    sbom_kind: 'file_inventory_not_cyclonedx',
+    limitations: ['Not CycloneDX/SPDX dependency SBOM', 'asar listing depends on @electron/asar'],
+    asar_listing: scan.asar_listing ?? 'unknown',
     file_count: scan.files.length,
     total_bytes: scan.files.reduce((sum, file) => sum + file.size, 0),
   };
@@ -148,7 +187,7 @@ export function main(repoRoot = dirname(dirname(fileURLToPath(import.meta.url)))
   if (!scan.ok) {
     console.error(`Release artifact scan failed:\n${scan.findings.join('\n')}`);
   } else {
-    console.log(`Release artifact scan passed (${scan.files.length} files).`);
+    console.log(`Release artifact scan passed (${scan.files.length} files, asar=${scan.asar_listing}).`);
   }
   if (outIdx >= 0) {
     const outputDir = process.argv[outIdx + 1];

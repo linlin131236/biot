@@ -7,20 +7,29 @@ export function hasSigningMaterial(env = process.env) {
   return Boolean(env.CSC_LINK && env.CSC_KEY_PASSWORD);
 }
 
-export function evaluateSignatureResult({ materialPresent, verifyExitCode, stdout, stderr }) {
-  if (!materialPresent) {
+export function evaluateSignatureVerification({ targetExists, verifyExitCode, stdout = '', stderr = '' }) {
+  if (!targetExists) {
+    return {
+      status: 'failed',
+      checkId: 'signing.verify',
+      reason: 'target_missing',
+      playerBetaAllowed: false,
+    };
+  }
+  if (verifyExitCode === null) {
     return {
       status: 'blocked',
       checkId: 'signing.verify',
-      reason: 'release_signing_blocked',
+      reason: 'signtool_unavailable',
       playerBetaAllowed: false,
+      detail: summarize(stdout, stderr),
     };
   }
   if (verifyExitCode !== 0) {
     return {
       status: 'failed',
       checkId: 'signing.verify',
-      reason: 'signtool_verify_failed',
+      reason: 'signature_missing_or_invalid',
       playerBetaAllowed: false,
       detail: summarize(stdout, stderr),
     };
@@ -34,37 +43,67 @@ export function evaluateSignatureResult({ materialPresent, verifyExitCode, stdou
   };
 }
 
+export function evaluateSigningCapability({ materialPresent }) {
+  if (!materialPresent) {
+    return {
+      status: 'blocked',
+      checkId: 'signing.capability',
+      reason: 'release_signing_blocked',
+      canSignNewArtifacts: false,
+    };
+  }
+  return {
+    status: 'passed',
+    checkId: 'signing.capability',
+    reason: 'signing_material_present',
+    canSignNewArtifacts: true,
+  };
+}
+
+// Backward-compatible alias used by older tests/callers.
+export function evaluateSignatureResult({ materialPresent, verifyExitCode, stdout = '', stderr = '' }) {
+  if (!materialPresent) {
+    return evaluateSigningCapability({ materialPresent: false });
+  }
+  return evaluateSignatureVerification({
+    targetExists: true,
+    verifyExitCode,
+    stdout,
+    stderr,
+  });
+}
+
 export async function verifyWindowsSignature(options) {
   const {
     targetPath,
     env = process.env,
     runSigntool = defaultRunSigntool,
   } = options;
-  if (!targetPath || !existsSync(targetPath)) {
+  const targetExists = Boolean(targetPath && existsSync(targetPath));
+  const capability = evaluateSigningCapability({ materialPresent: hasSigningMaterial(env) });
+  if (!targetExists) {
     return {
-      status: 'failed',
-      checkId: 'signing.verify',
-      reason: 'target_missing',
+      ...evaluateSignatureVerification({ targetExists: false, verifyExitCode: 1 }),
+      capability,
       playerBetaAllowed: false,
-      detail: `missing ${targetPath ?? '<empty>'}`,
     };
   }
-  if (!hasSigningMaterial(env)) {
-    return evaluateSignatureResult({ materialPresent: false, verifyExitCode: null, stdout: '', stderr: '' });
-  }
-  const { code, stdout, stderr } = await runSigntool(targetPath);
-  return evaluateSignatureResult({
-    materialPresent: true,
-    verifyExitCode: code,
+  const { code, stdout, stderr, unavailable } = await runSigntool(targetPath);
+  const verification = evaluateSignatureVerification({
+    targetExists: true,
+    verifyExitCode: unavailable ? null : code,
     stdout,
     stderr,
   });
+  return {
+    ...verification,
+    capability,
+    playerBetaAllowed: verification.status === 'passed' && capability.status === 'passed',
+  };
 }
 
 function summarize(stdout = '', stderr = '') {
-  const text = `${stdout}\n${stderr}`.trim();
-  // Never echo env-derived secrets; only keep a short verify summary.
-  return text.slice(0, 500);
+  return `${stdout}\n${stderr}`.trim().slice(0, 500);
 }
 
 async function defaultRunSigntool(targetPath) {
@@ -77,12 +116,14 @@ async function defaultRunSigntool(targetPath) {
       code: 1,
       stdout: '',
       stderr: 'signtool_not_found',
+      unavailable: true,
     };
   }
   return {
     code: result.status ?? 1,
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
+    unavailable: false,
   };
 }
 
@@ -93,7 +134,9 @@ export async function main(repoRoot = dirname(dirname(fileURLToPath(import.meta.
     : join(repoRoot, 'apps/desktop/release/win-unpacked/Bolt.exe');
   const result = await verifyWindowsSignature({ targetPath });
   console.log(JSON.stringify(result, null, 2));
-  if (result.status !== 'passed') process.exitCode = result.status === 'blocked' ? 2 : 1;
+  if (result.status === 'passed') process.exitCode = 0;
+  else if (result.status === 'blocked') process.exitCode = 2;
+  else process.exitCode = 1;
   return result;
 }
 

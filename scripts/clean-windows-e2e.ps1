@@ -55,16 +55,18 @@ if ($pollution.Count -gt 0) {
 }
 
 $checks["clean_windows_preflight"] = "passed"
-# Launch smoke only on clean hosts. Do not claim full GUI E2E here.
+# Launch smoke only on clean hosts. This is NOT full clean_windows_e2e.
 $proc = Start-Process -FilePath $ArtifactPath -PassThru
 Start-Sleep -Seconds 5
 if (-not $proc.HasExited) {
   Stop-Process -Id $proc.Id -Force
-  $checks["clean_windows_e2e"] = "passed"
-  $status = "passed"
-  $reason = "packaged_launch_smoke_passed"
+  $checks["package.launch_smoke"] = "passed"
+  $checks["clean_windows_e2e"] = "not_run"
+  $status = "incomplete"
+  $reason = "launch_smoke_only_full_e2e_not_run"
 } else {
-  $checks["clean_windows_e2e"] = "failed"
+  $checks["package.launch_smoke"] = "failed"
+  $checks["clean_windows_e2e"] = "not_run"
   $status = "failed"
   $reason = "process_exited_immediately"
 }
@@ -74,7 +76,8 @@ Write-Json (Join-Path $EvidenceDir "clean-windows-checks.json") @{
   reason = $reason
   checks = $checks
   pollution = @()
+  note = "clean_windows_e2e requires install/start/core/credentials/task/exit/uninstall evidence. Launch smoke alone is insufficient."
 }
-if ($status -ne "passed") { exit 1 }
-Write-Host "clean windows packaged launch smoke passed"
-exit 0
+if ($status -eq "failed") { exit 1 }
+Write-Host "clean windows launch smoke completed; clean_windows_e2e remains not_run"
+exit 3

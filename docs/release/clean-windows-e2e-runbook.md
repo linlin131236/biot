@@ -58,3 +58,8 @@ player_beta = No
 ```
 
 Do not invent GUI E2E results from the developer machine.
+
+
+## Important
+
+`package.launch_smoke` only proves the process starts. It must never mark `clean_windows_e2e=passed`.

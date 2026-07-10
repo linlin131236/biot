@@ -51,7 +51,11 @@ node scripts/verify-windows-signature.mjs --path apps/desktop/release/win-unpack
 ```
 
 - Exit `0`: signature verified (`signing.verify=passed`).
-- Exit `2`: `release_signing_blocked` because `CSC_LINK`/`CSC_KEY_PASSWORD` are absent. Unsigned internal builds are allowed for dev only; player beta remains forbidden.
-- Exit `1`: verification failed or target missing. Do not claim the build is signed.
+- `signing.verify` runs `signtool verify /pa` and does **not** require private key material.
+- `signing.capability` is separate and reports whether `CSC_LINK`/`CSC_KEY_PASSWORD` can produce new signed artifacts.
+- Exit `0`: signature verified.
+- Exit `1`: signature missing/invalid or target missing.
+- Exit `2`: signtool unavailable (tooling blocked).
+- Player beta requires both `signing.verify=passed` and `signing.capability=passed`.
 - Never commit certificates, passwords, or private keys. Never log `CSC_KEY_PASSWORD`.
 
