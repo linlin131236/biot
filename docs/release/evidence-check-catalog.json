@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "checks": [
+    {"id": "package.layout", "required_for_player_beta": true},
+    {"id": "startup.core-resources", "required_for_player_beta": true},
+    {"id": "artifact.sha256", "required_for_player_beta": true},
+    {"id": "artifact.secret-scan", "required_for_player_beta": true},
+    {"id": "artifact.sbom", "required_for_player_beta": true},
+    {"id": "signing.verify", "required_for_player_beta": true},
+    {"id": "update.success", "required_for_player_beta": true},
+    {"id": "update.reject-tamper", "required_for_player_beta": true},
+    {"id": "update.rollback", "required_for_player_beta": true},
+    {"id": "crash.redaction", "required_for_player_beta": true},
+    {"id": "clean_windows_e2e", "required_for_player_beta": true},
+    {"id": "install.nsis", "required_for_player_beta": true},
+    {"id": "production_update_channel", "required_for_public_beta": true}
+  ]
+}
