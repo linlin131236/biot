@@ -41,3 +41,17 @@ The workflow does not create GitHub releases, push tags, or publish artifacts.
 ## Auto Update
 
 Auto-update remains disabled. Do not enable update checks until signing and release channel policy are complete.
+
+## Signature Verification
+
+Run after packaging:
+
+```bash
+node scripts/verify-windows-signature.mjs --path apps/desktop/release/win-unpacked/Bolt.exe
+```
+
+- Exit `0`: signature verified (`signing.verify=passed`).
+- Exit `2`: `release_signing_blocked` because `CSC_LINK`/`CSC_KEY_PASSWORD` are absent. Unsigned internal builds are allowed for dev only; player beta remains forbidden.
+- Exit `1`: verification failed or target missing. Do not claim the build is signed.
+- Never commit certificates, passwords, or private keys. Never log `CSC_KEY_PASSWORD`.
+
