@@ -83,5 +83,5 @@ Correct ongoing status:
 
 ## Correct summary statement
 
-> 内部发布链关键缺口已按审核意见修复，Desktop 全量全绿，且已从 clean commit 重新生成 EXE 与 NSIS。  
+> 内部发布链关键缺口已按审核意见修复，Desktop 全量全绿，且已从 clean commit 重新生成 EXE 与 NSIS。
 > 但这仍不等于可玩家内测：签名、干净 Windows 完整 E2E 与生产更新链仍未通过。

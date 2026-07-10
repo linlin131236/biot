@@ -43,6 +43,15 @@ export function listFilesRecursive(root) {
   return out;
 }
 
+export function normalizeAsarEntry(entry) {
+  const bs = String.fromCharCode(92);
+  let value = String(entry).split('/').join(bs);
+  while (value.startsWith(bs) || value.startsWith('/')) {
+    value = value.slice(1);
+  }
+  return value;
+}
+
 export function resolveAsarModule() {
   const candidates = [
     '@electron/asar',
@@ -62,7 +71,7 @@ export function listAsarEntries(asarPath) {
   const asar = resolveAsarModule();
   if (!asar) return null;
   try {
-    return asar.listPackage(asarPath).map((entry) => String(entry).split(String.fromCharCode(92)).join('/'));
+    return asar.listPackage(asarPath).map((entry) => normalizeAsarEntry(entry));
   } catch (error) {
     return null;
   }
@@ -71,8 +80,9 @@ export function listAsarEntries(asarPath) {
 export function readAsarFile(asarPath, entryPath) {
   const asar = resolveAsarModule();
   if (!asar) return null;
+  const normalized = normalizeAsarEntry(entryPath);
   try {
-    return asar.extractFile(asarPath, entryPath);
+    return asar.extractFile(asarPath, normalized);
   } catch {
     return null;
   }
@@ -129,6 +139,7 @@ export function scanReleaseArtifacts(packageRoot) {
       try {
         text = readFileSync(full, 'utf8');
       } catch {
+        findings.push(`file_read_failed:${rel}`);
         continue;
       }
       for (const pattern of patternsForPath(rel)) {
@@ -151,17 +162,24 @@ export function scanReleaseArtifacts(packageRoot) {
           if (lower.endsWith(suffix)) findings.push(`forbidden asar entry ${entry}`);
         }
         if (lower.endsWith('.env') || /(^|\/)\.env(\.|$)/.test(lower)) findings.push(`forbidden asar entry ${entry}`);
-      
+
         const lowerEntry = String(entry).toLowerCase();
         const ext = lowerEntry.includes('.') ? `.${lowerEntry.split('.').pop()}` : '';
         if (['.js', '.mjs', '.cjs', '.json', '.css', '.html', '.map', '.txt', '.md'].includes(ext)) {
           const bytes = readAsarFile(asarFile, entry);
-          if (bytes) {
+          if (!bytes) {
+            findings.push(`asar_read_failed:${normalizeAsarEntry(entry)}`);
+            continue;
+          }
+          if (bytes.length === 0) {
+            findings.push(`asar_read_empty:${normalizeAsarEntry(entry)}`);
+            continue;
+          }
+          if (bytes.length < 1500000) {
             const textContent = Buffer.from(bytes).toString('utf8');
-            if (textContent.length > 0 && textContent.length < 1500000) {
-              for (const pattern of patternsForPath(rel)) {
-                if (pattern.re.test(textContent)) findings.push(`forbidden content ${pattern.id} in resources/app.asar:${entry}`);
-              }
+            const asarRel = `resources/app.asar:${normalizeAsarEntry(entry)}`;
+            for (const pattern of SECRET_CONTENT_PATTERNS) {
+              if (pattern.re.test(textContent)) findings.push(`forbidden content ${pattern.id} in ${asarRel}`);
             }
           }
         }
