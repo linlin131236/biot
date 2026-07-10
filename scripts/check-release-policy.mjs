@@ -7,10 +7,11 @@ const failures = [];
 const desktopPackage = readJson('apps/desktop/package.json');
 const scripts = desktopPackage.scripts ?? {};
 
-requireScript('package:win', ['node ../../scripts/run-electron-builder.mjs', '--win portable nsis', '--publish never']);
-requireScript('package:win:portable', ['node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win portable', '--publish never']);
-requireScript('package:win:nsis', ['node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win nsis', '--publish never']);
+requireScript('package:win', ['node ../../scripts/check-desktop-package-config.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win portable nsis', '--publish never']);
+requireScript('package:win:portable', ['node ../../scripts/check-desktop-package-config.mjs', 'node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win portable', '--publish never']);
+requireScript('package:win:nsis', ['node ../../scripts/check-desktop-package-config.mjs', 'node ../../scripts/release-preflight.mjs', 'node ../../scripts/run-electron-builder.mjs', '--win nsis', '--publish never']);
 requireScript('package:win:dir', [
+  'node ../../scripts/check-desktop-package-config.mjs',
   'node ../../scripts/release-preflight.mjs',
   'node ../../scripts/run-electron-builder.mjs',
   '--win --dir',
