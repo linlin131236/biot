@@ -2,104 +2,105 @@ import type { AgentLoopResult, AgentStepResult, HarnessRun, MemoryConsolidationR
 
 type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
-export async function createHarnessRun(baseUrl: string, goal: string, workspace: string, fetcher: Fetcher = fetch): Promise<HarnessRun> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs`, jsonPost({ goal, workspace })));
+export async function createHarnessRun(goal: string, workspace: string, fetcher: Fetcher): Promise<HarnessRun> {
+  return readJson(await fetcher('/harness/runs', jsonPost({ goal, workspace })));
 }
 
-export async function submitToolRequest(baseUrl: string, runId: string, request: ToolRequest, fetcher: Fetcher = fetch): Promise<ToolResult> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/tool-requests`, jsonPost(request)));
+export async function submitToolRequest(runId: string, request: ToolRequest, fetcher: Fetcher): Promise<ToolResult> {
+  return readJson(await fetcher(`/harness/runs/${runId}/tool-requests`, jsonPost(request)));
 }
 
-export async function runAgentStep(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<AgentStepResult> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/agent-steps`, { method: 'POST' }));
+export async function runAgentStep(runId: string, fetcher: Fetcher): Promise<AgentStepResult> {
+  return readJson(await fetcher(`/harness/runs/${runId}/agent-steps`, { method: 'POST' }));
 }
 
-export async function runAgentLoop(baseUrl: string, runId: string, maxSteps: number, fetcher: Fetcher = fetch): Promise<AgentLoopResult> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/agent-loops`, jsonPost({ max_steps: maxSteps })));
+export async function runAgentLoop(runId: string, maxSteps: number, fetcher: Fetcher): Promise<AgentLoopResult> {
+  return readJson(await fetcher(`/harness/runs/${runId}/agent-loops`, jsonPost({ max_steps: maxSteps })));
 }
 
-export async function fetchModelSettingsStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<ModelSettingsStatus> {
-  return readJson(await fetcher(`${baseUrl}/model/settings`));
+export async function fetchModelSettingsStatus(fetcher: Fetcher): Promise<ModelSettingsStatus> {
+  return readJson(await fetcher('/model/settings'));
 }
 
-export async function saveModelSettings(baseUrl: string, settings: ModelSettings, fetcher: Fetcher = fetch): Promise<ModelSettingsStatus> {
-  return readJson(await fetcher(`${baseUrl}/model/settings`, jsonPost(settings)));
+export async function saveModelSettings(settings: ModelSettings, fetcher: Fetcher): Promise<ModelSettingsStatus> {
+  return readJson(await fetcher('/model/settings', jsonPost(settings)));
 }
 
-export async function fetchHarnessTrace(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<TraceEvent[]> {
-  return readJson(await fetcher(`${baseUrl}/harness/runs/${runId}/trace`));
+export async function fetchHarnessTrace(runId: string, fetcher: Fetcher): Promise<TraceEvent[]> {
+  return readJson(await fetcher(`/harness/runs/${runId}/trace`));
 }
 
-export async function fetchMemorySnapshot(baseUrl: string, fetcher: Fetcher = fetch): Promise<MemorySnapshot> {
-  return readJson(await fetcher(`${baseUrl}/memory`));
+export async function fetchMemorySnapshot(fetcher: Fetcher): Promise<MemorySnapshot> {
+  return readJson(await fetcher('/memory'));
 }
 
-export async function recordMemory(baseUrl: string, memory: Partial<MemoryRecord>, fetcher: Fetcher = fetch): Promise<MemoryRecord> {
-  return readJson(await fetcher(`${baseUrl}/memory`, jsonPost(memory)));
+export async function recordMemory(memory: Partial<MemoryRecord>, fetcher: Fetcher): Promise<MemoryRecord> {
+  return readJson(await fetcher('/memory', jsonPost(memory)));
 }
 
-export async function fetchMemoryRecords(baseUrl: string, query: MemoryQuery = {}, fetcher: Fetcher = fetch): Promise<MemoryRecord[]> {
+export async function fetchMemoryRecords(query: MemoryQuery = {}, fetcher: Fetcher): Promise<MemoryRecord[]> {
   const params = new URLSearchParams(query as Record<string, string>);
   const suffix = params.toString() ? `?${params.toString()}` : '';
-  return readJson(await fetcher(`${baseUrl}/memory/records${suffix}`));
+  return readJson(await fetcher(`/memory/records${suffix}`));
 }
 
-export async function resolveMemory(baseUrl: string, memoryId: string, fetcher: Fetcher = fetch): Promise<MemoryRecord> {
-  return readJson(await fetcher(`${baseUrl}/memory/${memoryId}/resolve`, { method: 'POST' }));
+export async function resolveMemory(memoryId: string, fetcher: Fetcher): Promise<MemoryRecord> {
+  return readJson(await fetcher(`/memory/${memoryId}/resolve`, { method: 'POST' }));
 }
 
-export async function consolidateMemory(baseUrl: string, fetcher: Fetcher = fetch): Promise<MemoryConsolidationResult> {
-  return readJson(await fetcher(`${baseUrl}/memory/consolidate`, { method: 'POST' }));
+export async function consolidateMemory(fetcher: Fetcher): Promise<MemoryConsolidationResult> {
+  return readJson(await fetcher('/memory/consolidate', { method: 'POST' }));
 }
 
-export async function fetchPendingPermissions(baseUrl: string, fetcher: Fetcher = fetch): Promise<PendingPermission[]> {
-  return readJson(await fetcher(`${baseUrl}/permissions/pending`));
+export async function fetchPendingPermissions(fetcher: Fetcher): Promise<PendingPermission[]> {
+  return readJson(await fetcher('/permissions/pending'));
 }
 
-export async function approvePermission(baseUrl: string, requestId: string, fetcher: Fetcher = fetch): Promise<ToolResult> {
-  return readJson(await fetcher(`${baseUrl}/permissions/${requestId}/approve`, { method: 'POST' }));
+export async function approvePermission(requestId: string, fetcher: Fetcher): Promise<ToolResult> {
+  return readJson(await fetcher(`/permissions/${requestId}/approve`, { method: 'POST' }));
 }
 
-export async function rejectPermission(baseUrl: string, requestId: string, fetcher: Fetcher = fetch): Promise<ToolResult> {
-  return readJson(await fetcher(`${baseUrl}/permissions/${requestId}/reject`, { method: 'POST' }));
+export async function rejectPermission(requestId: string, fetcher: Fetcher): Promise<ToolResult> {
+  return readJson(await fetcher(`/permissions/${requestId}/reject`, { method: 'POST' }));
 }
 
-export async function runDocumentGardener(baseUrl: string, runId: string, fetcher: Fetcher = fetch): Promise<ToolResult> {
-  return readJson(await fetcher(`${baseUrl}/maintenance/document-gardener/runs/${runId}`, { method: 'POST' }));
+export async function runDocumentGardener(runId: string, fetcher: Fetcher): Promise<ToolResult> {
+  return readJson(await fetcher(`/maintenance/document-gardener/runs/${runId}`, { method: 'POST' }));
 }
 
-export async function fetchDesktopSettings(baseUrl: string, fetcher: Fetcher = fetch): Promise<{
+export async function fetchDesktopSettings(fetcher: Fetcher): Promise<{
   theme: string;
   language: string;
   default_workspace: string;
   has_api_key: boolean;
+  credential_revision: number;
 }> {
-  return readJson(await fetcher(`${baseUrl}/desktop/settings`));
+  return readJson(await fetcher('/desktop/settings'));
 }
 
-export async function saveDesktopSettings(baseUrl: string, settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher = fetch): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
-  return readJson(await fetcher(`${baseUrl}/desktop/settings`, jsonPost(settings)));
+export async function saveDesktopSettings(settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean; credential_revision: number }> {
+  return readJson(await fetcher('/desktop/settings', jsonPost(settings)));
 }
 
-export async function saveDesktopApiKey(baseUrl: string, apiKey: string, fetcher: Fetcher = fetch): Promise<{ status: string; has_api_key: boolean }> {
-  return readJson(await fetcher(`${baseUrl}/desktop/settings/api-key`, jsonPost({ api_key: apiKey })));
+export async function saveDesktopApiKey(apiKey: string, revision: number, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean; revision: number }> {
+  return readJson(await fetcher('/desktop/settings/api-key', jsonPost({ api_key: apiKey, revision })));
 }
 
-export async function deleteDesktopApiKey(baseUrl: string, fetcher: Fetcher = fetch): Promise<{ status: string; has_api_key: boolean }> {
-  return readJson(await fetcher(`${baseUrl}/desktop/settings/api-key`, { method: 'DELETE' }));
+export async function deleteDesktopApiKey(revision: number, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean; revision: number }> {
+  return readJson(await fetcher(`/desktop/settings/api-key?revision=${revision}`, { method: 'DELETE' }));
 }
 
-export async function addWorkspaceHistory(baseUrl: string, path: string, fetcher: Fetcher = fetch): Promise<{ recent_workspaces: string[] }> {
-  return readJson(await fetcher(`${baseUrl}/desktop/settings/workspace-history`, jsonPost({ path })));
+export async function addWorkspaceHistory(path: string, fetcher: Fetcher): Promise<{ recent_workspaces: string[] }> {
+  return readJson(await fetcher('/desktop/settings/workspace-history', jsonPost({ path })));
 }
 
-export async function fetchRecentSessions(baseUrl: string, limit: number = 20, fetcher: Fetcher = fetch): Promise<{ sessions: Array<{ id: string; title: string; time: string; status: string }> }> {
+export async function fetchRecentSessions(limit: number = 20, fetcher: Fetcher): Promise<{ sessions: Array<{ id: string; title: string; time: string; status: string }> }> {
   const params = new URLSearchParams({ limit: String(limit) });
-  return readJson(await fetcher(`${baseUrl}/workspace/recent-sessions?${params}`));
+  return readJson(await fetcher(`/workspace/recent-sessions?${params}`));
 }
 
-export async function fetchWorkspaceStatus(baseUrl: string, fetcher: Fetcher = fetch): Promise<{ accessible: boolean; path: string }> {
-  return readJson(await fetcher(`${baseUrl}/workspace/status`));
+export async function fetchWorkspaceStatus(fetcher: Fetcher): Promise<{ accessible: boolean; path: string }> {
+  return readJson(await fetcher('/workspace/status'));
 }
 
 function jsonPost(body: unknown): RequestInit {

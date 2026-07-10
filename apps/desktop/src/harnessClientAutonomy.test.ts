@@ -1,17 +1,28 @@
 import { describe, expect, it, vi } from 'vitest';
-import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, approvePermissionFromCenter, rejectPermissionFromCenter, applyApproval } from './harnessClientAutonomy';
+import { bindTaskClosureGoal, bindTaskClosureRun, createCheckpoint, createGoal, evaluateReview, fetchSkills, loadCheckpoint, clearGoal, fetchGoalEvidence, fetchGoalBudget, fetchUnfinishedGoals, fetchRunTimeline, getTaskClosureByGoal, getTaskClosureByRun, steerRun, fetchTaskClosureVerificationPlan, fetchTaskClosureAssessment, updateTaskClosureAssessment, fetchExecutionQueue, proposeExecutionQueue, approveExecutionQueueItem, rejectExecutionQueueItem, completeExecutionQueueItem, failExecutionQueueItem, fetchExecutionHandoffs, createExecutionHandoff, completeExecutionHandoff, failExecutionHandoff, fetchExecutionAuditTimeline, fetchExecutionAuditDiagnostics, approvePermissionFromCenter, rejectPermissionFromCenter, applyApproval } from './harnessClientAutonomy';
 import { runAgentLoop } from './harnessClient';
 import type { AgentLoopResult } from '@bolt/shared';
 
 describe('harness autonomy client', () => {
+  it('creates a goal without baseUrl', async () => {
+    const fetcher = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ id: 'goal_1' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    await createGoal({ objective: 'x' }, fetcher);
+    expect(fetcher).toHaveBeenCalledWith('/goals', expect.objectContaining({ method: 'POST' }));
+  });
+
   it('calls permission center decision endpoints through PermissionGate routes', async () => {
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({ status: 'executed' }))));
 
-    await approvePermissionFromCenter('http://core', 'tool_1', fetcher);
-    await rejectPermissionFromCenter('http://core', 'tool_2', fetcher);
+    await approvePermissionFromCenter('tool_1', fetcher);
+    await rejectPermissionFromCenter('tool_2', fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('http://core/permissions/tool_1/approve', { method: 'POST' });
-    expect(fetcher).toHaveBeenCalledWith('http://core/permissions/tool_2/reject', { method: 'POST' });
+    expect(fetcher).toHaveBeenCalledWith('/permissions/tool_1/approve', { method: 'POST' });
+    expect(fetcher).toHaveBeenCalledWith('/permissions/tool_2/reject', { method: 'POST' });
   });
 
   it('calls checkpoint endpoints', async () => {
@@ -32,29 +43,29 @@ describe('harness autonomy client', () => {
       return Promise.resolve(new Response(JSON.stringify(checkpoint)));
     });
 
-    const created = await createCheckpoint('http://core', { run_id: 'run_1', goal_id: 'goal_1' }, fetcher);
-    const loaded = await loadCheckpoint('http://core', 'cp_1234abcd', fetcher);
+    const created = await createCheckpoint({ run_id: 'run_1', goal_id: 'goal_1' }, fetcher);
+    const loaded = await loadCheckpoint('cp_1234abcd', fetcher);
 
     expect(created.id).toBe('cp_1234abcd');
     expect(loaded?.file_contents?.['main.txt']).toBe('hello');
     expect(fetcher).toHaveBeenCalledWith(
-      'http://core/checkpoints',
+      '/checkpoints',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ run_id: 'run_1', goal_id: 'goal_1' }) }),
     );
-    expect(fetcher).toHaveBeenCalledWith('http://core/checkpoints/cp_1234abcd');
+    expect(fetcher).toHaveBeenCalledWith('/checkpoints/cp_1234abcd');
   });
 
   it('calls review gate endpoint', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ passed: false, failures: ['desktop build'] })));
 
-    const result = await evaluateReview('http://core', {
+    const result = await evaluateReview({
       items: ['pytest', 'desktop build'],
       results: { pytest: true, 'desktop build': false },
     }, fetcher);
 
     expect(result.failures).toEqual(['desktop build']);
     expect(fetcher).toHaveBeenCalledWith(
-      'http://core/review/evaluate',
+      '/review/evaluate',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ items: ['pytest', 'desktop build'], results: { pytest: true, 'desktop build': false } }),
@@ -65,42 +76,42 @@ describe('harness autonomy client', () => {
   it('returns an empty skill list until the backend has a route', async () => {
     const fetcher = vi.fn();
 
-    await expect(fetchSkills('http://core', fetcher)).resolves.toEqual([]);
+    await expect(fetchSkills(fetcher)).resolves.toEqual([]);
     expect(fetcher).not.toHaveBeenCalled();
   });
 
   it('calls clearGoal endpoint', async () => {
     const stopped = { id: 'goal_1', status: 'stopped' };
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(stopped)));
-    const result = await clearGoal('http://core', 'goal_1', fetcher);
+    const result = await clearGoal('goal_1', fetcher);
     expect(result.status).toBe('stopped');
-    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/clear', expect.objectContaining({ method: 'POST' }));
+    expect(fetcher).toHaveBeenCalledWith('/goals/goal_1/clear', expect.objectContaining({ method: 'POST' }));
   });
 
   it('calls fetchGoalEvidence endpoint', async () => {
     const evidence = [{ phase: 'test', result: 'pass' }];
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(evidence)));
-    const result = await fetchGoalEvidence('http://core', 'goal_1', fetcher);
+    const result = await fetchGoalEvidence('goal_1', fetcher);
     expect(result).toHaveLength(1);
-    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/evidence');
+    expect(fetcher).toHaveBeenCalledWith('/goals/goal_1/evidence');
   });
 
   it('calls fetchGoalBudget endpoint', async () => {
     const budget = { spent: 0.5, limit: 5.0 };
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(budget)));
-    const result = await fetchGoalBudget('http://core', 'goal_1', fetcher);
+    const result = await fetchGoalBudget('goal_1', fetcher);
     expect(result.spent).toBe(0.5);
-    expect(fetcher).toHaveBeenCalledWith('http://core/goals/goal_1/budget');
+    expect(fetcher).toHaveBeenCalledWith('/goals/goal_1/budget');
   });
 
   it('calls runAgentLoop endpoint with typed result', async () => {
     const loopResult: AgentLoopResult = { status: 'executed', steps: 3 };
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(loopResult)));
-    const result = await runAgentLoop('http://core', 'run_1', 10, fetcher);
+    const result = await runAgentLoop('run_1', 10, fetcher);
     expect(result.status).toBe('executed');
     expect(result.steps).toBe(3);
     expect(fetcher).toHaveBeenCalledWith(
-      'http://core/harness/runs/run_1/agent-loops',
+      '/harness/runs/run_1/agent-loops',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ max_steps: 10 }) }),
     );
   });
@@ -108,25 +119,25 @@ describe('harness autonomy client', () => {
   it('calls fetchUnfinishedGoals endpoint', async () => {
     const goals = [{ id: 'goal_1', objective: 'test', status: 'paused' }];
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(goals)));
-    const result = await fetchUnfinishedGoals('http://core', fetcher);
+    const result = await fetchUnfinishedGoals(fetcher);
     expect(result).toHaveLength(1);
-    expect(fetcher).toHaveBeenCalledWith('http://core/goals/unfinished');
+    expect(fetcher).toHaveBeenCalledWith('/goals/unfinished');
   });
 
   it('calls fetchRunTimeline endpoint', async () => {
     const timeline = [{ type: 'run.created', sequence: 1 }];
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(timeline)));
-    const result = await fetchRunTimeline('http://core', 'run_1', fetcher);
+    const result = await fetchRunTimeline('run_1', fetcher);
     expect(result).toHaveLength(1);
-    expect(fetcher).toHaveBeenCalledWith('http://core/runs/run_1/timeline');
+    expect(fetcher).toHaveBeenCalledWith('/runs/run_1/timeline');
   });
 
   it('calls steerRun endpoint with typed result', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ status: 'injected' })));
-    const result = await steerRun('http://core', 'run_1', '请优先修复测试', fetcher);
+    const result = await steerRun('run_1', '请优先修复测试', fetcher);
     expect(result.status).toBe('injected');
     expect(fetcher).toHaveBeenCalledWith(
-      'http://core/runs/run_1/steering',
+      '/runs/run_1/steering',
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ content: '请优先修复测试' }) }),
     );
   });
@@ -135,24 +146,24 @@ describe('harness autonomy client', () => {
     const closure = { id: 'cl_43', objective: '修复拼写', template_id: 'bugfix', status: 'executing', final_status: 'executing' };
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(closure))));
 
-    await bindTaskClosureRun('http://core', 'cl_43', 'run_43', fetcher);
-    await bindTaskClosureGoal('http://core', 'cl_43', 'goal_43', fetcher);
+    await bindTaskClosureRun('cl_43', 'run_43', fetcher);
+    await bindTaskClosureGoal('cl_43', 'goal_43', fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_43/bind-run', expect.objectContaining({ method: 'POST', body: JSON.stringify({ run_id: 'run_43' }) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_43/bind-goal', expect.objectContaining({ method: 'POST', body: JSON.stringify({ goal_id: 'goal_43' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_43/bind-run', expect.objectContaining({ method: 'POST', body: JSON.stringify({ run_id: 'run_43' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_43/bind-goal', expect.objectContaining({ method: 'POST', body: JSON.stringify({ goal_id: 'goal_43' }) }));
   });
 
   it('calls task closure lookup endpoints', async () => {
     const closure = { id: 'cl_43', objective: '修复拼写', template_id: 'bugfix', status: 'stopped', final_status: 'stopped' };
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify(closure))));
 
-    const byRun = await getTaskClosureByRun('http://core', 'run_43', fetcher);
-    const byGoal = await getTaskClosureByGoal('http://core', 'goal_43', fetcher);
+    const byRun = await getTaskClosureByRun('run_43', fetcher);
+    const byGoal = await getTaskClosureByGoal('goal_43', fetcher);
 
     expect(byRun.final_status).toBe('stopped');
     expect(byGoal.status).toBe('stopped');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-run/run_43');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/by-goal/goal_43');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/by-run/run_43');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/by-goal/goal_43');
   });
 
   it('calls task closure verification endpoints', async () => {
@@ -162,85 +173,85 @@ describe('harness autonomy client', () => {
       return Promise.resolve(new Response(JSON.stringify({ id: 'cl_44', status: 'completed', final_status: 'completed' })));
     });
 
-    const plan = await fetchTaskClosureVerificationPlan('http://core', 'cl_44', fetcher);
-    const assessment = await fetchTaskClosureAssessment('http://core', 'cl_44', fetcher);
-    const updated = await updateTaskClosureAssessment('http://core', 'cl_44', fetcher);
+    const plan = await fetchTaskClosureVerificationPlan('cl_44', fetcher);
+    const assessment = await fetchTaskClosureAssessment('cl_44', fetcher);
+    const updated = await updateTaskClosureAssessment('cl_44', fetcher);
 
     expect(plan.template_id).toBe('bugfix');
     expect(assessment.status).toBe('missing_evidence');
     expect(updated.status).toBe('missing_evidence');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/verification-plan');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/assessment');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_44/assessment', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_44/verification-plan');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_44/assessment');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_44/assessment', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
   });
 
   it('calls execution queue endpoints', async () => {
     const item = { id: 'eq_1', closure_id: 'cl_1', kind: 'verification_command', risk: 'verification_command', status: 'pending' };
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify([item]))));
 
-    await fetchExecutionQueue('http://core', 'cl_1', fetcher);
-    await proposeExecutionQueue('http://core', 'cl_1', fetcher);
-    await approveExecutionQueueItem('http://core', 'eq_1', fetcher);
-    await rejectExecutionQueueItem('http://core', 'eq_1', '暂不处理', fetcher);
-    await completeExecutionQueueItem('http://core', 'eq_1', '用户已完成', fetcher);
-    await failExecutionQueueItem('http://core', 'eq_1', '失败', fetcher);
+    await fetchExecutionQueue('cl_1', fetcher);
+    await proposeExecutionQueue('cl_1', fetcher);
+    await approveExecutionQueueItem('eq_1', fetcher);
+    await rejectExecutionQueueItem('eq_1', '暂不处理', fetcher);
+    await completeExecutionQueueItem('eq_1', '用户已完成', fetcher);
+    await failExecutionQueueItem('eq_1', '失败', fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue?closure_id=cl_1');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_1/execution-queue/propose', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/approve', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/reject', expect.objectContaining({ method: 'POST', body: JSON.stringify({ reason: '暂不处理' }) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/complete', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '用户已完成' }) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/fail', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '失败' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue?closure_id=cl_1');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_1/execution-queue/propose', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue/eq_1/approve', expect.objectContaining({ method: 'POST', body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue/eq_1/reject', expect.objectContaining({ method: 'POST', body: JSON.stringify({ reason: '暂不处理' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue/eq_1/complete', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '用户已完成' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue/eq_1/fail', expect.objectContaining({ method: 'POST', body: JSON.stringify({ result: '失败' }) }));
   });
 
   it('calls execution handoff endpoints', async () => {
     const handoff = { id: 'eh_1', closure_id: 'cl_1', queue_item_id: 'eq_1', handoff_type: 'manual_verification', status: 'ready_for_manual_action' };
     const fetcher = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify([handoff]))));
 
-    await fetchExecutionHandoffs('http://core', 'cl_1', fetcher);
-    await createExecutionHandoff('http://core', 'eq_1', fetcher);
-    await completeExecutionHandoff('http://core', 'eh_1', '用户已完成', fetcher);
-    await failExecutionHandoff('http://core', 'eh_1', '失败', fetcher);
+    await fetchExecutionHandoffs('cl_1', fetcher);
+    await createExecutionHandoff('eq_1', fetcher);
+    await completeExecutionHandoff('eh_1', '用户已完成', fetcher);
+    await failExecutionHandoff('eh_1', '失败', fetcher);
     const { requestExecutionHandoffPermission } = await import('./harnessClientAutonomy');
-    await requestExecutionHandoffPermission('http://core', 'eh_1', fetcher);
+    await requestExecutionHandoffPermission('eh_1', fetcher);
 
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs?closure_id=cl_1');
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-queue/eq_1/handoff', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/complete', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '用户已完成' }) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/fail', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '失败' }) }));
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-handoffs/eh_1/request-permission', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-handoffs?closure_id=cl_1');
+    expect(fetcher).toHaveBeenCalledWith('/execution-queue/eq_1/handoff', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-handoffs/eh_1/complete', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '用户已完成' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-handoffs/eh_1/fail', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ result: '失败' }) }));
+    expect(fetcher).toHaveBeenCalledWith('/execution-handoffs/eh_1/request-permission', expect.objectContaining({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) }));
   });
 
   it('calls execution audit timeline endpoint as read-only GET', async () => {
     const timeline = [{ id: 'audit_1', closure_id: 'cl_1', source: 'permission', status: 'executed', label: '已执行', summary: '权限执行已返回结果', occurred_at: 10 }];
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(timeline)));
 
-    const result = await fetchExecutionAuditTimeline('http://core', 'cl_1', fetcher);
+    const result = await fetchExecutionAuditTimeline('cl_1', fetcher);
 
     expect(result[0].label).toBe('已执行');
-    expect(fetcher).toHaveBeenCalledWith('http://core/task-closures/cl_1/execution-audit-timeline');
+    expect(fetcher).toHaveBeenCalledWith('/task-closures/cl_1/execution-audit-timeline');
   });
 
   it('calls execution audit diagnostics endpoint as read-only GET', async () => {
     const diagnostics = [{ id: 'diag_1', code: 'missing_pending_permission', severity: 'blocking', severity_label: '阻断', summary: '交接等待权限', suggestion: '建议人工处理' }];
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(diagnostics)));
 
-    const result = await fetchExecutionAuditDiagnostics('http://core', 'cl_1', fetcher);
+    const result = await fetchExecutionAuditDiagnostics('cl_1', fetcher);
 
     expect(result[0].severity_label).toBe('阻断');
-    expect(fetcher).toHaveBeenCalledWith('http://core/execution-audit/diagnostics?closure_id=cl_1');
+    expect(fetcher).toHaveBeenCalledWith('/execution-audit/diagnostics?closure_id=cl_1');
   });
 
   it('loadCheckpoint returns null for bad id', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response('null', { status: 200 }));
-    const result = await loadCheckpoint('http://core', 'cp_nonexist', fetcher);
+    const result = await loadCheckpoint('cp_nonexist', fetcher);
     expect(result).toBeNull();
   });
 
   it('applyApproval sends POST with proposal_id and empty approval', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ result: { success: true } }), { status: 200 }));
-    await applyApproval('http://core', 'prop_1', fetcher);
-    expect(fetcher).toHaveBeenCalledWith('http://core/tools/approval/apply', expect.objectContaining({
+    await applyApproval('prop_1', fetcher);
+    expect(fetcher).toHaveBeenCalledWith('/tools/approval/apply', expect.objectContaining({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
     }));
@@ -252,12 +263,12 @@ describe('harness autonomy client', () => {
   it('applyApproval returns result on success', async () => {
     const responseBody = { result: { success: true, proposal_id: 'prop_1', reason: '已应用' } };
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200 }));
-    const result = await applyApproval('http://core', 'prop_1', fetcher);
+    const result = await applyApproval('prop_1', fetcher);
     expect(result.result.success).toBe(true);
   });
 
   it('applyApproval throws on error response', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: '提案不存在' }), { status: 400 }));
-    await expect(applyApproval('http://core', 'prop_bad', fetcher)).rejects.toThrow();
+    await expect(applyApproval('prop_bad', fetcher)).rejects.toThrow();
   });
 });

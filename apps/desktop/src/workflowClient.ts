@@ -11,103 +11,103 @@ export interface WorkflowRefresh {
   permissions?: PendingPermission[];
 }
 
-export async function startWorkflowRun(baseUrl: string, goal: string, workspace: string, fetcher: Fetcher): Promise<HarnessRun> {
-  return createHarnessRun(baseUrl, goal, workspace, fetcher);
+export async function startWorkflowRun(goal: string, workspace: string, fetcher: Fetcher): Promise<HarnessRun> {
+  return createHarnessRun(goal, workspace, fetcher);
 }
 
-export async function executeWorkflowStep(baseUrl: string, runId: string, fetcher: Fetcher): Promise<{ step: AgentStepResult; refresh: WorkflowRefresh }> {
-  const step = await runAgentStep(baseUrl, runId, fetcher);
-  return { step, refresh: await refreshWorkflow(baseUrl, runId, fetcher) };
+export async function executeWorkflowStep(runId: string, fetcher: Fetcher): Promise<{ step: AgentStepResult; refresh: WorkflowRefresh }> {
+  const step = await runAgentStep(runId, fetcher);
+  return { step, refresh: await refreshWorkflow(runId, fetcher) };
 }
 
-export async function refreshWorkflow(baseUrl: string, runId: string, fetcher: Fetcher): Promise<WorkflowRefresh> {
+export async function refreshWorkflow(runId: string, fetcher: Fetcher): Promise<WorkflowRefresh> {
   const [trace, memory, permissions] = await Promise.all([
-    fetchHarnessTrace(baseUrl, runId, fetcher),
-    fetchMemorySnapshot(baseUrl, fetcher),
-    fetchPendingPermissions(baseUrl, fetcher),
+    fetchHarnessTrace(runId, fetcher),
+    fetchMemorySnapshot(fetcher),
+    fetchPendingPermissions(fetcher),
   ]);
   return { trace, memory, permissions };
 }
 
-export async function decidePermission(baseUrl: string, requestId: string, approved: boolean, fetcher: Fetcher): Promise<ToolResult> {
-  return approved ? approvePermission(baseUrl, requestId, fetcher) : rejectPermission(baseUrl, requestId, fetcher);
+export async function decidePermission(requestId: string, approved: boolean, fetcher: Fetcher): Promise<ToolResult> {
+  return approved ? approvePermission(requestId, fetcher) : rejectPermission(requestId, fetcher);
 }
 
-export async function loadModelSettings(baseUrl: string, fetcher: Fetcher): Promise<ModelSettingsStatus> {
-  return fetchModelSettingsStatus(baseUrl, fetcher);
+export async function loadModelSettings(fetcher: Fetcher): Promise<ModelSettingsStatus> {
+  return fetchModelSettingsStatus(fetcher);
 }
 
-export async function storeModelSettings(baseUrl: string, settings: ModelSettings, fetcher: Fetcher): Promise<ModelSettingsStatus> {
-  return saveModelSettings(baseUrl, settings, fetcher);
+export async function storeModelSettings(settings: ModelSettings, fetcher: Fetcher): Promise<ModelSettingsStatus> {
+  return saveModelSettings(settings, fetcher);
 }
 
-export async function maintainMemory(baseUrl: string, runId: string, fetcher: Fetcher): Promise<ToolResult> {
-  return runDocumentGardener(baseUrl, runId, fetcher);
+export async function maintainMemory(runId: string, fetcher: Fetcher): Promise<ToolResult> {
+  return runDocumentGardener(runId, fetcher);
 }
 
-export async function consolidateWorkflowMemory(baseUrl: string, fetcher: Fetcher): Promise<MemoryConsolidationResult> {
-  return consolidateMemory(baseUrl, fetcher);
+export async function consolidateWorkflowMemory(fetcher: Fetcher): Promise<MemoryConsolidationResult> {
+  return consolidateMemory(fetcher);
 }
 
 // === Dogfood path helpers ===
 
-export async function createWorkflowGoal(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Goal> {
-  return createGoal(baseUrl, payload, fetcher);
+export async function createWorkflowGoal(payload: Record<string, unknown>, fetcher: Fetcher): Promise<Goal> {
+  return createGoal(payload, fetcher);
 }
 
-export async function createWorkflowConversation(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ id: string }> {
-  return createConversation(baseUrl, payload, fetcher);
+export async function createWorkflowConversation(payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ id: string }> {
+  return createConversation(payload, fetcher);
 }
 
-export async function addWorkflowMessage(baseUrl: string, conversationId: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ status: string }> {
-  return addMessage(baseUrl, conversationId, payload, fetcher);
+export async function addWorkflowMessage(conversationId: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<{ status: string }> {
+  return addMessage(conversationId, payload, fetcher);
 }
 
-export async function submitWorkflowTool(baseUrl: string, runId: string, request: { tool: string; operation: string; payload: Record<string, unknown> }, fetcher: Fetcher): Promise<ToolResult> {
-  return submitToolRequest(baseUrl, runId, request, fetcher);
+export async function submitWorkflowTool(runId: string, request: { tool: string; operation: string; payload: Record<string, unknown> }, fetcher: Fetcher): Promise<ToolResult> {
+  return submitToolRequest(runId, request, fetcher);
 }
 
-export async function createWorkflowCheckpoint(baseUrl: string, payload: Record<string, unknown>, fetcher: Fetcher): Promise<Checkpoint> {
-  return createCheckpoint(baseUrl, payload, fetcher);
+export async function createWorkflowCheckpoint(payload: Record<string, unknown>, fetcher: Fetcher): Promise<Checkpoint> {
+  return createCheckpoint(payload, fetcher);
 }
 
-export async function loadWorkflowCheckpoint(baseUrl: string, cpId: string, fetcher: Fetcher): Promise<Checkpoint | null> {
-  return loadCheckpoint(baseUrl, cpId, fetcher);
+export async function loadWorkflowCheckpoint(cpId: string, fetcher: Fetcher): Promise<Checkpoint | null> {
+  return loadCheckpoint(cpId, fetcher);
 }
 
-export async function evaluateWorkflowReview(baseUrl: string, payload: { items: string[]; results: Record<string, boolean> }, fetcher: Fetcher): Promise<{ passed: boolean; failures: string[] }> {
-  return evaluateReview(baseUrl, payload, fetcher);
+export async function evaluateWorkflowReview(payload: { items: string[]; results: Record<string, boolean> }, fetcher: Fetcher): Promise<{ passed: boolean; failures: string[] }> {
+  return evaluateReview(payload, fetcher);
 }
 
-export async function fetchWorkflowTimeline(baseUrl: string, runId: string, fetcher: Fetcher): Promise<unknown[]> {
-  return fetchRunTimeline(baseUrl, runId, fetcher);
+export async function fetchWorkflowTimeline(runId: string, fetcher: Fetcher): Promise<unknown[]> {
+  return fetchRunTimeline(runId, fetcher);
 }
 
-export async function loadDesktopSettings(baseUrl: string, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
-  return harnessFetchDesktopSettings(baseUrl, fetcher);
+export async function loadDesktopSettings(fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean; credential_revision: number }> {
+  return harnessFetchDesktopSettings(fetcher);
 }
 
-export async function storeDesktopSettings(baseUrl: string, settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean }> {
-  return harnessSaveDesktopSettings(baseUrl, settings, fetcher);
+export async function storeDesktopSettings(settings: { theme?: string; language?: string; default_workspace?: string }, fetcher: Fetcher): Promise<{ theme: string; language: string; default_workspace: string; has_api_key: boolean; credential_revision: number }> {
+  return harnessSaveDesktopSettings(settings, fetcher);
 }
 
-export async function storeDesktopApiKey(baseUrl: string, apiKey: string, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean }> {
-  return harnessSaveDesktopApiKey(baseUrl, apiKey, fetcher);
+export async function storeDesktopApiKey(apiKey: string, revision: number, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean; revision: number }> {
+  return harnessSaveDesktopApiKey(apiKey, revision, fetcher);
 }
 
-export async function removeDesktopApiKey(baseUrl: string, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean }> {
-  return harnessDeleteDesktopApiKey(baseUrl, fetcher);
+export async function removeDesktopApiKey(revision: number, fetcher: Fetcher): Promise<{ status: string; has_api_key: boolean; revision: number }> {
+  return harnessDeleteDesktopApiKey(revision, fetcher);
 }
 
-export async function addWorkspaceToHistory(baseUrl: string, path: string, fetcher: Fetcher): Promise<void> {
-  await harnessAddWorkspaceHistory(baseUrl, path, fetcher);
+export async function addWorkspaceToHistory(path: string, fetcher: Fetcher): Promise<void> {
+  await harnessAddWorkspaceHistory(path, fetcher);
 }
 
-export async function loadRecentSessions(baseUrl: string, limit: number = 20, fetcher: Fetcher): Promise<Array<{ id: string; title: string; time: string; status: string }>> {
-  const result = await harnessFetchRecentSessions(baseUrl, limit, fetcher);
+export async function loadRecentSessions(limit: number = 20, fetcher: Fetcher): Promise<Array<{ id: string; title: string; time: string; status: string }>> {
+  const result = await harnessFetchRecentSessions(limit, fetcher);
   return result.sessions;
 }
 
-export async function loadWorkspaceStatus(baseUrl: string, fetcher: Fetcher): Promise<{ accessible: boolean; path: string }> {
-  return harnessFetchWorkspaceStatus(baseUrl, fetcher);
+export async function loadWorkspaceStatus(fetcher: Fetcher): Promise<{ accessible: boolean; path: string }> {
+  return harnessFetchWorkspaceStatus(fetcher);
 }
