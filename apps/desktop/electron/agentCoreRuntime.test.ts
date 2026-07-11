@@ -1,9 +1,33 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { resolveAgentCoreRuntime, AgentCoreSupervisor, defaultHealthCheck } from './agentCoreRuntime';
 
 describe('agent core runtime', () => {
+  it('fails closed when no trusted user data root is provided', () => {
+    const runtime = resolveAgentCoreRuntime({
+      repoRoot: 'C:/Projects/Bolt',
+      env: { BOLT_CORE_DATA_ROOT: 'C:/attacker/data' },
+      exists: () => false,
+      generationFactory: () => ({
+        startupId: 'startup-id',
+        bootstrapKey: 'bootstrap-key',
+        bearerToken: 'bearer-token',
+      }),
+    });
+
+    expect(runtime.validationError).toBe('Agent Core data root is required');
+    expect(runtime.env.BOLT_CORE_DATA_ROOT).toBeUndefined();
+  });
+
+  it('passes Electron userData to the Agent Core runtime factory', () => {
+    const mainSource = readFileSync(join(__dirname, 'main.ts'), 'utf-8');
+
+    expect(mainSource).toContain("dataRoot: app.getPath('userData'),");
+  });
+
   it('strict health accepts only exact HTTP 200 liveness schema without redirects', async () => {
     const originalFetch = globalThis.fetch;
     const fetchMock = vi.fn().mockResolvedValue(new Response('{"status":"ok","service":"bolt-agent-core"}', { status: 200 }));
@@ -29,7 +53,12 @@ describe('agent core runtime', () => {
     child.kill = vi.fn();
     child.killed = false;
     child.pid = 1234;
-    const runtime = resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', env: {}, exists: () => false });
+    const runtime = resolveAgentCoreRuntime({
+      repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
+      env: {},
+      exists: () => false,
+    });
     const supervisor = new AgentCoreSupervisor({
       runtime,
       readiness: vi.fn().mockResolvedValue({ generationId: runtime.startupId, endpoint: 'http://127.0.0.1:43123', port: 43123 }),
@@ -58,6 +87,7 @@ describe('agent core runtime', () => {
     let generationIndex = 0;
     const runtimeFactory = () => resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       env: {},
       exists: () => false,
       generationFactory: () => generations[generationIndex++],
@@ -119,6 +149,7 @@ describe('agent core runtime', () => {
     });
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       env: {},
       exists: () => false,
       generationFactory: () => ({
@@ -159,7 +190,7 @@ describe('agent core runtime', () => {
     const health = vi.fn().mockResolvedValue(true);
     const readiness = vi.fn().mockRejectedValue(new Error('CORE_READINESS_INVALID'));
     const supervisor = new AgentCoreSupervisor({
-      runtime: resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', env: {}, exists: () => false }),
+      runtime: resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt', env: {}, exists: () => false }),
       readiness,
       health,
       spawn,
@@ -177,6 +208,7 @@ describe('agent core runtime', () => {
   it('rebuilds a minimal child environment without inherited Bolt secrets or Python injection', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       env: {
         SystemRoot: 'C:/Windows',
         WINDIR: 'C:/Windows',
@@ -211,6 +243,7 @@ describe('agent core runtime', () => {
       BOLT_CORE_BOOTSTRAP_KEY: 'new-bootstrap',
       BOLT_CORE_BEARER: 'new-bearer',
       BOLT_WORKSPACE: 'C:/Projects/Bolt',
+      BOLT_CORE_DATA_ROOT: 'C:/Users/bolt/AppData/Roaming/Bolt',
       BOLT_CORE_PROTOCOL_VERSION: '1',
     });
     expect(Object.values(runtime.env)).not.toContain('old-token');
@@ -224,6 +257,7 @@ describe('agent core runtime', () => {
   it('resolves the development desktop runner from the repo workspace', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       env: {},
       exists: (path) => path.endsWith('services/agent-core/.venv/Scripts/python.exe')
     });
@@ -237,6 +271,7 @@ describe('agent core runtime', () => {
   it('ignores inherited development runtime overrides', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       env: {
         BOLT_AGENT_CORE_PORT: '8765',
         BOLT_AGENT_CORE_PYTHON: 'C:/Python/python.exe',
@@ -258,7 +293,7 @@ describe('agent core runtime', () => {
     child.pid = 1234;
     const spawn = vi.fn().mockReturnValue(child);
     const supervisor = new AgentCoreSupervisor({
-      runtime: resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', env: {}, exists: () => false }),
+      runtime: resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt', env: {}, exists: () => false }),
       health: vi.fn().mockResolvedValue(true),
       readiness: vi.fn().mockRejectedValue(new Error('CORE_READINESS_INVALID')),
       spawn
@@ -277,7 +312,7 @@ describe('agent core runtime', () => {
     child.killed = false;
     const spawn = vi.fn().mockReturnValue(child);
     const health = vi.fn().mockResolvedValue(true);
-    const runtime = resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', env: {}, exists: () => false });
+    const runtime = resolveAgentCoreRuntime({ repoRoot: 'C:/Projects/Bolt', dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt', env: {}, exists: () => false });
     const readiness = vi.fn().mockResolvedValue({
       generationId: runtime.startupId,
       endpoint: 'http://127.0.0.1:43123',
@@ -298,6 +333,7 @@ describe('agent core runtime', () => {
     const spawn = vi.fn();
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       resourcesPath: 'C:/Program Files/Bolt/resources',
       packaged: true,
       env: {},
@@ -322,6 +358,7 @@ describe('agent core runtime', () => {
   it('ignores agent core path and python overrides in packaged mode', () => {
     const runtime = resolveAgentCoreRuntime({
       repoRoot: 'C:/Projects/Bolt',
+      dataRoot: 'C:/Users/bolt/AppData/Roaming/Bolt',
       resourcesPath: 'C:/Program Files/Bolt/resources',
       packaged: true,
       env: {

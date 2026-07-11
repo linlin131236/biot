@@ -109,10 +109,13 @@ from bolt_core.product_workbench_dogfood_api import create_product_workbench_dog
 from bolt_core.desktop_beta_ship_api import create_desktop_beta_ship_router
 from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
+from bolt_core.persistence.database import Database
+from bolt_core.persistence.repositories import ControlPlaneRepository
 from bolt_core.app_routes import register as register_simple_routes
 def create_app(
     execution_audit_path: str | Path | None = None,
     project_dir: str | Path | None = None,
+    persistence_root: str | Path | None = None,
     local_api_token: str | None = None,
     require_local_api_token: bool = False,
     lock_default_workspace: bool = False,
@@ -121,6 +124,12 @@ def create_app(
     model_gateway=None, locked_workspace_binding=None,
 ) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core", docs_url="/docs" if not desktop_production else None, redoc_url="/redoc" if not desktop_production else None, openapi_url="/openapi.json" if not desktop_production else None)
+    persistence = (
+        ControlPlaneRepository(Database.open(Path(persistence_root)))
+        if persistence_root is not None
+        else None
+    )
+    app.state.persistence = persistence
     install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
     workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"), lock_default_workspace)
     audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))

@@ -25,6 +25,7 @@ class StartupEnvironment:
     bootstrap_key: bytes
     bearer_token: str
     workspace: str
+    data_root: str
 
 
 @dataclass(frozen=True)
@@ -81,11 +82,12 @@ def consume_startup_environment(env: MutableMapping[str, str]) -> StartupEnviron
     bootstrap_key = _decode_canonical_base64url(env.pop("BOLT_CORE_BOOTSTRAP_KEY"), 32)
     bearer_token = env.pop("BOLT_CORE_BEARER")
     workspace = env["BOLT_WORKSPACE"]
+    data_root = env.pop("BOLT_CORE_DATA_ROOT")
     if env.get("BOLT_CORE_PROTOCOL_VERSION") != "1":
         raise ValueError("unsupported desktop runner protocol")
     _decode_canonical_base64url(startup_id, 32)
     _decode_canonical_base64url(bearer_token, 32)
-    return StartupEnvironment(startup_id, bootstrap_key, bearer_token, workspace)
+    return StartupEnvironment(startup_id, bootstrap_key, bearer_token, workspace, data_root)
 
 
 def create_readiness_line(
@@ -181,6 +183,7 @@ def main() -> None:
             local_api_token=startup.bearer_token,
             require_local_api_token=True,
             project_dir=startup.workspace,
+            persistence_root=startup.data_root,
             lock_default_workspace=True,
             desktop_production=True,
             credential_lifecycle=security.credential_lifecycle,

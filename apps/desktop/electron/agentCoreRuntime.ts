@@ -6,6 +6,7 @@ import { waitForReadinessProof } from './agentCoreReadiness.js';
 
 export interface AgentCoreRuntimeOptions {
   repoRoot: string;
+  dataRoot?: string;
   resourcesPath?: string;
   packaged?: boolean;
   env?: NodeJS.ProcessEnv;
@@ -49,14 +50,16 @@ export function resolveAgentCoreRuntime(options: AgentCoreRuntimeOptions): Agent
   const sourceRoot = joinPath(coreRoot, 'src');
   const venvPython = joinPath(coreRoot, '.venv', 'Scripts', 'python.exe');
   const command = venvPython && (options.exists ?? (() => false))(venvPython) ? venvPython : 'python';
-  const validationError = packagedResourceError(options, coreRoot, sourceRoot);
+  const validationError = options.dataRoot
+    ? packagedResourceError(options, coreRoot, sourceRoot)
+    : 'Agent Core data root is required';
   const generation = (options.generationFactory ?? createGenerationSecrets)();
   return {
     baseUrl: `http://127.0.0.1:${port}`,
     command,
     args: ['-m', 'bolt_core.desktop_runner'],
     cwd: coreRoot,
-    env: buildChildEnvironment(env, sourceRoot, options.repoRoot, generation),
+    env: buildChildEnvironment(env, sourceRoot, options.repoRoot, options.dataRoot, generation),
     authToken: generation.bearerToken,
     startupId: generation.startupId,
     bootstrapKey: generation.bootstrapKey,
@@ -176,6 +179,7 @@ function buildChildEnvironment(
   parent: NodeJS.ProcessEnv,
   sourceRoot: string,
   workspace: string,
+  dataRoot: string | undefined,
   generation: AgentCoreGenerationSecrets,
 ): NodeJS.ProcessEnv {
   const child: NodeJS.ProcessEnv = {};
@@ -200,6 +204,7 @@ function buildChildEnvironment(
   child.BOLT_CORE_BOOTSTRAP_KEY = generation.bootstrapKey;
   child.BOLT_CORE_BEARER = generation.bearerToken;
   child.BOLT_WORKSPACE = workspace;
+  if (dataRoot) child.BOLT_CORE_DATA_ROOT = dataRoot;
   child.BOLT_CORE_PROTOCOL_VERSION = '1';
   return child;
 }

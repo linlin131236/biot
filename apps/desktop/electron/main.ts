@@ -75,6 +75,7 @@ async function createWindow() {
 async function startAgentCore() {
   const runtimeFactory = () => resolveAgentCoreRuntime({
     repoRoot: path.resolve(__dirname, '../../..'),
+    dataRoot: app.getPath('userData'),
     resourcesPath: process.resourcesPath,
     packaged: app.isPackaged,
     env: process.env,

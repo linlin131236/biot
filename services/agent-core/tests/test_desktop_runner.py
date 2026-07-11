@@ -45,6 +45,7 @@ def test_module_entrypoint_emits_proof_and_serves_authenticated_core(tmp_path):
         "BOLT_CORE_BOOTSTRAP_KEY": bootstrap,
         "BOLT_CORE_BEARER": bearer,
         "BOLT_WORKSPACE": str(tmp_path),
+        "BOLT_CORE_DATA_ROOT": str(tmp_path / "electron-user-data"),
         "BOLT_CORE_PROTOCOL_VERSION": "1",
     }
     source_root = os.path.join(os.path.dirname(__file__), "..", "src")
@@ -102,6 +103,7 @@ def test_hands_prebound_socket_to_server_and_emits_proof_only_after_startup():
         bootstrap_key=b"k" * 32,
         bearer_token=b64url(b"b" * 32),
         workspace="D:/Projects/Bolt",
+        data_root="D:/Users/bolt/AppData/Roaming/Bolt",
     )
     sock = bind_desktop_socket(0)
     port = sock.getsockname()[1]
@@ -145,6 +147,7 @@ def test_consumes_current_generation_secrets_and_removes_them_from_environment()
         "BOLT_CORE_BOOTSTRAP_KEY": b64url(b"k" * 32),
         "BOLT_CORE_BEARER": b64url(b"b" * 32),
         "BOLT_WORKSPACE": "D:/Projects/Bolt",
+        "BOLT_CORE_DATA_ROOT": "D:/Users/bolt/AppData/Roaming/Bolt",
         "BOLT_CORE_PROTOCOL_VERSION": "1",
     }
 
@@ -154,6 +157,7 @@ def test_consumes_current_generation_secrets_and_removes_them_from_environment()
     assert startup.bootstrap_key == b"k" * 32
     assert startup.bearer_token == b64url(b"b" * 32)
     assert startup.workspace == "D:/Projects/Bolt"
+    assert startup.data_root == "D:/Users/bolt/AppData/Roaming/Bolt"
     assert "BOLT_CORE_STARTUP_ID" not in env
     assert "BOLT_CORE_BOOTSTRAP_KEY" not in env
     assert "BOLT_CORE_BEARER" not in env
