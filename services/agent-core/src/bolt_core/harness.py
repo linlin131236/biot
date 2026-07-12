@@ -35,10 +35,7 @@ class Harness:
         self.locked_workspace = str(Path(locked_workspace).resolve()) if locked_workspace else None
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
-        self.model_settings = ModelSettingsStore(
-            repository=persistence,
-            credential_store=credential_store,
-        )
+        self.model_settings = ModelSettingsStore(repository=persistence, credential_store=credential_store)
         self.locked_workspace_binding = locked_workspace_binding
         self.agent_loop = AgentLoop(gateway=model_gateway)
         self.consolidator = MemoryConsolidator()
