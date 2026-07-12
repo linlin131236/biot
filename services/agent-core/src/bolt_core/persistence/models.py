@@ -19,7 +19,7 @@ _SENSITIVE_KEY_PARTS = (
     "secret", "cookie", "header",
 )
 _TOKEN_USAGE_KEYS = {
-    "tokencount", "maxtokens", "inputtokens", "outputtokens", "totaltokens",
+    "tokencount", "tokenbudget", "maxtokens", "inputtokens", "outputtokens", "totaltokens",
     "prompttokens", "completiontokens", "cachedinputtokens", "reasoningtokens",
 }
 _ASSIGNMENT_PATTERN = re.compile(

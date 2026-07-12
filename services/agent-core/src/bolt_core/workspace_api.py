@@ -32,7 +32,9 @@ def _format_time(ts: float) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
-def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
+def create_workspace_router(
+    project_dir: str | Path | None = None, *, persistence=None, workspace_id: str | None = None,
+) -> APIRouter:
     router = APIRouter(tags=["workspace"])
     workspace_root = Path(project_dir or Path.cwd()).resolve()
 
@@ -52,14 +54,35 @@ def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
         Reads goal_*.json files from .bolt/goals/ and returns
         title/time/status for each. Does NOT scan the entire disk.
         """
+        if persistence is not None:
+            rows = persistence.list_tasks(
+                workspace_id, statuses=["pending", "running", "paused", "recovering"],
+            )
+            sessions = []
+            for row in rows:
+                payload = row["payload"]
+                if payload.get("run_id"):
+                    continue
+                sessions.append({
+                    "id": row["id"],
+                    "title": payload.get("objective") or "未命名目标",
+                    "time": _format_iso_time(row["updated_at"]),
+                    "status": row["status"],
+                    "_mtime": row["updated_at"],
+                })
+            sessions.sort(key=lambda item: item["_mtime"], reverse=True)
+            return {"sessions": [
+                {key: value for key, value in item.items() if key != "_mtime"}
+                for item in sessions[:limit]
+            ]}
         goals_dir = workspace_root / ".bolt" / "goals"
         sessions: list[dict[str, Any]] = []
         if not goals_dir.is_dir():
             return {"sessions": sessions}
 
-        persistence = GoalPersistence(str(goals_dir))
+        legacy_persistence = GoalPersistence(str(goals_dir))
         try:
-            goals = persistence.list_unfinished()
+            goals = legacy_persistence.list_unfinished()
         except Exception as exc:
             logger.warning("workspace recent-sessions fallback: %s", exc)
             return {"sessions": sessions}
@@ -83,3 +106,11 @@ def create_workspace_router(project_dir: str | Path | None = None) -> APIRouter:
         return {"sessions": visible_sessions}
 
     return router
+
+
+def _format_iso_time(value: str) -> str:
+    import datetime
+    try:
+        return _format_time(datetime.datetime.fromisoformat(value).timestamp())
+    except (TypeError, ValueError, OverflowError):
+        return "未知时间"

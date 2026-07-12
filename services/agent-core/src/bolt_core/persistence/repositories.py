@@ -21,14 +21,17 @@ from bolt_core.persistence.models import (
 )
 
 
-class PersistenceConflictError(RuntimeError):
-    """A revision no longer matches the durable record."""
-
+from bolt_core.persistence.errors import (
+    PersistenceConflictError, TaskTerminalStateError,
+    RuntimeEventSequenceError, RuntimeSessionClosedError,
+)
+from bolt_core.persistence.execution_records import ExecutionRecordsMixin
+from bolt_core.persistence.runtime_records import RuntimeRecordsMixin
+from bolt_core.persistence.task_records import TaskRecordsMixin
 
 _SQLITE_INTEGER_MAX = 2**63 - 1
 
-
-class ControlPlaneRepository:
+class ControlPlaneRepository(TaskRecordsMixin, RuntimeRecordsMixin, ExecutionRecordsMixin):
     def __init__(self, database: Database) -> None:
         self.database = database
 
@@ -85,74 +88,6 @@ class ControlPlaneRepository:
                 "insert into tasks(id, workspace_id, session_id, status, revision, payload_json, created_at, updated_at) "
                 "values (?, ?, ?, ?, 0, ?, ?, ?)",
                 (task_id, workspace_id, session_id, status, serialized, now, now),
-            )
-
-    def create_runtime_session(
-        self, runtime_session_id: str, task_id: str, runtime_id: str,
-        external_session_id: str, status: str,
-    ) -> None:
-        validate_identifier(runtime_session_id)
-        validate_identifier(task_id)
-        validate_identifier(runtime_id)
-        validate_identifier(external_session_id)
-        validate_identifier(status)
-        now = _now()
-        with self.database.transaction() as connection:
-            connection.execute(
-                "insert into runtime_sessions(id, task_id, runtime_id, external_session_id, status, created_at, updated_at) "
-                "values (?, ?, ?, ?, ?, ?, ?)",
-                (runtime_session_id, task_id, runtime_id, external_session_id, status, now, now),
-            )
-
-    def append_runtime_event(
-        self, event_id: str, runtime_session_id: str, sequence: int, event_type: str, payload: dict
-    ) -> None:
-        validate_identifier(event_id)
-        validate_identifier(runtime_session_id)
-        _validate_positive_integer(sequence)
-        validate_identifier(event_type)
-        serialized = validate_json_object(payload)
-        now = _now()
-        with self.database.transaction() as connection:
-            connection.execute(
-                "insert into runtime_events(id, runtime_session_id, sequence, type, payload_json, created_at) "
-                "values (?, ?, ?, ?, ?, ?)",
-                (event_id, runtime_session_id, sequence, event_type, serialized, now),
-            )
-
-    def append_message(
-        self, message_id: str, session_id: str, sequence: int, role: str,
-        content: str, tool_call_id: str | None, metadata: dict,
-    ) -> None:
-        validate_identifier(message_id)
-        validate_identifier(session_id)
-        _validate_positive_integer(sequence)
-        validate_identifier(role)
-        validate_message_content(content)
-        if tool_call_id is not None:
-            validate_identifier(tool_call_id)
-        serialized = validate_json_object(metadata)
-        now = _now()
-        with self.database.transaction() as connection:
-            connection.execute(
-                "insert into messages(id, session_id, sequence, role, content, tool_call_id, "
-                "metadata_json, created_at) values (?, ?, ?, ?, ?, ?, ?, ?)",
-                (message_id, session_id, sequence, role, content, tool_call_id, serialized, now),
-            )
-
-    def save_checkpoint(
-        self, checkpoint_id: str, task_id: str, task_revision: int, payload: dict,
-    ) -> None:
-        validate_identifier(checkpoint_id)
-        validate_identifier(task_id)
-        _validate_nonnegative_integer(task_revision)
-        serialized = validate_json_object(payload)
-        now = _now()
-        with self.database.transaction() as connection:
-            connection.execute(
-                "insert into checkpoints(id, task_id, task_revision, payload_json, created_at) "
-                "values (?, ?, ?, ?, ?)",
-                (checkpoint_id, task_id, task_revision, serialized, now),
             )
 
     def save_model_profile(

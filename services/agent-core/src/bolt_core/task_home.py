@@ -90,7 +90,7 @@ class TaskHomeService:
 
     def _collect_goals(self) -> dict:
         try:
-            goals = self._harness.goal_service.unfinished_goals()
+            goals = self._harness.goals.unfinished_goals()
             goal_dicts = [g.to_dict() for g in goals]
             current = None
             for g in goal_dicts:

@@ -23,6 +23,10 @@ class PermissionQueue:
         self._items: dict[str, PendingPermission] = {}
         self._lock = RLock()
 
+    def restore(self, item: PendingPermission) -> None:
+        with self._lock:
+            self._items[item.request_id] = item
+
     def add(self, run_id: str, request: ToolRequest, decision: PermissionDecision, payload: dict | None = None) -> PendingPermission:
         with self._lock:
             item = PendingPermission(

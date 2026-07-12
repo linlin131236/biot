@@ -6,7 +6,13 @@ from bolt_core.review_gate import ReviewChecklist
 from bolt_core.tool_result_api import tool_result_dict
 
 
-def register(app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces, review_gate):
+def register(app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces, review_gate,
+             checkpoint_factory=None):
+    def checkpoint_for(workspace: str):
+        if workspace == harness.workspace:
+            return checkpoint_service
+        return checkpoint_factory(workspace) if checkpoint_factory else CheckpointService(workspace)
+
     @app.get("/terminal")
     def terminal_list() -> list[dict]:
         return harness.terminal_list()
@@ -25,60 +31,78 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
 
     @app.post("/goals")
     def create_goal(payload: dict) -> dict:
-        return harness.goal_service.create_goal(payload).to_dict()
+        try:
+            return harness.goals.create_goal(payload).to_dict()
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
 
     @app.get("/goals/unfinished")
     def unfinished_goals() -> list[dict]:
-        return [g.to_dict() for g in harness.goal_service.unfinished_goals()]
+        return [g.to_dict() for g in harness.goals.unfinished_goals()]
 
     @app.get("/goals/{goal_id}")
     def get_goal(goal_id: str) -> dict:
-        return harness.goal_service.get_goal(goal_id).to_dict()
+        try:
+            return harness.goals.get_goal(goal_id).to_dict()
+        except (KeyError, FileNotFoundError) as error:
+            raise HTTPException(status_code=404, detail="未找到目标") from error
 
     @app.post("/goals/{goal_id}/pause")
     def pause_goal(goal_id: str) -> dict:
-        return harness.goal_service.pause_goal(goal_id).to_dict()
+        try:
+            return harness.goals.pause_goal(goal_id).to_dict()
+        except (KeyError, FileNotFoundError) as error:
+            raise HTTPException(status_code=404, detail="未找到目标") from error
 
     @app.post("/goals/{goal_id}/resume")
     def resume_goal(goal_id: str) -> dict:
-        return harness.goal_service.resume_goal(goal_id).to_dict()
+        try:
+            return harness.goals.resume_goal(goal_id).to_dict()
+        except (KeyError, FileNotFoundError) as error:
+            raise HTTPException(status_code=404, detail="未找到目标") from error
 
     @app.post("/goals/{goal_id}/clear")
     def clear_goal(goal_id: str) -> dict:
-        return harness.goal_service.clear_goal(goal_id).to_dict()
+        try:
+            return harness.goals.clear_goal(goal_id).to_dict()
+        except (KeyError, FileNotFoundError) as error:
+            raise HTTPException(status_code=404, detail="未找到目标") from error
 
     @app.get("/goals/{goal_id}/evidence")
     def goal_evidence(goal_id: str) -> list[dict]:
-        return [e.__dict__ for e in harness.goal_service.goal_evidence(goal_id)]
+        return [e.__dict__ for e in harness.goals.goal_evidence(goal_id)]
 
     @app.get("/goals/{goal_id}/budget")
     def goal_budget(goal_id: str) -> dict:
-        return harness.goal_service.goal_budget(goal_id)
+        return harness.goals.goal_budget(goal_id)
 
     @app.post("/conversations")
     def create_conversation(payload: dict) -> dict:
-        cid = payload.get("id", f"conv_{__import__('uuid').uuid4().hex[:8]}")
-        system = payload.get("system_prompt", "")
-        if system:
-            from bolt_core.conversation import ConversationMessage
-            harness.conversation_store.add(cid, ConversationMessage(role="system", content=system))
+        try:
+            cid = harness.conversations.create(payload.get("id"), payload.get("system_prompt", ""))
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return {"id": cid}
 
     @app.get("/conversations")
     def list_conversations() -> list[str]:
-        return harness.conversation_store.list_conversations()
+        return harness.conversations.list_conversations()
 
     @app.get("/conversations/{conversation_id}")
     def get_conversation(conversation_id: str) -> list[dict]:
-        return [m.to_dict() for m in harness.conversation_store.history(conversation_id)]
+        return harness.conversations.history(conversation_id)
 
     @app.post("/conversations/{conversation_id}/messages")
     def add_message(conversation_id: str, payload: dict) -> dict:
-        from bolt_core.conversation import ConversationMessage
-        msg = ConversationMessage(role=payload.get("role", "user"),
-                                  content=payload.get("content", ""),
-                                  metadata=payload.get("metadata") or {})
-        harness.conversation_store.add(conversation_id, msg)
+        try:
+            harness.conversations.add_message(
+                conversation_id,
+                payload.get("role", "user"),
+                payload.get("content", ""),
+                payload.get("metadata") or {},
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         return {"status": "ok"}
 
     @app.get("/runs/{run_id}/timeline")
@@ -88,7 +112,7 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
     @app.post("/checkpoints")
     def create_checkpoint(payload: dict) -> dict:
         workspace = checkpoint_workspace(payload, harness.runs, harness.workspace)
-        service = CheckpointService(workspace) if workspace != harness.workspace else checkpoint_service
+        service = checkpoint_for(workspace)
         checkpoint = service.create(run_id=str(payload.get("run_id", "")),
                                     goal_id=str(payload.get("goal_id", "")),
                                     changed_files=string_list(payload.get("changed_files")),
@@ -103,7 +127,7 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
         target = checkpoint_workspaces.get(checkpoint_id, harness.workspace)
         if workspace is not None and workspace != target:
             raise HTTPException(status_code=400, detail="检查点工作区不允许由请求覆盖")
-        service = CheckpointService(target) if target != harness.workspace else checkpoint_service
+        service = checkpoint_for(target)
         checkpoint = service.load(checkpoint_id)
         return None if checkpoint is None else checkpoint.to_dict()
 
@@ -115,7 +139,7 @@ def register(app, harness, result_ingestion, checkpoint_service, checkpoint_work
         target = checkpoint_workspaces.get(checkpoint_id, harness.workspace)
         if workspace is not None and workspace != target:
             raise HTTPException(status_code=400, detail="检查点工作区不允许由请求覆盖")
-        service = CheckpointService(target) if target != harness.workspace else checkpoint_service
+        service = checkpoint_for(target)
         result = service.restore(checkpoint_id, confirm_restore=True)
         if result["status"] == "not_found":
             raise HTTPException(status_code=404, detail="未找到检查点")

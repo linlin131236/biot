@@ -4,7 +4,11 @@ import sqlite3
 import pytest
 
 from bolt_core.persistence.database import Database
-from bolt_core.persistence.repositories import ControlPlaneRepository, PersistenceConflictError
+from bolt_core.persistence.repositories import (
+    ControlPlaneRepository,
+    PersistenceConflictError,
+    RuntimeEventSequenceError,
+)
 
 
 _SECRET_CANARY = "C4N4RY7D83CBB5XX"
@@ -153,7 +157,10 @@ def test_repository_rejects_invalid_foreign_key_and_duplicate_event_sequence(tmp
     repository.create_runtime_session("runtime_session_123", "task_123", "bolt-native", "external_123", "running")
     repository.append_runtime_event("event_123", "runtime_session_123", 1, "status", {})
 
-    with pytest.raises(sqlite3.IntegrityError):
+    # A duplicate sequence is now rejected before touching the database by the
+    # strict-monotonic guard; the unique(runtime_session_id, sequence) constraint
+    # remains as defense in depth.
+    with pytest.raises(RuntimeEventSequenceError):
         repository.append_runtime_event("event_124", "runtime_session_123", 1, "status", {})
 
 

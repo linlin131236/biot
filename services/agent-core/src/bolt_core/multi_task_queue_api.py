@@ -23,7 +23,7 @@ def create_multi_task_queue_router(harness, closure_service, planner_service) ->
         except Exception:
             pass
         try:
-            goals = [g.to_dict() for g in harness.goal_service.unfinished_goals()]
+            goals = [g.to_dict() for g in harness.goals.unfinished_goals()]
         except Exception:
             pass
         try:

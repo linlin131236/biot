@@ -31,6 +31,9 @@ class FakeGoalService:
 class FakeHarness:
     def __init__(self, goal_service=None, permissions=None):
         self.goal_service = goal_service or FakeGoalService()
+        # Readers now consume the goal coordinator (harness.goals); in these
+        # unit tests the fake goal service satisfies the same read interface.
+        self.goals = self.goal_service
         self.permissions = permissions or FakePermissions()
 
 

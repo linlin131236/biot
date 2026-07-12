@@ -3,18 +3,25 @@ from uuid import uuid4
 
 from bolt_core.agent_loop import AgentLoop, AgentLoopResult, AgentStepResult
 from bolt_core.conversation import ConversationStore
+from bolt_core.conversation_coordinator import ConversationCoordinator
 from bolt_core.document_gardener import DocumentGardener
 from bolt_core.failure_memory import ToolFailure
 from bolt_core.file_writer import apply_file_write, change_set_json, propose_file_write
+from bolt_core.harness_file_changes import (
+    apply_pending_file_patch, apply_pending_file_write, queue_file_patch,
+    queue_file_write,
+)
 from bolt_core.memory_consolidator import MemoryConsolidationResult, MemoryConsolidator
 from bolt_core.memory_store import MemoryRecord, MemoryStore
 from bolt_core.model_settings import ModelSettingsStatus, ModelSettingsStore
-from bolt_core.patch_engine import build_change_set, apply_change_set
+from bolt_core.patch_engine import ChangeSet, apply_change_set, build_change_set
 from bolt_core.goal_service import GoalService
+from bolt_core.goal_coordinator import GoalCoordinator
 from bolt_core.harness_state import HarnessRun, HarnessState
 from bolt_core.permission_gate import PermissionGate
 from bolt_core.permission_queue import PendingPermission, PermissionQueue
 from bolt_core.perception import PerceptionService
+from bolt_core.path_guard import PathGuard
 from bolt_core.perception_types import PerceptionSnapshot, dataclass_dict
 from bolt_core.terminal_service import TerminalService
 from bolt_core.task_closure_recorder import TaskClosureRecorder
@@ -24,6 +31,11 @@ from bolt_core.tool_protocol import ToolRequest, ToolResult
 from bolt_core.trace import TraceEvent, TraceLog
 from bolt_core.workspace_lock import resolve_run_workspace
 from bolt_core.workspace_credential_gate import LockedWorkspace
+from bolt_core.persistence.runtime_harness import (
+    assert_run_open, clear_pending_permission, ensure_runtime, finish_runtime,
+    finish_step_runtime, persist_pending_permission, register_run, restore_runs,
+    update_runtime,
+)
 class Harness:
     def __init__(self, workspace: str, memory_store: MemoryStore | None = None,
                  memory_db_path: str | None = None,
@@ -41,28 +53,35 @@ class Harness:
         self.consolidator = MemoryConsolidator()
         self.terminal = TerminalService(self.workspace)
         self.goal_service = GoalService(self.workspace)
-        self.task_closure_service = task_closure_service
-        self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
-        self.conversation_store = ConversationStore(str(Path(self.workspace) / ".bolt" / "conversations.db"))
-        self._state = HarnessState()
-        self.runs = self._state.runs
-        self.traces = self._state.traces
+        self.task_closure_service = task_closure_service; self.task_closure_recorder = TaskClosureRecorder(task_closure_service)
+        self.persistence = persistence
+        self._workspace_id = persistence.save_workspace(self.workspace) if persistence is not None else None
+        self.conversation_store = None if persistence is not None else ConversationStore(str(Path(self.workspace) / ".bolt" / "conversations.db"))
+        self.conversations = ConversationCoordinator(self.workspace, persistence, self.conversation_store)
+        self.goals = GoalCoordinator(self.workspace, persistence, self.goal_service)
+        self._state = HarnessState(); self.runs = self._state.runs; self.traces = self._state.traces
         self._state_lock = self._state.lock
+        restore_runs(self)
 
     def create_run(self, goal: str, workspace: str | None = None) -> HarnessRun:
         run = HarnessRun(id=f"run_{uuid4().hex[:12]}", goal=goal, workspace=resolve_run_workspace(workspace, self.workspace, self.locked_workspace))
-        trace = self._state.register(run)
+        trace = self._register_run(run)
+        self._ensure_repository_runtime(run)
         trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         self._capture_perception(run)
         return run
 
     def register_internal_run(self, run_id: str, goal: str, workspace: str | None = None) -> HarnessRun:
+        if run_id in self._state.runs:
+            return self._state.runs[run_id]
         run = HarnessRun(id=run_id, goal=goal, workspace=resolve_run_workspace(workspace, self.workspace, self.locked_workspace))
-        trace = self._state.register(run)
+        trace = self._register_run(run)
+        self._ensure_repository_runtime(run)
         trace.record("run.created", {"goal": goal, "workspace": run.workspace})
         return run
 
     def submit_tool_request(self, run_id: str, request: ToolRequest) -> ToolResult:
+        assert_run_open(self, run_id)
         run_immediately = False
         with self._state_lock:
             self._trace_log(run_id).record("tool.requested", {"tool": request.tool})
@@ -78,7 +97,8 @@ class Harness:
             if request.tool == "file.patch":
                 return self._record_task_closure_tool_result(run_id, self._queue_file_patch(run_id, request, decision))
             if not run_immediately:
-                self.permissions.add(run_id, request, decision)
+                pending = self.permissions.add(run_id, request, decision)
+                persist_pending_permission(self, run_id, pending)
                 self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
                 return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
         execution = self._execute(run_id, request)
@@ -89,6 +109,7 @@ class Harness:
     def approve_permission(self, request_id: str) -> ToolResult:
         with self._state_lock:
             item = self.permissions.approve(request_id)
+            clear_pending_permission(self, item.run_id, item.request_id)
             self._trace_log(item.run_id).record("permission.approved", {"request_id": request_id})
             if item.tool == "file.write":
                 return self._apply_file_write(item)
@@ -101,6 +122,7 @@ class Harness:
     def reject_permission(self, request_id: str) -> ToolResult:
         with self._state_lock:
             item = self.permissions.reject(request_id)
+            clear_pending_permission(self, item.run_id, item.request_id)
             self._trace_log(item.run_id).record("permission.rejected", {"request_id": request_id})
             if item.tool in ("file.write", "file.patch"):
                 self._trace_log(item.run_id).record("change.rejected", {"request_id": request_id})
@@ -143,26 +165,47 @@ class Harness:
         return result
 
     def run_agent_step(self, run_id: str) -> AgentStepResult:
+        assert_run_open(self, run_id)
         run, trace = self._run(run_id), self._trace_log(run_id)
         status = self.model_settings.status()
         if status.state == "blocked":
             trace.record("llm.blocked", {"reason": status.blocked_reason})
+            finish_step_runtime(self, run_id, "failed")
             return AgentStepResult("failed", "", None, status.blocked_reason)
         config = self.model_settings.config()
         memories = self._agent_memories()
-        return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories, self.locked_workspace_binding)
+        result = self.agent_loop.run_step(
+            run.goal, config, self.p0_context(), trace,
+            lambda req: self.submit_tool_request(run_id, req), memories,
+            self.locked_workspace_binding,
+        )
+        if result.status in ("completed", "failed"):
+            finish_step_runtime(self, run_id, result.status)
+        return result
 
     def run_agent_loop(self, run_id: str, max_steps: int = 50) -> AgentLoopResult:
+        assert_run_open(self, run_id)
         run, trace = self._run(run_id), self._trace_log(run_id)
         status = self.model_settings.status()
         if status.state == "blocked":
             trace.record("llm.blocked", {"reason": status.blocked_reason})
+            if self.persistence is not None and run.id != "run_execution_bridge":
+                finish_runtime(self, run_id, "failed")
             step = AgentStepResult("failed", "", None, status.blocked_reason)
             return AgentLoopResult("failed", 0, step, status.blocked_reason)
         config = self.model_settings.config()
         closure_id = self.task_closure_recorder.start_loop(run_id)
-        result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps, self.locked_workspace_binding)
-        self.task_closure_recorder.record_loop_result(closure_id, result, max_steps)
+        try:
+            result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps, self.locked_workspace_binding)
+            self.task_closure_recorder.record_loop_result(closure_id, result, max_steps)
+        except Exception:
+            if self.persistence is not None and run.id != "run_execution_bridge": finish_runtime(self, run_id, "failed")
+            raise
+        if self.persistence is not None and run.id != "run_execution_bridge":
+            if result.status == "pending_permission":
+                update_runtime(self, run_id, "waiting_approval")
+            else:
+                finish_runtime(self, run_id, _runtime_status(result.status))
         return result
 
     def terminal_poll(self, session_id: str) -> dict:
@@ -217,67 +260,16 @@ class Harness:
         return execution
 
     def _queue_file_write(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
-        path = str(request.payload.get("path", ""))
-        proposed = str(request.payload.get("proposed_content", ""))
-        proposal = propose_file_write(path, proposed, self._workspace(run_id))
-        if proposal.status != "pending_review" or proposal.change is None:
-            return self._deny(request, proposal.error or "change proposal failed")
-        payload = {**request.payload, "change_set": proposal.change.__dict__}
-        self.permissions.add(run_id, request, decision, payload)
-        self._trace_log(run_id).record("change.proposed", {"request_id": request.id})
-        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
-        return ToolResult.pending(request.id, change_set_json(proposal.change))
+        return queue_file_write(self, run_id, request, decision, propose_file_write, change_set_json)
 
     def _queue_file_patch(self, run_id: str, request: ToolRequest, decision) -> ToolResult:
-        path = str(request.payload.get("path", ""))
-        old_string = str(request.payload.get("old_string", ""))
-        new_string = str(request.payload.get("new_string", ""))
-        from bolt_core.path_guard import PathGuard
-        ws = self._workspace(run_id)
-        guard = PathGuard(ws)
-        check = guard.check(path)
-        if not check.allowed:
-            return self._deny(request, check.reason)
-        target = check.path
-        if not target.exists():
-            return self._deny(request, f"file not found: {path}")
-        try:
-            original = target.read_text(encoding="utf-8")
-        except OSError as exc:
-            return self._deny(request, f"read error: {exc}")
-        count = original.count(old_string)
-        if count == 0:
-            return self._deny(request, "old_string not found in file")
-        if count > 1:
-            return self._deny(request, f"old_string appears {count} times, must be unique")
-        patched = original.replace(old_string, new_string, 1)
-        change = build_change_set(path, original, patched)
-        payload = {**request.payload, "change_set": change.__dict__}
-        self.permissions.add(run_id, request, decision, payload)
-        self._trace_log(run_id).record("change.proposed", {"request_id": request.id})
-        self._trace_log(run_id).record("permission.pending", {"request_id": request.id})
-        return ToolResult.pending(request.id, change_set_json(change))
+        return queue_file_patch(self, run_id, request, decision, PathGuard, build_change_set, change_set_json)
 
     def _apply_file_write(self, item: PendingPermission) -> ToolResult:
-        allowed, reason = apply_file_write(item.payload["change_set"], self._workspace(item.run_id))
-        event = "change.applied" if allowed else "change.failed"
-        self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
-        if allowed:
-            return ToolResult.executed(item.request_id, reason)
-        request = ToolRequest(item.request_id, item.tool, item.operation, item.payload)
-        self._record_execution_failure(request, reason)
-        return ToolResult.failed(item.request_id, reason)
+        return apply_pending_file_write(self, item, apply_file_write)
 
     def _apply_file_patch(self, item: PendingPermission) -> ToolResult:
-        change_set = item.payload.get("change_set", {})
-        from bolt_core.patch_engine import ChangeSet
-        change = ChangeSet(**change_set)
-        decision = apply_change_set(change, self._workspace(item.run_id))
-        event = "change.applied" if decision.allowed else "change.failed"
-        self._trace_log(item.run_id).record(event, {"request_id": item.request_id})
-        if decision.allowed:
-            return ToolResult.executed(item.request_id, decision.reason)
-        return ToolResult.failed(item.request_id, decision.reason)
+        return apply_pending_file_patch(self, item, ChangeSet, apply_change_set)
 
     def _result_from_execution(self, request: ToolRequest, execution: ToolExecution) -> ToolResult:
         if execution.status == "executed":
@@ -297,3 +289,9 @@ class Harness:
     def _workspace(self, run_id: str) -> str: return self._run(run_id).workspace
     def _run(self, run_id: str) -> HarnessRun: return self._state.run(run_id)
     def _trace_log(self, run_id: str) -> TraceLog: return self._state.trace(run_id)
+    def _register_run(self, run: HarnessRun) -> TraceLog: return register_run(self, run)
+    def _ensure_repository_runtime(self, run: HarnessRun) -> None: ensure_runtime(self, run)
+
+
+def _runtime_status(status: str) -> str:
+    return "completed" if status == "completed" else "failed"

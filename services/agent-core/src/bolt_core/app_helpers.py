@@ -5,7 +5,7 @@ from bolt_core.tool_result_api import tool_result_dict
 
 def goal_exists(harness: Harness, goal_id: str) -> bool:
     try:
-        harness.goal_service.get_goal(goal_id)
+        harness.goals.get_goal(goal_id)
         return True
     except Exception:
         return False

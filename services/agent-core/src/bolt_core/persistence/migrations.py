@@ -169,4 +169,65 @@ def _create_v1_schema(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
-MIGRATIONS = (Migration(1, "initial_control_plane", _create_v1_schema, _V1_SCHEMA),)
+_V2_SCHEMA = (
+    """create table task_closures (
+            id text primary key,
+            workspace_id text not null references workspaces(workspace_id) on delete restrict,
+            status text not null,
+            revision integer not null,
+            payload_json text not null,
+            created_at text not null,
+            updated_at text not null
+        )""",
+)
+
+
+def _create_v2_schema(connection: sqlite3.Connection) -> None:
+    for statement in _V2_SCHEMA:
+        connection.execute(statement)
+
+
+_V3_SCHEMA = (
+    """create table execution_queue_items (
+            id text primary key,
+            workspace_id text not null references workspaces(workspace_id) on delete restrict,
+            status text not null,
+            revision integer not null,
+            payload_json text not null,
+            created_at text not null,
+            updated_at text not null
+        )""",
+)
+
+
+def _create_v3_schema(connection: sqlite3.Connection) -> None:
+    for statement in _V3_SCHEMA:
+        connection.execute(statement)
+
+
+_V4_SCHEMA = (
+    """create table execution_handoffs (
+            id text primary key,
+            workspace_id text not null references workspaces(workspace_id) on delete restrict,
+            queue_item_id text not null references execution_queue_items(id) on delete restrict,
+            closure_id text not null references task_closures(id) on delete restrict,
+            status text not null,
+            revision integer not null,
+            payload_json text not null,
+            created_at text not null,
+            updated_at text not null
+        )""",
+)
+
+
+def _create_v4_schema(connection: sqlite3.Connection) -> None:
+    for statement in _V4_SCHEMA:
+        connection.execute(statement)
+
+
+MIGRATIONS = (
+    Migration(1, "initial_control_plane", _create_v1_schema, _V1_SCHEMA),
+    Migration(2, "task_closures", _create_v2_schema, _V2_SCHEMA),
+    Migration(3, "execution_queue_items", _create_v3_schema, _V3_SCHEMA),
+    Migration(4, "execution_handoffs", _create_v4_schema, _V4_SCHEMA),
+)

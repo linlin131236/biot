@@ -11,6 +11,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import uuid4
 
+from bolt_core.persistence.artifact_store import ArtifactStore
+
 _MAX_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 _SECRET_PATTERN = re.compile(r"sk-[a-zA-Z0-9]{20,}")
 _CP_ID_PATTERN = re.compile(r"^cp_[a-f0-9]{8}$")
@@ -57,17 +59,27 @@ class Checkpoint:
 
 
 class CheckpointService:
-    def __init__(self, workspace: str = "") -> None:
+    def __init__(
+        self, workspace: str = "", repository=None,
+        workspace_id: str | None = None, artifact_store: ArtifactStore | None = None,
+    ) -> None:
+        if repository is not None and workspace_id is None:
+            raise ValueError("repository-backed checkpoints require a workspace_id")
         self._workspace = workspace
+        self._repository = repository
+        self._workspace_id = workspace_id
+        self._artifacts = artifact_store
         self._dir = Path(workspace) / ".bolt" / "checkpoints" if workspace else Path(
             ".bolt") / "checkpoints"
-        self._dir.mkdir(parents=True, exist_ok=True)
+        if repository is None:
+            self._dir.mkdir(parents=True, exist_ok=True)
 
     def create(self, run_id: str, goal_id: str,
                changed_files: list[str] | None = None,
                constraints: list[str] | None = None,
                pending_permissions: list[str] | None = None,
-               evidence_refs: list[str] | None = None) -> Checkpoint:
+               evidence_refs: list[str] | None = None,
+               task_revision: int | None = None) -> Checkpoint:
         cp_id = f"cp_{uuid4().hex[:8]}"
         contents = {}
         if changed_files and self._workspace:
@@ -96,6 +108,8 @@ class CheckpointService:
             pending_permissions=pending_permissions or [],
             evidence_refs=evidence_refs or [],
         )
+        if self._repository is not None:
+            return self._persist_repository(cp, task_revision)
         # Persist
         cp_path = self._dir / f"{cp_id}.json"
         cp_path.write_text(json.dumps(cp.to_dict(), indent=2), encoding="utf-8")
@@ -104,6 +118,22 @@ class CheckpointService:
     def load(self, cp_id: str) -> Checkpoint | None:
         if not _CP_ID_PATTERN.match(cp_id):
             return None
+        if self._repository is not None:
+            try:
+                record = self._repository.load_checkpoint(cp_id)
+            except KeyError:
+                return None
+            payload = dict(record["payload"])
+            return Checkpoint(
+                id=record["id"],
+                run_id=payload.get("run_id", ""),
+                goal_id=record["task_id"],
+                changed_files=payload.get("changed_files", []),
+                file_contents=self._load_artifacts(payload.get("file_contents")),
+                constraints=payload.get("constraints", []),
+                pending_permissions=payload.get("pending_permissions", []),
+                evidence_refs=payload.get("evidence_refs", []),
+            )
         cp_path = self._dir / f"{cp_id}.json"
         if not cp_path.is_file():
             return None
@@ -120,6 +150,43 @@ class CheckpointService:
             pending_permissions=data.get("pending_permissions", []),
             evidence_refs=data.get("evidence_refs", []),
         )
+
+    def _persist_repository(self, checkpoint: Checkpoint, task_revision: int | None) -> Checkpoint:
+        task = self._repository.load_task(checkpoint.goal_id)
+        revision = task["revision"] if task_revision is None else task_revision
+        file_contents = checkpoint.file_contents or {}
+        if self._artifacts is not None:
+            file_contents = {
+                path: {
+                    "artifact_id": self._artifacts.store(checkpoint.goal_id, content)["artifact_id"],
+                    "summary": content[:512],
+                }
+                for path, content in file_contents.items()
+            }
+        payload = checkpoint.to_dict()
+        payload.pop("id", None)
+        payload["file_contents"] = file_contents or None
+        self._repository.save_checkpoint(
+            checkpoint.id, checkpoint.goal_id, revision, payload,
+        )
+        return checkpoint
+
+    def _load_artifacts(self, value: object) -> dict[str, str] | None:
+        if not isinstance(value, dict):
+            return None
+        if self._artifacts is None:
+            return {
+                path: content for path, content in value.items()
+                if isinstance(content, str)
+            } or None
+        loaded: dict[str, str] = {}
+        for path, reference in value.items():
+            if not isinstance(reference, dict):
+                continue
+            artifact_id = reference.get("artifact_id")
+            if isinstance(artifact_id, str):
+                loaded[path] = self._artifacts.load(artifact_id)
+        return loaded or None
 
     def restore(self, cp_id: str, confirm_restore: bool = False) -> dict:
         if not confirm_restore:

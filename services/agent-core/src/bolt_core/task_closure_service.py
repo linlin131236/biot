@@ -16,6 +16,7 @@ from bolt_core.task_verification import (
 
 from bolt_core.execution_audit_store import ExecutionAuditStore
 from bolt_core.evidence_redactor import redact
+from bolt_core.persistence.closure_repository import restore as restore_repository, save as save_repository
 
 
 @dataclass
@@ -27,10 +28,24 @@ class TaskClosureRecord:
 class TaskClosureService:
     """Records task closure evidence. Does NOT execute tools, push, release, or approve permissions."""
 
-    def __init__(self, store: ExecutionAuditStore | None = None) -> None:
+    def __init__(
+        self,
+        store: ExecutionAuditStore | None = None,
+        repository=None,
+        workspace_id: str | None = None,
+    ) -> None:
+        if repository is not None and store is not None:
+            raise ValueError("closure store is single-source: pass repository OR store, not both")
+        if repository is not None and workspace_id is None:
+            raise ValueError("repository-backed closures require a workspace_id")
         self._store: dict[str, TaskClosureRecord] = {}
         self._audit_store = store
-        if store is not None:
+        self._repository = repository
+        self._workspace_id = workspace_id
+        self._revisions: dict[str, int] = {}
+        if repository is not None:
+            restore_repository(self)
+        elif store is not None:
             self._restore(store.load().closure_records)
 
     def start(self, objective: str, template_id: TaskTemplateId,
@@ -276,6 +291,9 @@ class TaskClosureService:
             self._store[closure.id] = TaskClosureRecord(closure=closure, events=data.get("events", []))
 
     def _save_closures(self) -> None:
+        if self._repository is not None:
+            save_repository(self)
+            return
         if self._audit_store is not None:
             records = [{**record.closure.__dict__, "events": record.events} for record in self._store.values()]
             self._audit_store.save_closure_records(records)

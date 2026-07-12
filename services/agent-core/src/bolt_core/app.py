@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Query
 from bolt_core.model_settings import ModelSettingsConflictError
 from bolt_core.checkpoint import CheckpointService
+from bolt_core.persistence.artifact_store import ArtifactStore
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
 from bolt_core.execution_permission_bridge import ExecutionPermissionBridgeService
@@ -112,6 +113,7 @@ from bolt_core.release_readiness import ReleaseReadinessService
 from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.persistence.database import Database
 from bolt_core.persistence.repositories import ControlPlaneRepository
+from bolt_core.persistence.recovery import RecoveryScanner
 from bolt_core.app_routes import register as register_simple_routes
 def create_app(
     execution_audit_path: str | Path | None = None,
@@ -133,21 +135,51 @@ def create_app(
     app.state.persistence = persistence
     install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
     workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"), lock_default_workspace)
-    audit_store = ExecutionAuditStore(resolve_execution_audit_path(execution_audit_path, workspace_root))
+    audit_path = (
+        resolve_execution_audit_path(execution_audit_path, workspace_root)
+        if persistence is None
+        else Path(persistence.database.path).with_name("__legacy_execution_audit_disabled__.json")
+    )
+    audit_store = ExecutionAuditStore(audit_path)
     audit_store_status = "ok"
     audit_store_error = ""
+    closure_workspace_id = (
+        persistence.save_workspace(str(workspace_root)) if persistence is not None else None
+    )
+    if persistence is not None:
+        RecoveryScanner(persistence).recover_workspace(closure_workspace_id)
+        persistence.reconcile_runtime_sessions(closure_workspace_id)
     try:
-        task_closure_service = TaskClosureService(audit_store)
-        execution_queue_service = ExecutionQueueService(audit_store)
-        execution_handoff_service = ExecutionHandoffService(audit_store)
+        if persistence is not None:
+            # Single source of truth: closures persist through the repository's
+            # dedicated task_closures table, never the legacy execution-audit JSON.
+            task_closure_service = TaskClosureService(
+                repository=persistence, workspace_id=closure_workspace_id
+            )
+            execution_queue_service = ExecutionQueueService(
+                repository=persistence, workspace_id=closure_workspace_id
+            )
+            execution_handoff_service = ExecutionHandoffService(
+                repository=persistence, workspace_id=closure_workspace_id
+            )
+        else:
+            task_closure_service = TaskClosureService(audit_store)
+            execution_queue_service = ExecutionQueueService(audit_store)
+            execution_handoff_service = ExecutionHandoffService(audit_store)
     except ExecutionAuditStoreError as exc:
         audit_store_status = "degraded"
         audit_store_error = str(exc)
-        task_closure_service = TaskClosureService(None)
+        task_closure_service = (
+            TaskClosureService(repository=persistence, workspace_id=closure_workspace_id)
+            if persistence is not None
+            else TaskClosureService(None)
+        )
         execution_queue_service = ExecutionQueueService(None)
         execution_handoff_service = ExecutionHandoffService(None)
     harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace, locked_workspace_binding=locked_workspace_binding, model_gateway=model_gateway, persistence=persistence, credential_store=credential_store)
     app.state.harness = harness
+    app.state.execution_queue_service = execution_queue_service
+    app.state.execution_handoff_service = execution_handoff_service
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
@@ -159,7 +191,25 @@ def create_app(
     local_checklist_service = LocalReleaseChecklistService(str(project_dir or Path.cwd()), audit_store)
     recovery_policy_service = RecoveryPolicyService()
     planner_service = PlannerTaskGraphService()
-    checkpoint_service = CheckpointService(harness.workspace)
+    checkpoint_service = (
+        CheckpointService(
+            harness.workspace,
+            repository=persistence,
+            workspace_id=closure_workspace_id,
+            artifact_store=ArtifactStore(persistence.database.path.parent.parent),
+        )
+        if persistence is not None else CheckpointService(harness.workspace)
+    )
+    app.state.checkpoint_service = checkpoint_service
+    checkpoint_factory = (
+        (lambda target: CheckpointService(
+            target,
+            repository=persistence,
+            workspace_id=persistence.save_workspace(target),
+            artifact_store=ArtifactStore(persistence.database.path.parent.parent),
+        ))
+        if persistence is not None else None
+    )
     checkpoint_workspaces: dict[str, str] = {}
     review_gate = ReviewGate()
     gate_freeze_service = get_global_gate_freeze_service()
@@ -249,7 +299,10 @@ def create_app(
         credential_lifecycle=credential_lifecycle,
         credential_configs=credential_configs,
     ))
-    app.include_router(create_workspace_router(str(project_dir or Path.cwd())))
+    app.include_router(create_workspace_router(
+        str(project_dir or Path.cwd()), persistence=persistence,
+        workspace_id=closure_workspace_id,
+    ))
     app.include_router(create_desktop_beta_dogfood_router())
     app.include_router(create_product_workbench_router(str(project_dir or Path.cwd())))
     app.include_router(create_product_workbench_dogfood_router(str(project_dir or Path.cwd())))
@@ -338,7 +391,10 @@ def create_app(
         result_ingestion.ingest(result)
         return tool_result_dict(result)
 
-    register_simple_routes(app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces, review_gate)
+    register_simple_routes(
+        app, harness, result_ingestion, checkpoint_service, checkpoint_workspaces,
+        review_gate, checkpoint_factory,
+    )
 
     return app
 

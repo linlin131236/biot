@@ -11,7 +11,7 @@ from bolt_core.persistence.migrations import MIGRATIONS, Migration
 _FIXTURE = Path(__file__).parent / "fixtures" / "persistence" / "v0-empty.sqlite3"
 
 
-def test_empty_database_migrates_to_v1_with_required_tables(tmp_path):
+def test_empty_database_migrates_through_current_schema_with_required_tables(tmp_path):
     database = Database.open(tmp_path / "user-data")
 
     with database.connection() as connection:
@@ -28,10 +28,12 @@ def test_empty_database_migrates_to_v1_with_required_tables(tmp_path):
         "schema_migrations", "workspaces", "sessions", "messages", "tasks",
         "runtime_sessions", "runtime_events", "checkpoints", "model_profiles",
     }
-    assert [(row[0], row[1]) for row in versions] == [(1, MIGRATIONS[0].checksum)]
+    assert [(row[0], row[1]) for row in versions] == [
+        (migration.version, migration.checksum) for migration in MIGRATIONS
+    ]
 
 
-def test_empty_v0_fixture_upgrades_to_v1(tmp_path):
+def test_empty_v0_fixture_upgrades_to_current_schema(tmp_path):
     data_root = tmp_path / "user-data"
     target = data_root / "state" / "bolt.sqlite3"
     target.parent.mkdir(parents=True)
@@ -110,6 +112,7 @@ def test_open_detects_tampered_actual_migration_content(tmp_path):
 
     migrations.MIGRATIONS = (
         Migration(1, "initial_control_plane", tampered_initial_schema),
+        *original_migrations[1:],
     )
     try:
         recovered = Database.open(root)
