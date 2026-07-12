@@ -203,17 +203,41 @@ async def test_memory_record_query_resolve_and_consolidate_endpoints():
 
 
 @pytest.mark.anyio
-async def test_model_settings_endpoint_ignores_plaintext_api_key_payload():
-    async with _client() as client:
-        save_response = await client.post(
-            "/model/settings",
-            json={"provider": "openai-compatible", "base_url": "https://api.example", "api_key": "secret", "model": "test"},
-        )
-        status_response = await client.get("/model/settings")
+async def test_model_settings_endpoint_returns_conflict_for_stale_revision(tmp_path):
+    user_data = tmp_path / "user-data"
+    app = create_app(project_dir=tmp_path, persistence_root=user_data)
+    transport = ASGITransport(app=app, raise_app_exceptions=False)
+    payload = {
+        "revision": 0,
+        "provider": "openai-compatible",
+        "base_url": "https://api.example",
+        "model": "first-model",
+    }
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        assert (await client.post("/model/settings", json=payload)).status_code == 200
+        assert (await client.post("/model/settings", json={"revision": 0, "model": "second-model"})).status_code == 200
+        response = await client.post("/model/settings", json={"revision": 0, "model": "stale-model"})
 
-    assert save_response.json()["has_api_key"] is False
-    assert status_response.json()["model"] == "test"
-    assert "secret" not in str(status_response.json())
+    assert response.status_code == 409
+    assert response.json() == {"detail": "model settings revision conflict"}
+
+
+@pytest.mark.anyio
+async def test_model_settings_endpoint_rejects_plaintext_api_key_payload():
+    async with _client() as client:
+        response = await client.post(
+            "/model/settings",
+            json={
+                "revision": 0,
+                "provider": "openai-compatible",
+                "base_url": "https://api.example",
+                "api_key": "synthetic-secret-canary-1234567890",
+                "model": "test",
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "sensitive model settings fields are not accepted"
 
 
 @pytest.mark.anyio

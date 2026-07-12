@@ -227,6 +227,18 @@ class ControlPlaneRepository:
         return self.load_model_profile(profile_id)
 
 
+    def delete_model_profile(self, profile_id: str, expected_revision: int) -> None:
+        validate_identifier(profile_id)
+        _validate_nonnegative_integer(expected_revision)
+        with self.database.transaction() as connection:
+            cursor = connection.execute(
+                "delete from model_profiles where id = ? and revision = ?",
+                (profile_id, expected_revision),
+            )
+        if cursor.rowcount != 1:
+            raise PersistenceConflictError("model profile revision conflict")
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 

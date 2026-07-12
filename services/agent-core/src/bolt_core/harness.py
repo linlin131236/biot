@@ -29,12 +29,16 @@ class Harness:
                  memory_db_path: str | None = None,
                  task_closure_service: TaskClosureService | None = None,
                  locked_workspace: str | None = None, model_gateway=None,
-                 locked_workspace_binding: LockedWorkspace | None = None) -> None:
+                 locked_workspace_binding: LockedWorkspace | None = None, persistence=None,
+                 credential_store=None) -> None:
         self.workspace = str(Path(workspace).resolve())
         self.locked_workspace = str(Path(locked_workspace).resolve()) if locked_workspace else None
         self.memory = memory_store or MemoryStore(memory_db_path)
         self.permissions = PermissionQueue()
-        self.model_settings = ModelSettingsStore()
+        self.model_settings = ModelSettingsStore(
+            repository=persistence,
+            credential_store=credential_store,
+        )
         self.locked_workspace_binding = locked_workspace_binding
         self.agent_loop = AgentLoop(gateway=model_gateway)
         self.consolidator = MemoryConsolidator()
@@ -82,9 +86,7 @@ class Harness:
                 return self._record_task_closure_tool_result(run_id, ToolResult.pending(request.id, decision.reason))
         execution = self._execute(run_id, request)
         return self._record_task_closure_tool_result(run_id, self._result_from_execution(request, execution))
-
-    def trace(self, run_id: str) -> list[TraceEvent]:
-        return self._trace_log(run_id).events()
+    def trace(self, run_id: str) -> list[TraceEvent]: return self._trace_log(run_id).events()
     def pending_permissions(self) -> list[PendingPermission]:
         return self.permissions.pending()
     def approve_permission(self, request_id: str) -> ToolResult:
@@ -106,11 +108,9 @@ class Harness:
             if item.tool in ("file.write", "file.patch"):
                 self._trace_log(item.run_id).record("change.rejected", {"request_id": request_id})
             return ToolResult.rejected(request_id, "rejected by user")
-    def p0_context(self) -> dict[str, list]:
-        return self.memory.p0_context()
+    def p0_context(self) -> dict[str, list]: return self.memory.p0_context()
     def memory_snapshot(self) -> dict:
         return self.memory.snapshot()
-
     def model_settings_status(self) -> ModelSettingsStatus:
         return self.model_settings.status()
 
@@ -146,15 +146,22 @@ class Harness:
         return result
 
     def run_agent_step(self, run_id: str) -> AgentStepResult:
-        run = self._run(run_id)
-        trace = self._trace_log(run_id)
+        run, trace = self._run(run_id), self._trace_log(run_id)
+        status = self.model_settings.status()
+        if status.state == "blocked":
+            trace.record("llm.blocked", {"reason": status.blocked_reason})
+            return AgentStepResult("failed", "", None, status.blocked_reason)
         config = self.model_settings.config()
         memories = self._agent_memories()
         return self.agent_loop.run_step(run.goal, config, self.p0_context(), trace, lambda req: self.submit_tool_request(run_id, req), memories, self.locked_workspace_binding)
 
     def run_agent_loop(self, run_id: str, max_steps: int = 50) -> AgentLoopResult:
-        run = self._run(run_id)
-        trace = self._trace_log(run_id)
+        run, trace = self._run(run_id), self._trace_log(run_id)
+        status = self.model_settings.status()
+        if status.state == "blocked":
+            trace.record("llm.blocked", {"reason": status.blocked_reason})
+            step = AgentStepResult("failed", "", None, status.blocked_reason)
+            return AgentLoopResult("failed", 0, step, status.blocked_reason)
         config = self.model_settings.config()
         closure_id = self.task_closure_recorder.start_loop(run_id)
         result = self.agent_loop.run_loop(run.goal, config, self.p0_context, trace, lambda req: self.submit_tool_request(run_id, req), self._agent_memories, max_steps, self.locked_workspace_binding)
@@ -290,11 +297,6 @@ class Harness:
         self.memory.record_failure(failure, source=request.id)
         return ToolResult.denied(request.id, reason)
 
-    def _workspace(self, run_id: str) -> str:
-        return self._run(run_id).workspace
-
-    def _run(self, run_id: str) -> HarnessRun:
-        return self._state.run(run_id)
-
-    def _trace_log(self, run_id: str) -> TraceLog:
-        return self._state.trace(run_id)
+    def _workspace(self, run_id: str) -> str: return self._run(run_id).workspace
+    def _run(self, run_id: str) -> HarnessRun: return self._state.run(run_id)
+    def _trace_log(self, run_id: str) -> TraceLog: return self._state.trace(run_id)

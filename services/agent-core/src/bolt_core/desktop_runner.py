@@ -32,6 +32,7 @@ class StartupEnvironment:
 class DesktopSecurityContext:
     credential_lifecycle: object
     credential_configs: object
+    credential_store: object
     credential_gate: object
     model_gateway: object
     locked_workspace: object
@@ -163,7 +164,14 @@ def build_desktop_security_context(workspace: str | Path, credentials) -> Deskto
     )
     gate = WorkspaceCredentialGate(PersistentWorkspaceCredentialState(journals, configs), credentials)
     lifecycle = CredentialLifecycle(credentials, configs, id_factory=new_credential_id)
-    return DesktopSecurityContext(lifecycle, configs, gate, DefaultModelGateway(credential_gate=gate), binding)
+    return DesktopSecurityContext(
+        lifecycle,
+        configs,
+        credentials,
+        gate,
+        DefaultModelGateway(credential_gate=gate),
+        binding,
+    )
 
 
 def main() -> None:
@@ -188,6 +196,7 @@ def main() -> None:
             desktop_production=True,
             credential_lifecycle=security.credential_lifecycle,
             credential_configs=security.credential_configs,
+            credential_store=security.credential_store,
             model_gateway=security.model_gateway,
             locked_workspace_binding=security.locked_workspace,
         ),

@@ -2,7 +2,8 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
+from bolt_core.model_settings import ModelSettingsConflictError
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.execution_handoff import ExecutionHandoffService
 from bolt_core.execution_handoff_api import create_execution_handoff_router
@@ -121,7 +122,7 @@ def create_app(
     lock_default_workspace: bool = False,
     desktop_production: bool = False,
     credential_lifecycle=None, credential_configs=None,
-    model_gateway=None, locked_workspace_binding=None,
+    model_gateway=None, locked_workspace_binding=None, credential_store=None,
 ) -> FastAPI:
     app = FastAPI(title="Bolt Agent Core", docs_url="/docs" if not desktop_production else None, redoc_url="/redoc" if not desktop_production else None, openapi_url="/openapi.json" if not desktop_production else None)
     persistence = (
@@ -145,7 +146,8 @@ def create_app(
         task_closure_service = TaskClosureService(None)
         execution_queue_service = ExecutionQueueService(None)
         execution_handoff_service = ExecutionHandoffService(None)
-    harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace, locked_workspace_binding=locked_workspace_binding, model_gateway=model_gateway)
+    harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace, locked_workspace_binding=locked_workspace_binding, model_gateway=model_gateway, persistence=persistence, credential_store=credential_store)
+    app.state.harness = harness
     bridge_run_id = "run_execution_bridge"
     harness.register_internal_run(bridge_run_id, "申请人工执行权限")
     permission_bridge = ExecutionPermissionBridgeService(execution_handoff_service, harness.permissions, lambda record: permission_bridge_target(record, task_closure_service, harness, bridge_run_id))
@@ -303,7 +305,17 @@ def create_app(
 
     @app.post("/model/settings")
     def update_model_settings(payload: dict) -> dict:
-        return harness.update_model_settings(payload).__dict__
+        try:
+            return harness.update_model_settings(payload).__dict__
+        except ModelSettingsConflictError as error:
+            raise HTTPException(status_code=409, detail="model settings revision conflict") from error
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+
+    @app.delete("/model/settings")
+    def delete_model_settings(revision: int) -> dict:
+        harness.model_settings.delete(revision=revision)
+        return harness.model_settings_status().__dict__
 
     @app.get("/permissions/pending")
     def pending_permissions() -> list[dict]:

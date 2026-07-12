@@ -30,7 +30,8 @@ def test_model_config_contains_only_non_secret_credential_reference():
 def test_model_settings_rejects_plaintext_api_key_payload():
     store = ModelSettingsStore()
 
-    status = store.update({"api_key": "must-not-be-retained"})
+    with pytest.raises(ValueError, match="sensitive model settings fields"):
+        store.update({"api_key": "must-not-be-retained"})
 
-    assert status.has_api_key is False
+    assert store.status().has_api_key is False
     assert not hasattr(store.config(), "api_key")
