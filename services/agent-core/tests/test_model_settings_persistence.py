@@ -327,3 +327,31 @@ def test_missing_credential_blocks_agent_execution_before_gateway_call(tmp_path)
     assert result.status == "failed"
     assert result.error == "credential_not_found"
     assert not any(event.type == "llm.requested" for event in harness.trace(run.id))
+
+
+def test_unavailable_credential_manager_blocks_agent_execution_before_gateway_call(tmp_path):
+    from bolt_core.harness import Harness
+
+    class UnavailableCredentials:
+        def load(self, _credential_id: str) -> str | None:
+            raise OSError("credential manager unavailable")
+
+    repository = _repository(tmp_path)
+    ModelSettingsStore(
+        repository=repository,
+        credential_store=FakeCredentials({"credential-123": "safe-secret"}),
+    ).update(_payload(0))
+    harness = Harness(
+        workspace=str(tmp_path),
+        persistence=repository,
+        credential_store=UnavailableCredentials(),
+    )
+    run = harness.create_run("must not run while credential manager is unavailable")
+
+    result = harness.run_agent_step(run.id)
+
+    assert harness.model_settings.status().state == "blocked"
+    assert harness.model_settings.status().blocked_reason == "credential_not_found"
+    assert result.status == "failed"
+    assert result.error == "credential_not_found"
+    assert not any(event.type == "llm.requested" for event in harness.trace(run.id))

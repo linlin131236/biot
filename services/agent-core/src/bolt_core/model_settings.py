@@ -146,7 +146,10 @@ class ModelSettingsStore:
     def _credential_available(self) -> bool:
         if self._config.credential_id is None or self._credential_store is None:
             return False
-        return self._credential_store.load(self._config.credential_id) is not None
+        try:
+            return self._credential_store.load(self._config.credential_id) is not None
+        except Exception:
+            return False
 
     def _reset(self) -> None:
         self._revision = None
