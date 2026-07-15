@@ -145,6 +145,7 @@ describe('Main Agent Core IPC boundary', () => {
 
   it.each([
     [{ requestId: 'id', path: '/memory', method: 'TRACE' }, 'CORE_METHOD_NOT_ALLOWED'],
+    [{ requestId: 'x'.repeat(129), path: '/memory', method: 'GET' }, 'CORE_REQUEST_INVALID'],
     [{ requestId: 'id', path: '//example.com/memory', method: 'GET' }, 'CORE_REQUEST_INVALID'],
     [{ requestId: 'id', path: '/memory', method: 'GET', extra: true }, 'CORE_REQUEST_INVALID'],
     [{ requestId: 'id', path: '/memory', method: 'GET', headers: [['Accept', 'application/json']] }, 'CORE_HEADER_NOT_ALLOWED'],

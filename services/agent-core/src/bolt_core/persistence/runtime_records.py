@@ -157,6 +157,49 @@ class RuntimeRecordsMixin:
                 (event_id, runtime_session_id, sequence, event_type, serialized, now),
             )
 
+    def append_runtime_event_with_status(
+        self, event_id: str, runtime_session_id: str, sequence: int,
+        event_type: str, payload: dict, status: str,
+    ) -> None:
+        validate_identifier(event_id)
+        validate_identifier(runtime_session_id)
+        _validate_positive_integer(sequence)
+        validate_identifier(event_type)
+        validate_identifier(status)
+        serialized = validate_json_object(payload)
+        now = _now()
+        with self.database.transaction() as connection:
+            row = connection.execute(
+                "select rs.status, rs.task_id, t.status as task_status from runtime_sessions rs "
+                "join tasks t on t.id = rs.task_id where rs.id = ?",
+                (runtime_session_id,),
+            ).fetchone()
+            if row is None or row["status"] in _CLOSED_RUNTIME_STATES:
+                raise RuntimeSessionClosedError("runtime session is closed")
+            if row["task_status"] in _TERMINAL_TASK_STATES:
+                raise TaskTerminalStateError("task is in a terminal state")
+            last = connection.execute(
+                "select max(sequence) as last_sequence from runtime_events where runtime_session_id = ?",
+                (runtime_session_id,),
+            ).fetchone()["last_sequence"]
+            if sequence != (1 if last is None else last + 1):
+                raise RuntimeEventSequenceError(
+                    "runtime event sequence must be strictly monotonic and gapless"
+                )
+            connection.execute(
+                "insert into runtime_events(id, runtime_session_id, sequence, type, payload_json, created_at) "
+                "values (?, ?, ?, ?, ?, ?)",
+                (event_id, runtime_session_id, sequence, event_type, serialized, now),
+            )
+            connection.execute(
+                "update runtime_sessions set status = ?, updated_at = ? where id = ?",
+                (status, now, runtime_session_id),
+            )
+            connection.execute(
+                "update tasks set status = ?, revision = revision + 1, updated_at = ? where id = ?",
+                (status, now, row["task_id"]),
+            )
+
     def runtime_session_is_open(self, runtime_session_id: str) -> bool:
         validate_identifier(runtime_session_id)
         connection = self.database.connection()

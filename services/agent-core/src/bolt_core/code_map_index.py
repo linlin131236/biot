@@ -20,7 +20,7 @@ from typing import Optional
 # ── Excluded paths ────────────────────────────────────────────────────
 _EXCLUDED_PARTS = {
     "node_modules", ".git", "dist", "build", "__pycache__", ".venv",
-    "venv", ".bolt", "uv.lock",
+    "venv", ".bolt", "uv.lock", "runtime-releases",
 }
 _EXCLUDED_FILES = {
     ".env", ".env.local", "credentials.json", "secrets", "cert.pem",

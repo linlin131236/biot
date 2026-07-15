@@ -22,7 +22,6 @@ class ModelSettingsStatus:
     revision: int | None = None
     credential_id: str | None = None
     context_window: int = 8192
-    capability_overrides: dict[str, bool] | None = None
     state: str = "unconfigured"
     blocked_reason: str | None = None
 
@@ -83,7 +82,6 @@ class ModelSettingsStore:
             self._revision,
             self._config.credential_id,
             self._config.context_window,
-            self._config.capability_overrides or {},
             "blocked" if blocked else ("ready" if credential_available else "unconfigured"),
             "credential_not_found" if blocked else None,
         )
@@ -159,7 +157,6 @@ class ModelSettingsStore:
 
 
 def _config_from_profile(profile: dict) -> ModelConfig:
-    config = profile["config"]
     return ModelConfig(
         profile["provider"],
         profile["base_url"],
@@ -168,7 +165,6 @@ def _config_from_profile(profile: dict) -> ModelConfig:
         profile["temperature"],
         profile["timeout"],
         profile["context_window"],
-        config.get("capability_overrides", {}),
     )
 
 
@@ -182,16 +178,14 @@ def _profile_from_config(config: ModelConfig, payload: dict) -> dict:
         "timeout": changes.get("timeout", config.timeout),
         "context_window": changes.get("context_window", config.context_window),
         "credential_id": changes.get("credential_id", config.credential_id),
-        "config": changes.get(
-            "config", {"capability_overrides": config.capability_overrides or {}},
-        ),
+        "config": changes.get("config", {}),
     }
 
 
 def _validate_persisted_payload(payload: dict) -> None:
     allowed = {
         "revision", "provider", "base_url", "model", "temperature", "timeout",
-        "context_window", "credential_id", "capability_overrides",
+        "context_window", "credential_id",
     }
     if not isinstance(payload, dict):
         raise ValueError("unsupported model settings field")
@@ -207,15 +201,4 @@ def _profile_changes(payload: dict) -> dict:
         "provider", "base_url", "model", "temperature", "timeout", "context_window", "credential_id",
     }
     changes = {key: payload[key] for key in allowed & payload.keys()}
-    if "capability_overrides" in payload:
-        changes["config"] = {"capability_overrides": _validate_capability_overrides(payload["capability_overrides"])}
     return changes
-
-
-def _validate_capability_overrides(value: object) -> dict[str, bool]:
-    if not isinstance(value, dict) or any(
-        not isinstance(name, str) or type(enabled) is not bool
-        for name, enabled in value.items()
-    ):
-        raise ValueError("invalid capability overrides")
-    return dict(value)

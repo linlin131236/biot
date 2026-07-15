@@ -8,6 +8,9 @@ const REQUIRED_RELATIVE = [
   'resources/agent-core/src/bolt_core/app.py',
   'resources/agent-core/pyproject.toml',
   'resources/agent-core/.venv/Scripts/python.exe',
+  'resources/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/bin/hermes-acp.exe',
+  'resources/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/licenses/HERMES-AGENT-MIT.txt',
+  'resources/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/metadata/provenance.json',
 ];
 
 export function inspectPackagedWindowsTree(unpackedRoot) {

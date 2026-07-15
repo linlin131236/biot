@@ -119,6 +119,8 @@ export function LiquidGlassWorkbench(props: LiquidGlassWorkbenchProps) {
             workspacePath={safeWorkspace}
             coreStatus={props.coreStatus}
             runId={props.runId}
+            runtimeStatuses={props.runtimeStatuses}
+            refreshRuntimeStatuses={props.refreshRuntimeStatuses}
             error={props.error}
             toolFlow={props.toolFlow}
             modelPanel={props.modelPanel}

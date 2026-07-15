@@ -24,6 +24,7 @@ def test_model_config_contains_only_non_secret_credential_reference():
     names = {field.name for field in fields(ModelConfig)}
 
     assert "api_key" not in names
+    assert "capability_overrides" not in names
     assert "credential_id" in names
 
 

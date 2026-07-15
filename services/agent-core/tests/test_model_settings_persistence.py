@@ -41,7 +41,6 @@ def _payload(revision: int, credential_id: str | None = "credential-123") -> dic
         "timeout": 45.0,
         "context_window": 32768,
         "credential_id": credential_id,
-        "capability_overrides": {"shell": False, "images": True},
     }
 
 
@@ -62,7 +61,6 @@ def test_persistent_model_settings_reload_all_non_secret_fields_after_store_recr
     assert restarted.config().timeout == 45.0
     assert restarted.config().context_window == 32768
     assert restarted.config().credential_id == "credential-123"
-    assert restarted.config().capability_overrides == {"shell": False, "images": True}
 
 
 def test_persistent_model_settings_rejects_stale_revision_without_overwriting(tmp_path):
@@ -229,14 +227,12 @@ def test_save_rejects_repository_readback_that_differs_from_requested_config(mon
     assert store.config().model == "gpt-4o"
 
 
-def test_capability_override_rejects_non_boolean_value_before_persistence(tmp_path):
+def test_model_settings_rejects_runtime_capability_overrides(tmp_path):
     repository = _repository(tmp_path)
     store = ModelSettingsStore(repository=repository, credential_store=FakeCredentials())
-    payload = _payload(0)
-    payload["capability_overrides"] = {"shell": "enabled"}
 
-    with pytest.raises(ValueError, match="invalid capability overrides"):
-        store.update(payload)
+    with pytest.raises(ValueError, match="unsupported model settings field"):
+        store.update({"revision": 0, "capability_overrides": {"tool_calling": False}})
 
     with pytest.raises(KeyError):
         repository.load_model_profile("default")
@@ -268,7 +264,7 @@ def test_app_and_harness_real_restart_restore_settings_without_secret_on_disk(tm
         assert restored.status_code == 200
         assert restored.json()["model"] == "gpt-test"
         assert restored.json()["context_window"] == 32768
-        assert restored.json()["capability_overrides"] == {"shell": False, "images": True}
+        assert "capability_overrides" not in restored.json()
         assert canary not in str(restored.json())
 
     assert first_app.state.harness is not second_app.state.harness

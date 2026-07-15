@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { DesktopSettingsStatus } from './LiquidGlassSettingsData';
+import type { RuntimeStatus } from './runtimeClient';
 
 export type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
@@ -32,6 +33,8 @@ export interface LiquidGlassWorkbenchProps {
   setTheme: (value: ThemeMode) => void;
   onSaveTheme: (next: ThemeMode) => void;
   settings: DesktopSettingsStatus | null;
+  runtimeStatuses: RuntimeStatus[];
+  refreshRuntimeStatuses: () => void;
   fetcher: Fetcher;
 }
 
@@ -58,6 +61,8 @@ export interface LiquidGlassHomeProps {
   workspacePath: string;
   coreStatus: string;
   runId: string | null;
+  runtimeStatuses?: RuntimeStatus[];
+  refreshRuntimeStatuses?: () => void;
   error?: ReactNode;
   toolFlow?: ReactNode;
   modelPanel?: ReactNode;

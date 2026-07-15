@@ -26,6 +26,12 @@ test('inspectPackagedWindowsTree passes a minimal valid package tree', () => {
     writeFileSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'app.py'), '# app');
     writeFileSync(join(root, 'resources', 'agent-core', 'pyproject.toml'), '[project]\nname="bolt"');
     writeFileSync(join(root, 'resources', 'agent-core', '.venv', 'Scripts', 'python.exe'), 'stub');
+    mkdirSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'bin'), { recursive: true });
+    mkdirSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'licenses'), { recursive: true });
+    mkdirSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'metadata'), { recursive: true });
+    writeFileSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'bin', 'hermes-acp.exe'), 'stub');
+    writeFileSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'licenses', 'HERMES-AGENT-MIT.txt'), 'MIT');
+    writeFileSync(join(root, 'resources', 'agent-core', 'src', 'bolt_core', 'runtime-releases', 'hermes', '0.18.2', 'metadata', 'provenance.json'), '{}');
     writeFileSync(join(root, 'resources', 'app.asar'), 'asar-stub');
     const result = inspectPackagedWindowsTree(root);
     assert.equal(result.ok, true);

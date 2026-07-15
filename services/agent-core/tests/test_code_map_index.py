@@ -142,6 +142,12 @@ def test_no_dist_in_index():
         assert "dist/" not in e["file_path"] and "build/" not in e["file_path"]
 
 
+def test_no_managed_runtime_payload_in_index():
+    svc = CodeMapIndexService(".")
+    payload = svc._workspace / "services/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/bin/Lib/site.py"
+    assert svc._is_indexable(payload) is False
+
+
 # ── Safety: read-only ─────────────────────────────────────────────────
 
 def test_service_has_no_write_methods():

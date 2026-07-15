@@ -3,7 +3,7 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const ignored = new Set(['node_modules', 'dist', 'dist-electron', '.venv', '.git', '__pycache__', '.pytest_cache']);
+const ignored = new Set(['node_modules', 'dist', 'dist-electron', '.venv', '.git', '__pycache__', '.pytest_cache', 'runtime-releases']);
 const sourceExts = new Set(['.py', '.ts', '.tsx', '.js', '.jsx']);
 const failures = [];
 
@@ -66,6 +66,12 @@ function checkPythonBoundaries(rel, text) {
   if (rel.endsWith('builder_engine.py')) return;
   // M151: desktop_settings.py writes to .bolt/ user config (settings + API key file)
   if (rel.endsWith('desktop_settings.py')) return;
+  // Task2: managed runtime process boundary; owns restricted-token launch and Job Object containment.
+  if (rel.includes('/runtime/process_supervisor.py') || rel.includes('/runtime/windows_process.py')) return;
+  if (rel.includes('/runtime/windows_job_object.py') || rel.includes('/runtime/windows_restricted_token.py')) return;
+  if (rel.includes('/runtime/windows_acl.py') || rel.includes('/runtime/windows_appcontainer.py')) return;
+  if (rel.includes('/runtime/hermes_acp.py') || rel.includes('/runtime/hermes_installer.py')) return;
+  if (rel.includes('/runtime/hermes_release_inventory.py')) return;
   if (/from bolt_core\.(file_writer|patch_engine) import /.test(text)) fail(rel, 'direct write primitive import outside harness boundary');
   if (/\bsubprocess\b/.test(text)) fail(rel, 'subprocess usage outside shell executor boundary');
   if (/\.write_text\(|\.write_bytes\(|open\([^\n]*['"]w/.test(text)) fail(rel, 'direct file write outside write boundary');

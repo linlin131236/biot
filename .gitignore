@@ -13,5 +13,7 @@ __pycache__/
 *.pfx
 *.p12
 *.pem
+!services/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/bin/Lib/site-packages/certifi/cacert.pem
+!services/agent-core/src/bolt_core/runtime-releases/hermes/0.18.2/bin/Lib/site-packages/pip/_vendor/certifi/cacert.pem
 *.key
 release-evidence/

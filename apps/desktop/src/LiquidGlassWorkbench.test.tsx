@@ -24,6 +24,12 @@ const baseProps = {
   setTheme: vi.fn(),
   onSaveTheme: vi.fn(),
   settings: { theme: 'dark', language: 'zh-CN', default_workspace: '', has_api_key: false },
+  runtimeStatuses: [{
+    runtime_id: 'hermes', implementation_version: null, protocol_type: 'acp', protocol_version: 'v1',
+    capabilities: { messages: false, planning: false, tools: false, file_changes: false, shell: false, permissions: false, cancellation: false, resumption: false, mcp: false, images: false },
+    state: 'release_unavailable', start_available: false, blocked_reason: 'release_unavailable', active_session_count: 0,
+  }],
+  refreshRuntimeStatuses: vi.fn(),
   fetcher: fetch,
   legacyPanels: <div>工程面板内容</div>,
 };
@@ -51,6 +57,15 @@ describe('LiquidGlassWorkbench', () => {
     expect(baseProps.startRun).toHaveBeenCalled();
     expect(baseProps.createGoal).toHaveBeenCalled();
     expect(baseProps.runStep).toHaveBeenCalled();
+  });
+
+  it('renders an honest unavailable Hermes Runtime state and supports refresh', () => {
+    render(<LiquidGlassWorkbench {...baseProps} />);
+
+    expect(screen.getAllByText('等待受信任构建').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '刷新运行时状态' }));
+    expect(baseProps.refreshRuntimeStatuses).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /启动 Hermes/ })).not.toBeInTheDocument();
   });
 
   it('shows the settings center with the approved categories', () => {

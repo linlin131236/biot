@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 
 const root = process.cwd();
 const maxLines = 300;
-const ignored = new Set(['node_modules', 'dist', 'dist-electron', 'release', '.venv', '.git', '.bolt']);
+const ignored = new Set(['node_modules', 'dist', 'dist-electron', 'release', 'release-evidence', '.venv', '.git', '.bolt', '.review-tmp', 'runtime-releases']);
 const extensions = new Set(['.py', '.ts', '.tsx', '.css', '.md', '.json', '.yaml', '.yml']);
 const generated = new Set(['pnpm-lock.yaml']);
 
@@ -28,6 +28,8 @@ const KNOWN_EXEMPT = new Set([
   'docs/project-state.md',
   // M164: app.py is the central router registry (one import/registration per feature module)
   'services/agent-core/src/bolt_core/app.py',
+  // Task2: generated SHA-256 inventory for the fixed Hermes runtime payload.
+  'services/agent-core/src/bolt_core/runtime/hermes_release_inventory.py',
 ]);
 
 const failures = scan(root).filter((file) => {

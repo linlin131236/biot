@@ -53,6 +53,7 @@ function withCoreDefaults(impl: (input: string, init?: RequestInit) => Promise<R
     }
     if (input === '/goals/unfinished' || input.endsWith('/goals/unfinished')) return json([]);
     if (input === '/health' || input.endsWith('/health')) return json({ status: 'ok', service: 'bolt-agent-core' });
+    if (input === '/runtime' || input.endsWith('/runtime')) return json({ runtimes: [{ runtime_id: 'hermes', protocol_type: 'acp', protocol_version: 'v1', capabilities: {}, state: 'release_unavailable', start_available: false, blocked_reason: 'release_unavailable', active_session_count: 0 }] });
     if (input.endsWith('/permissions/pending')) return json([]);
     if (input.endsWith('/memory')) return json({ records: [], p0_context: { unresolved_failures: [], hard_constraints: [] } });
     if (input.includes('/execution-queue') || input.includes('/execution-handoffs')) return json([]);
@@ -104,6 +105,22 @@ describe('App', () => {
       expect(fetcher).toHaveBeenCalledWith('/health');
     });
     expect(await screen.findByText('本地')).toBeInTheDocument();
+  });
+
+  it('loads and refreshes the real Runtime availability without exposing Core internals', async () => {
+    const fetcher = vi.fn().mockImplementation(withCoreDefaults(async (input: string) => {
+      if (input === '/runtime') return json({ runtimes: [{ runtime_id: 'hermes', protocol_type: 'acp', protocol_version: 'v1', capabilities: {}, state: 'release_unavailable', start_available: false, blocked_reason: 'release_unavailable', active_session_count: 0 }] });
+      return json({});
+    }));
+    localStorage.setItem('bolt.desktop.session', JSON.stringify({ completed: true, workspacePath: 'C:/Projects/Bolt' }));
+
+    render(<App fetcher={fetcher} />);
+
+    expect((await screen.findAllByText('等待受信任构建')).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: '刷新运行时状态' }));
+    await vi.waitFor(() => expect(fetcher.mock.calls.filter(([path]) => path === '/runtime').length).toBeGreaterThanOrEqual(2));
+    expect(document.body.textContent).not.toContain('127.0.0.1');
+    expect(document.body.textContent).not.toContain('BOLT_RUNTIME_TOKEN');
   });
 
   it('shows a readable error when a core action fails', async () => {

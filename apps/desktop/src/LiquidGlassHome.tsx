@@ -9,6 +9,7 @@ import {
   Layers3,
   Mic,
   Route,
+  RefreshCw,
   ShieldCheck,
   TestTube2,
 } from 'lucide-react';
@@ -17,6 +18,8 @@ import { GlassButton, GlassPill, GlassToolbar } from './LiquidGlassPrimitives';
 
 export function LiquidGlassHome(props: LiquidGlassHomeProps) {
   const coreOnline = props.coreStatus === 'ok';
+  const hermes = props.runtimeStatuses?.find((runtime) => runtime.runtime_id === 'hermes');
+  const runtimeState = runtimeStateLabel(hermes?.state);
   const runStatus = getRunStatus(props.hasWorkspace, coreOnline, props.runId);
   const projectName = props.hasWorkspace ? getProjectName(props.workspacePath) : '等待选择';
   const cockpitItems = [
@@ -39,6 +42,11 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       label: '核心服务',
       value: coreOnline ? '本地' : '离线',
       tone: coreOnline ? 'success' : 'danger',
+    },
+    {
+      label: 'Hermes 运行时',
+      value: runtimeState,
+      tone: hermes?.state === 'verified' ? 'success' : hermes ? 'warning' : 'default',
     },
   ];
   const recommendedTasks = [
@@ -142,8 +150,18 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
 
       <section className="biotCompatStatus biotCompatibilityStatus" aria-label="工程状态">
         <span>Agent Core 状态</span><strong>{coreOnline ? '本地' : '离线'}</strong>
+        <span>Hermes 运行时</span><strong>{runtimeState}</strong>
         <span>工作区</span><strong>{props.hasWorkspace ? '已选择' : '未选择'}</strong>
         <span>当前运行</span><strong>{props.runId || '无'}</strong>
+        <GlassButton
+          className="biotRuntimeRefresh"
+          icon={<RefreshCw size={16} />}
+          aria-label="刷新运行时状态"
+          onClick={props.refreshRuntimeStatuses}
+          disabled={!props.refreshRuntimeStatuses}
+        >
+          刷新
+        </GlassButton>
       </section>
 
       <section className="biotCommandStrip" aria-label="Agent 快捷操作">
@@ -195,6 +213,17 @@ export function LiquidGlassHome(props: LiquidGlassHomeProps) {
       </details>
     </div>
   );
+}
+
+function runtimeStateLabel(state: string | undefined): string {
+  switch (state) {
+    case 'verified': return '已验证';
+    case 'not_installed': return '未安装';
+    case 'invalid': return '安装校验失败';
+    case 'release_unavailable': return '等待受信任构建';
+    case 'available': return '可用';
+    default: return '未检测';
+  }
 }
 
 function getRunStatus(hasWorkspace: boolean, coreOnline: boolean, runId: string | null) {

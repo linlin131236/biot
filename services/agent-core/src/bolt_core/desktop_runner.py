@@ -199,6 +199,8 @@ def main() -> None:
             credential_store=security.credential_store,
             model_gateway=security.model_gateway,
             locked_workspace_binding=security.locked_workspace,
+            managed_runtime_root=Path(startup.data_root) / "runtimes",
+            bundled_runtime_root=Path(__file__).resolve().parent / "runtime-releases",
         ),
         host="127.0.0.1",
         log_config=None,

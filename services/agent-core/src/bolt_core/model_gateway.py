@@ -23,7 +23,6 @@ class ModelConfig:
     temperature: float = 0.2
     timeout: float = 120.0
     context_window: int = 8192
-    capability_overrides: dict[str, bool] | None = None
 
 
 @dataclass(frozen=True)

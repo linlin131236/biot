@@ -1,0 +1,90 @@
+{
+  "excluded_source_directories": [
+    "optional-skills",
+    "skills"
+  ],
+  "implementation_version": "0.18.2",
+  "inputs": {
+    "license_sha256": "821556e6336796450ab852d375117b48a4887e71d255794fd6318d99982a5ab6",
+    "pyproject_toml_sha256": "d1eee316b301dbaa35d8e59ab138cf86a4937f0fe4c65f97d839d798ae6a6755",
+    "uv_lock_sha256": "8d03d04a404c641e1c9642f0482e2d8752c57da02da94d612a5f30883b25fbca",
+    "wheel_sha256": "3e1a139c3083faecb32e3996e75ac0b1f489e478e5cc4b6c18f786e13f22d711"
+  },
+  "launcher": {
+    "args": [
+      "-I",
+      "-B",
+      "-m",
+      "acp_adapter.entry"
+    ],
+    "executable_relative_path": "bin/hermes-acp.exe"
+  },
+  "overlay": [
+    {
+      "after_sha256": "2e3cbc91e7b775f47fafa5ec30d108a72f7f30505c536ca7792f25a235b19d36",
+      "before_sha256": "1cd38809832cc1bc16bbf499a153382d7ceb5f714ab979abf69d80a4495cfeb4",
+      "path": "setup.py",
+      "reason": "exclude bundled skills from headless ACP runtime"
+    },
+    {
+      "after_sha256": "90fe564904022375aa44c43173de9f585cd9254603df337d5fa3ea72a11a9f3d",
+      "before_sha256": "142c5a26977de0e086c30a9a8341853df012b91c5e0f287d1426f7c05f62dcc4",
+      "path": "MANIFEST.in",
+      "reason": "exclude skills from source distribution metadata"
+    },
+    {
+      "after_sha256": "45bcfb7ca27ee453ce4070e28bb1afd519f865213b4dbe8034e305c7bc2cfafe",
+      "before_sha256": "3f522d24746773ee52403aeae68c144f5e7cc42c5906dd99bf565b5d7dd0407a",
+      "path": "hermes_cli/config.py",
+      "reason": "empty custom Authorization suppresses OpenAI SDK bearer auth for Bolt loopback proxy"
+    },
+    {
+      "after_sha256": "17558ccdcbd20250991e3b3c656a1ef8393e43904bf75b9ce8648a2bb82ea4d5",
+      "before_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "acp_adapter/bolt_model_client.py",
+      "reason": "route managed Hermes model calls through the parent ACP connection"
+    },
+    {
+      "after_sha256": "e3209f659a1ac4d37f8b4981974efda3bfce273651be06342c4a67a93f23e329",
+      "before_sha256": "3f3b55d929282802c007142c10b27fc9b8e9373f303cdd4b61d45e530183f737",
+      "path": "acp_adapter/session.py",
+      "reason": "bolt-managed sessions bypass runtime provider and use the ACP model client"
+    },
+    {
+      "after_sha256": "123eb40827e9db3738036a8f302f30077c871bc8589a9c3850b7781c72266c86",
+      "before_sha256": "f53d20853688ef41dea41d24722bec0ca41dc2f35a7fbbfd6a8b64ff90e3ff07",
+      "path": "acp_adapter/server.py",
+      "reason": "bind the managed model facade to the parent ACP event loop for one prompt"
+    },
+    {
+      "after_sha256": "9c867cf6bce753ee08a66ca5cd6fd4d70e82d4e84d03c167e8ee6dfad606113d",
+      "before_sha256": "123eb40827e9db3738036a8f302f30077c871bc8589a9c3850b7781c72266c86",
+      "path": "acp_adapter/server.py",
+      "reason": "bind Core-owned model authority before the executor begins the prompt"
+    },
+    {
+      "after_sha256": "1bd3ff8d8de1f2e14bc70cae0b99d8479f516e16385a1658f1aafc0870f79666",
+      "before_sha256": "9c867cf6bce753ee08a66ca5cd6fd4d70e82d4e84d03c167e8ee6dfad606113d",
+      "path": "acp_adapter/server.py",
+      "reason": "cancel a pending Core model RPC when the prompt ends or its transport fails"
+    },
+    {
+      "after_sha256": "a3221a8bcb8cec34ff1f6db22430b4d65677de9a46afc81edbb9b419a364c247",
+      "before_sha256": "24b34c42281b851ee826a27ae54d489d031199411df796a6f50f6c2cf60fb63c",
+      "path": "agent/chat_completion_helpers.py",
+      "reason": "prevent the managed ACP provider from rebuilding an HTTP client"
+    }
+  ],
+  "python": {
+    "architecture": "x64",
+    "version": "3.11.15"
+  },
+  "runtime_id": "hermes",
+  "schema_version": 1,
+  "scope": "headless_acp_only",
+  "staging_source_sha256": "271ccb7d07093dfde1b2aa554a702a951c94a90ef13c1fc42616f9127101a836",
+  "upstream": {
+    "commit": "291eae63b7d37129661082e23df35804c5e89365",
+    "source": "https://github.com/NousResearch/hermes-agent"
+  }
+}

@@ -8,6 +8,7 @@ import { createBoltState, reduceBoltState, type BoltState } from './state';
 import { loadDesktopSession, saveDesktopSession, type DesktopSession } from './desktopSession';
 import { fetchCoreHealth } from './coreClient';
 import { createAgentCoreFetcher } from './agentCoreAuth';
+import { fetchRuntimeStatuses, type RuntimeStatus } from './runtimeClient';
 import { decidePermission, evaluateWorkflowReview, executeWorkflowStep, loadModelSettings, maintainMemory, refreshWorkflow, startWorkflowRun, storeModelSettings, createWorkflowGoal, fetchWorkflowTimeline, loadDesktopSettings, storeDesktopSettings, addWorkspaceToHistory, loadRecentSessions } from './workflowClient';
 import { PanelsSection } from './PanelsSection';
 import { LiquidGlassWorkbench } from './LiquidGlassWorkbench';
@@ -47,6 +48,7 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
   const [reviewResult, setReviewResult] = useState<{ passed: boolean; failures: string[] } | null>(null);
   const [timeline, setTimeline] = useState<unknown[]>([]);
   const [unfinishedGoals, setUnfinishedGoals] = useState<Goal[]>([]);
+  const [runtimeStatuses, setRuntimeStatuses] = useState<RuntimeStatus[]>([]);
   const [filePath, setFilePath] = useState('');
   const [oldText, setOldText] = useState('');
   const [newText, setNewText] = useState('');
@@ -70,6 +72,17 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
     return () => { active = false; };
   }, [fetcher, session.completed]);
 
+  useEffect(() => {
+    if (!session.completed) return;
+    let active = true;
+    fetchRuntimeStatuses(fetcher).then((statuses) => {
+      if (active) setRuntimeStatuses(statuses);
+    }).catch(() => {
+      if (active) setRuntimeStatuses([]);
+    });
+    return () => { active = false; };
+  }, [fetcher, session.completed]);
+
   async function handleSaveTheme(nextTheme: ThemeMode) {
     setTheme(nextTheme);
     await storeDesktopSettings({ theme: nextTheme }, fetcher);
@@ -84,6 +97,10 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
 
   async function guarded(action: () => Promise<void>, fallback: string) {
     try { setError(null); await action(); } catch (err) { setError(err instanceof Error && err.message.startsWith('Agent Core request failed') ? err.message : fallback); }
+  }
+
+  async function refreshRuntimeStatuses() {
+    await guarded(async () => setRuntimeStatuses(await fetchRuntimeStatuses(fetcher)), '无法读取运行时状态。');
   }
 
   async function startRun() {
@@ -181,6 +198,8 @@ export function App({ fetcher: providedFetcher, initialMemorySnapshot, initialPe
         setTheme={setTheme}
         onSaveTheme={handleSaveTheme}
         settings={settings}
+        runtimeStatuses={runtimeStatuses}
+        refreshRuntimeStatuses={refreshRuntimeStatuses}
         fetcher={fetcher}
         error={error ? <div className="error"><AlertTriangle size={16} />{error}</div> : null}
         toolFlow={<ToolFlowPanel hasWorkspace={hasWorkspace} filePath={filePath} setFilePath={setFilePath} oldText={oldText} setOldText={setOldText} newText={newText} setNewText={setNewText} readFile={readFile} submitPatch={submitPatch} />}

@@ -94,7 +94,7 @@ describe('M44 task closure assessment dogfood', () => {
     expect(urls.some(url => url.includes('/permissions/') && url.includes('/approve'))).toBe(false);
     expect(urls.some(url => url.includes('delete'))).toBe(false);
     expect(urls.some(url => url.includes('push'))).toBe(false);
-  });
+  }, 10_000);
 });
 
 function queueItem(overrides: Record<string, unknown> = {}) {

@@ -2,7 +2,10 @@ import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from bolt_core.model_settings import ModelSettingsConflictError
 from bolt_core.checkpoint import CheckpointService
 from bolt_core.persistence.artifact_store import ArtifactStore
@@ -114,6 +117,17 @@ from bolt_core.release_readiness_api import create_release_readiness_router
 from bolt_core.persistence.database import Database
 from bolt_core.persistence.repositories import ControlPlaneRepository
 from bolt_core.persistence.recovery import RecoveryScanner
+from bolt_core.runtime_api import create_runtime_router
+from bolt_core.runtime.native_runtime import BoltNativeRuntime
+from bolt_core.runtime.manager import RuntimeManager
+from bolt_core.runtime.registry import RuntimeRegistry
+from bolt_core.runtime.process_supervisor import RuntimeProcessSupervisor
+from bolt_core.runtime.hermes_acp import HermesAcpRuntime
+from bolt_core.model_proxy import RuntimeModelProxy
+from bolt_core.profile_model_gateway import SavedProfileModelGateway
+from bolt_core.runtime_control_plane import RuntimeControlPlane
+from bolt_core.runtime.model_rpc import RuntimeModelRpc
+from bolt_core.runtime.hermes_release_catalog import HermesReleaseCatalog
 from bolt_core.app_routes import register as register_simple_routes
 def create_app(
     execution_audit_path: str | Path | None = None,
@@ -125,14 +139,41 @@ def create_app(
     desktop_production: bool = False,
     credential_lifecycle=None, credential_configs=None,
     model_gateway=None, locked_workspace_binding=None, credential_store=None,
+    managed_runtime_root: str | Path | None = None,
+    bundled_runtime_root: str | Path | None = None,
 ) -> FastAPI:
-    app = FastAPI(title="Bolt Agent Core", docs_url="/docs" if not desktop_production else None, redoc_url="/redoc" if not desktop_production else None, openapi_url="/openapi.json" if not desktop_production else None)
+    runtime_control_plane = None
+
+    @asynccontextmanager
+    async def app_lifespan(_app: FastAPI):
+        try:
+            if runtime_control_plane is not None:
+                runtime_control_plane.startup()
+            yield
+        finally:
+            if runtime_control_plane is not None:
+                runtime_control_plane.shutdown()
+
+    app = FastAPI(
+        title="Bolt Agent Core",
+        docs_url="/docs" if not desktop_production else None,
+        redoc_url="/redoc" if not desktop_production else None,
+        openapi_url="/openapi.json" if not desktop_production else None,
+        lifespan=app_lifespan,
+    )
     persistence = (
         ControlPlaneRepository(Database.open(Path(persistence_root)))
         if persistence_root is not None
         else None
     )
     app.state.persistence = persistence
+
+    @app.exception_handler(RequestValidationError)
+    async def runtime_validation_error(request: Request, _error: RequestValidationError):
+        if request.url.path.startswith("/runtime/") or request.url.path == "/runtime":
+            return JSONResponse(status_code=422, content={"detail": "runtime_request_invalid"})
+        return JSONResponse(status_code=422, content={"detail": jsonable_encoder(_error.errors())})
+
     install_local_api_auth(app, local_api_token or os.environ.get("BOLT_AGENT_CORE_TOKEN"), require_token=require_local_api_token)
     workspace_root, locked_workspace = resolve_app_workspace(project_dir, os.environ.get("BOLT_WORKSPACE"), lock_default_workspace)
     audit_path = (
@@ -178,6 +219,64 @@ def create_app(
         execution_handoff_service = ExecutionHandoffService(None)
     harness = Harness(workspace=str(workspace_root), task_closure_service=task_closure_service, locked_workspace=locked_workspace, locked_workspace_binding=locked_workspace_binding, model_gateway=model_gateway, persistence=persistence, credential_store=credential_store)
     app.state.harness = harness
+    runtime_registry = RuntimeRegistry()
+    native_runtime = BoltNativeRuntime()
+    runtime_registry.register(native_runtime.descriptor, native_runtime)
+    runtime_supervisor = RuntimeProcessSupervisor()
+    runtime_broker = None
+    runtime_model_rpc = None
+    profile_gateway = None
+    hermes_factory = None
+    if (
+        desktop_production
+        and persistence is not None
+        and model_gateway is not None
+        and locked_workspace_binding is not None
+        and managed_runtime_root is not None
+    ):
+        profile_gateway = SavedProfileModelGateway(
+            persistence, model_gateway, locked_workspace_binding,
+        )
+        runtime_model_rpc = RuntimeModelRpc(RuntimeModelProxy(None, profile_gateway))
+    runtime_manager = RuntimeManager(
+        runtime_registry,
+        on_session_closed=(runtime_model_rpc.revoke if runtime_model_rpc is not None else None),
+    )
+    hermes_catalog = HermesReleaseCatalog.bundled()
+
+    if runtime_model_rpc is not None and managed_runtime_root is not None:
+        def hermes_factory(release):
+            return HermesAcpRuntime(
+                manifest=release.manifest,
+                installation=Path(managed_runtime_root) / "hermes" / release.manifest.implementation_version,
+                executable_args=list(release.executable_args),
+                supervisor=runtime_supervisor,
+                managed_runtime_root=Path(managed_runtime_root),
+                workspace=workspace_root,
+                model_policy_factory=lambda session: runtime_control_plane.model_policy(session),
+                model_rpc=runtime_model_rpc,
+                on_terminal=lambda session, kind: runtime_control_plane.runtime_terminal(session, kind),
+                on_session_closed=runtime_model_rpc.revoke,
+            )
+
+    runtime_control_plane = RuntimeControlPlane(
+        registry=runtime_registry,
+        manager=runtime_manager,
+        repository=persistence,
+        workspace_id=closure_workspace_id,
+        broker=runtime_broker,
+        supervisor=runtime_supervisor,
+        catalog=hermes_catalog,
+        managed_runtime_root=managed_runtime_root,
+        bundled_runtime_root=bundled_runtime_root,
+        profile_gateway=profile_gateway,
+        hermes_factory=hermes_factory,
+    )
+    app.state.runtime_registry = runtime_registry
+    app.state.runtime_manager = runtime_manager
+    app.state.runtime_broker = runtime_broker
+    app.state.runtime_model_rpc = runtime_model_rpc
+    app.state.runtime_control_plane = runtime_control_plane
     app.state.execution_queue_service = execution_queue_service
     app.state.execution_handoff_service = execution_handoff_service
     bridge_run_id = "run_execution_bridge"
@@ -308,6 +407,7 @@ def create_app(
     app.include_router(create_product_workbench_dogfood_router(str(project_dir or Path.cwd())))
     app.include_router(create_desktop_beta_ship_router(str(project_dir or Path.cwd())))
     app.include_router(create_harness_router(harness))
+    app.include_router(create_runtime_router(runtime_control_plane))
 
     @app.get("/health")
     def health() -> dict[str, str]:

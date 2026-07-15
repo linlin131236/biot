@@ -30,6 +30,8 @@ const ALLOWED_METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 const REQUEST_FIELDS = new Set(['requestId', 'path', 'method', 'headers', 'body', 'timeoutMs']);
 const RESPONSE_HEADERS = new Set(['content-type', 'content-length', 'etag', 'retry-after', 'x-bolt-error-code']);
 const MAX_RESPONSE_BYTES = 16 * 1024 * 1024;
+const MAX_REQUEST_ID_LENGTH = 128;
+const MAX_FINISHED_REQUESTS = 1024;
 
 export function registerAgentCoreIpc(ipcMain: IpcMainLike, dependencies: AgentCoreIpcDependencies): void {
   const activeRequests = new Map<string, ActiveRequest>();
@@ -85,7 +87,7 @@ export function registerAgentCoreIpc(ipcMain: IpcMainLike, dependencies: AgentCo
     } finally {
       clearTimeout(timeout);
       activeRequests.delete(request.requestId);
-      finishedRequests.set(request.requestId, event.sender.id);
+      rememberFinishedRequest(finishedRequests, request.requestId, event.sender.id);
     }
   });
 
@@ -114,6 +116,8 @@ function parseRequest(payload: unknown): {
   if (!isRecord(payload)
     || Object.keys(payload).some((key) => !REQUEST_FIELDS.has(key))
     || typeof payload.requestId !== 'string'
+    || payload.requestId.length < 1
+    || payload.requestId.length > MAX_REQUEST_ID_LENGTH
     || typeof payload.path !== 'string'
     || !isSafePath(payload.path)
     || typeof payload.method !== 'string'
@@ -125,6 +129,11 @@ function parseRequest(payload: unknown): {
   }
   if (!ALLOWED_METHODS.has(payload.method)) throw transportError('CORE_METHOD_NOT_ALLOWED');
   return payload as ReturnType<typeof parseRequest>;
+}
+
+function rememberFinishedRequest(requests: Map<string, number>, requestId: string, ownerId: number): void {
+  requests.set(requestId, ownerId);
+  if (requests.size > MAX_FINISHED_REQUESTS) requests.delete(requests.keys().next().value!);
 }
 
 function parseCancel(payload: unknown): string {
